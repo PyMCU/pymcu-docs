@@ -12,13 +12,7 @@ export default defineConfig({
       title: 'PyMCU',
       description:
         'PyMCU compiles a statically-typed, allocation-free subset of Python to bare-metal firmware for AVR, ARM (RP2040 / RP2350) and PIC.',
-      favicon: '/favicon.svg',
-      head: [
-        {
-          tag: 'link',
-          attrs: { rel: 'icon', href: '/favicon.ico', sizes: '32x32' },
-        },
-      ],
+      favicon: '/favicon.ico',
       // origin is https://github.com/PyMCU/website.git, default branch main.
       editLink: {
         baseUrl: 'https://github.com/PyMCU/website/edit/main/',

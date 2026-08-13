@@ -21,9 +21,21 @@ drag-and-drop or `pymcu flash`. The codegen itself is chip-agnostic: only the
 triple and CPU change between the two targets
 (`thumbv6m-none-eabi` / `cortex-m0plus` vs `thumbv8m.main-none-eabi` / `cortex-m33`).
 
-All three API styles work on the Pico: the MicroPython `machine` shim, the CircuitPython
-`board` / `digitalio` / `busio` shim, and the native PyMCU HAL. MicroPython is the natural
-starting point here — it is what most Pico code is already written in.
+Three API styles target the Pico: the MicroPython `machine` shim, the CircuitPython
+`board` / `digitalio` / `busio` shim, and the native PyMCU HAL.
+
+:::caution[`machine.Pin` does not compile on RP2040 / RP2350 today]
+As of v0.1.0a5, importing `machine.Pin` for an RP target fails the build with
+`ValueError: shift count 256 out of range (expected 0..31)`. A bare
+`led = Pin(25, Pin.OUT)` is enough to trigger it, and it predates this release — the same
+program fails identically on v0.1.0a4.
+
+The rest of the Pico surface is unaffected: `machine.UART`, CircuitPython's
+`digitalio.DigitalInOut` and `pymcu.hal.gpio.Pin` all build. Until this is fixed, drive pins
+on the Pico through the [native HAL](/stdlib/gpio/) or the
+[CircuitPython shim](/compat/circuitpython/); the MicroPython examples on this page that
+open with `Pin(...)` will not build as written.
+:::
 
 :::note[What the compat layers cover on the Pico]
 On ARM the compat shims currently wrap **GPIO and UART**: `machine.Pin`, `machine.UART`,

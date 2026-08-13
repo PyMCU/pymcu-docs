@@ -208,6 +208,15 @@ BAUD = micropython.const(9600)   # treated as integer constant 9600
 
 ## On the Raspberry Pi Pico
 
+:::caution[`machine.Pin` does not compile here today]
+As of v0.1.0a5, `machine.Pin` on an RP2040 / RP2350 target fails the build with
+`ValueError: shift count 256 out of range (expected 0..31)` — a bare `Pin(25, Pin.OUT)` is
+enough, and v0.1.0a4 fails the same way. `machine.UART` is unaffected. For pins on the Pico,
+use [`pymcu.hal.gpio.Pin`](/stdlib/gpio/) or
+[`digitalio.DigitalInOut`](/compat/circuitpython/) until it is fixed; both build today. The
+two examples below open with `Pin(...)` and will not build as written.
+:::
+
 Pins are plain GP numbers, so no board file is needed — set `target = "rp2040"` (or
 `"rp2350"`) and go:
 

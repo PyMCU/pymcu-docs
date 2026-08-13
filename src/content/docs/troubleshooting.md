@@ -187,6 +187,26 @@ uv pip install --no-deps -e lib/
 then quietly stops tracking your changes. The editable install is the supported workflow -
 after it is in place, stdlib edits are picked up on the next build with no copying at all.
 
+## `ValueError: shift count 256 out of range` on a Pico
+
+A known bug, not something in your code: `machine.Pin` does not compile for RP2040 / RP2350
+targets. The constructor alone triggers it, so a project scaffolded with
+`pymcu new --board raspberry_pi_pico --stdlib micropython` fails on its first build. It is
+not new in v0.1.0a5 — v0.1.0a4 fails identically.
+
+Everything else on that target builds, so the workaround is to drive pins through another
+API. The native HAL:
+
+```python
+from pymcu.hal.gpio import Pin
+
+led = Pin(25, Pin.OUT)
+led.toggle()
+```
+
+or CircuitPython's `digitalio.DigitalInOut`. `machine.UART` is unaffected, so a program that
+mixes `machine.UART` with a HAL `Pin` compiles today.
+
 ## `avr-size` reports a bigger binary than `pymcu build`
 
 Both numbers are right; they are measuring different things.

@@ -197,6 +197,8 @@ from pymcu.hal.gpio import Pin
 from pymcu.time import delay_ms
 
 led = Pin("PB5", Pin.OUT)   # port/pin string on AVR and PIC; Pin(25, ...) on ARM
+                            # on a Pico, use this native HAL Pin: the MicroPython
+                            # machine.Pin shim does not compile on RP targets yet
 
 while True:
     led.high()

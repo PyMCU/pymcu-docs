@@ -8,7 +8,7 @@ Each extra pulls in its own backend **and** its own assembler/linker binaries, s
 nothing to install from your system package manager.
 
 :::caution[Alpha release]
-The current release is **v0.1.0a3**. `pip`, `uv` and `pipx` skip pre-releases unless you ask
+The current release is **v0.1.0a5**. `pip`, `uv` and `pipx` skip pre-releases unless you ask
 for them, so every command on this page carries a `--pre` flag. Once `0.1.0` stable ships,
 `--pre` will no longer be needed.
 :::
@@ -53,11 +53,20 @@ pip install --pre "pymcu-compiler[avr]"
 Use this inside a virtual environment you manage yourself, or when adding PyMCU to an
 existing project's dependencies.
 
+:::caution[Not into the system Python]
+On Debian/Ubuntu 23.04 and newer, and on Homebrew Python, a plain `pip install` outside a
+virtual environment fails with `error: externally-managed-environment`. That is the
+distribution refusing to let pip write into the system interpreter, not a PyMCU problem —
+use `pipx` (above) for a global `pymcu` command, or create a virtual environment first.
+:::
+
 ## Verify
 
 ```bash
-pymcu --version
+pymcu version
 ```
+
+`pymcu --version` prints the same table.
 
 This prints a small table rather than a single version string:
 
@@ -66,7 +75,7 @@ This prints a small table rather than a single version string:
 +----------------+-----------------------+----------+
 | Package        | Description           | Version  |
 +----------------+-----------------------+----------+
-| pymcu-compiler | Compiler & CLI Driver | 0.1.0a3  |
+| pymcu-compiler | Compiler & CLI Driver | 0.1.0a5  |
 | pymcu-stdlib   | Standard Library      | ...      |
 | python         | Python Interpreter    | 3.11+    |
 +----------------+-----------------------+----------+

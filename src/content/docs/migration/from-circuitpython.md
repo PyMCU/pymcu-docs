@@ -32,7 +32,7 @@ will build. Full flag list in [the CLI reference](/driver/#pymcu-lint-path).
 ## Step 1: Install the compat package
 
 ```bash
-pip install pymcu-circuitpython
+pip install --pre pymcu-circuitpython
 ```
 
 Add to `pyproject.toml`:

@@ -31,7 +31,7 @@ program will build. Full flag list in [the CLI reference](/driver/#pymcu-lint-pa
 ## Step 1: Install the compat package
 
 ```bash
-pip install pymcu-micropython
+pip install --pre pymcu-micropython
 ```
 
 Add to `pyproject.toml`:

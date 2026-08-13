@@ -1,7 +1,50 @@
 ---
 title: Changelog
-description: "Release notes for every PyMCU alpha: what landed in v0.1.0a3 and v0.1.0a2, plus the pre-release series, listed by language feature, backend and driver."
+description: "Release notes for every PyMCU alpha: what landed in v0.1.0a5, v0.1.0a4 and the earlier pre-releases, listed by language feature, backend and driver."
 ---
+
+## v0.1.0a5 — Alpha 5 (2026-08-13)
+
+Full notes: [GitHub release](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a5)
+
+A portability-and-honesty release. The reader flow — `pipx install` → `pymcu new` →
+`pymcu build` → `pymcu flash` — was rehearsed end to end on Ubuntu (ARM64), Windows 11
+(ARM64) and macOS before the tag, with real-hardware flashes on two of them.
+
+### Fixed
+- **macOS wheels install again on macOS 14 / 15**: the arm64 wheels inherited the build
+  runner's `macosx_26_0_arm64` tag, so most Macs found no candidate at all
+- **A `ptr[T]` stored in a zero-cost-class field keeps its element width**, so MMIO through
+  such a field emits the right access width
+- **Error messages no longer lose their own instructions**: Rich markup ate the
+  `[tool.pymcu.flash]` section name out of the text telling you to add it, and install hints
+  named a package that does not exist
+- **`pymcu new` survives hostile environments**: no console and no `git` are handled, and the
+  generated `pyproject.toml` declares `requires-python = ">=3.11"`
+- **The flash figure is honest**: `pymcu build` reports code bytes consistently with the
+  disassembly (blink: **46 bytes**, 150 written to the chip). The old figure subtracted a
+  different preamble than the one it claimed
+- `pymcu version` exists as a subcommand, not only as the `--version` flag
+
+### Downloads
+- avrdude downloads carry pinned SHA-256 digests for all eight official v8.1 assets, and the
+  selection distinguishes Linux ARM64 / ARMv6 / 32-bit and native Windows ARM64
+- Downloads locate a CA bundle (`SSL_CERT_FILE`, system paths, `certifi`) instead of failing
+  with `CERTIFICATE_VERIFY_FAILED`; verification is never disabled
+- Archive extraction rejects path escapes by path semantics, not string prefixes
+
+### Toolchain cache
+- The cache under `~/.pymcu/tools` is keyed by payload rather than by interpreter, so every
+  Python on a machine shares one copy
+- Seeding keeps the two newest versions, and the new
+  [`pymcu toolchain clean`](/driver/#pymcu-toolchain-clean) (`--dry-run`, `--all`) reclaims
+  the rest on demand
+
+### Scaffolding
+- `pymcu new --stdlib micropython` (and `circuitpython`) generates a **top-level script** —
+  the shape real `main.py` / `code.py` files have — instead of a `def main():` wrapper
+- Dependency pins in generated projects tolerate pre-releases, so a project scaffolded from a
+  pipx-installed CLI installs cleanly with plain `pip`
 
 ## v0.1.0a4 — Alpha 4 (2026-08-02)
 

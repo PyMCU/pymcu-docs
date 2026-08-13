@@ -24,8 +24,10 @@ is **Pico 2 W (RP2350) only**. See the [Pico examples](/examples/rp2040/).
 ## Installation
 
 ```bash
-pip install pymcu-micropython
+pip install --pre pymcu-micropython
 ```
+
+`--pre` is required while the package is in alpha: without it pip finds no candidate at all.
 
 Or as a project dependency:
 

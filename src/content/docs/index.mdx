@@ -5,10 +5,11 @@ description: "PyMCU compiles typed, allocation-free Python to native AVR, RP2040
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
-:::tip[Alpha 4 is out]
-`pymcu flash` works end to end on the Pico / Pico 2, firmware is ~23% smaller, async
-on AVR really waits, and a batch of silent bugs is gone —
-[read the release notes](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a4), or see
+:::tip[Alpha 5 is out]
+The whole `pipx install` → `new` → `build` → `flash` flow was rehearsed on Ubuntu, Windows
+and macOS before the tag: macOS wheels install again, the flash figure matches the
+disassembly, and `pymcu toolchain clean` reclaims the cache —
+[read the release notes](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a5), or see
 [what changed](/changelog/).
 :::
 

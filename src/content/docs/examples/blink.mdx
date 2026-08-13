@@ -1,6 +1,6 @@
 ---
 title: Blink Example
-description: The AVR hello-world — toggle the Arduino Uno LED at 1 Hz in 162 bytes of flash, in MicroPython, CircuitPython and the native HAL.
+description: The AVR hello-world — toggle the Arduino Uno LED at 1 Hz in 150 bytes of flash, in MicroPython, CircuitPython and the native HAL.
 ---
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
@@ -13,7 +13,8 @@ are AVR-specific. The same program for a Raspberry Pi Pico is on the
 [RP2040 / RP2350 page](/examples/rp2040/).
 :::
 
-**Flash:** 162 bytes  **SRAM:** 0 bytes
+**Flash:** 150 bytes written to the chip — 46 of them your code, the rest the interrupt
+vector table, which is what `pymcu build` reports.  **SRAM:** 0 bytes
 
 ## Blink the built-in LED
 
@@ -75,7 +76,7 @@ def main():
 
 All three compile to the same `SBI` / `CBI` port toggles around the same delay loop —
 `machine.Pin` and `digitalio.DigitalInOut` are zero-cost wrappers over `pymcu.hal.gpio.Pin`.
-The 162-byte figure is for the native-HAL build; the MicroPython build matches it and the
+The 150-byte figure is for the native-HAL build; the MicroPython build matches it and the
 CircuitPython build is 2 bytes larger, because the `Direction.OUTPUT` setter clears `PORT`
 before setting `DDR` as its spec requires. Byte figures move between alpha compiler
 releases — `pymcu build` prints the current one for your own build.

@@ -17,8 +17,10 @@ machine code.
 ## Installation
 
 ```bash
-pip install pymcu-circuitpython
+pip install --pre pymcu-circuitpython
 ```
+
+`--pre` is required while the package is in alpha: without it pip finds no candidate at all.
 
 Or as a project dependency:
 

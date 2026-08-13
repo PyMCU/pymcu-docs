@@ -22,6 +22,7 @@ linting. It comes with `pymcu-compiler` — see
 | [`pymcu sync`](#pymcu-sync) | Regenerate the board module from `pyproject.toml` |
 | [`pymcu upgrade`](#pymcu-upgrade) | Update PyMCU packages in the project and the global tool |
 | [`pymcu stubs`](#pymcu-stubs) | Emit PEP 561 `.pyi` stubs for the installed packages |
+| [`pymcu version`](#global-options) | Print the version table |
 
 ## Global options
 
@@ -41,9 +42,9 @@ version of each — not a single version string. A package that is not installed
 **Not Installed** rather than omitted, which makes it the quickest way to check whether the
 stdlib is actually on the path.
 
-:::note[`pymcu version` is not a command]
-Version information is only reachable through the `--version` flag. `pymcu version` exits
-with "No such command".
+:::note[`pymcu version` works too]
+Since v0.1.0a5 the same table is also reachable as a subcommand, `pymcu version` — typing it
+no longer exits with "No such command".
 :::
 
 ## `pymcu new <name>`
@@ -470,9 +471,26 @@ troubleshooting commands.
 pymcu toolchain list              # every toolchain family and its install status
 pymcu toolchain install avr       # fetch one into the local cache
 pymcu toolchain update avr        # re-download to pick up a newer version
+pymcu toolchain clean             # drop superseded versions from the cache
 ```
 
 `list` prints family, description, version and status.
+
+### `pymcu toolchain clean`
+
+Every upgrade used to leave its predecessor on disk, so the cache grew without bound — a few
+alpha bumps are enough to reach several gigabytes. `clean` keeps the two newest versions of
+each toolchain (a project pinned to the previous release still builds) and removes the rest,
+along with directories left by earlier cache layouts.
+
+```bash
+pymcu toolchain clean --dry-run   # list what would go, remove nothing
+pymcu toolchain clean
+pymcu toolchain clean --all       # empty the cache, including toolchains in use
+```
+
+`--dry-run` prints each path with its size and why it was selected, and the total that would
+be freed. Anything removed is re-downloaded on the next build that needs it.
 
 ## `pymcu backend`
 

@@ -4,8 +4,8 @@ description: What PyMCU already implements across AVR, ARM and PIC, and what is 
 ---
 
 This page tracks which language and HAL features are implemented, how far each target has
-come, and what is planned next. The current release is **v0.1.0a3**
-([release notes](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a3)).
+come, and what is planned next. The current release is **v0.1.0a5**
+([release notes](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a5)).
 
 :::note[Alpha status]
 Core compilation is stable and test-covered, but tooling and error messages still have rough

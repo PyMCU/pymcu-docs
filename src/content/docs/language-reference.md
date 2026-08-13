@@ -9,7 +9,7 @@ fixed at compile time. This document is the canonical reference for every langua
 compiler accepts.
 
 :::note[Alpha]
-This page tracks PyMCU **v0.1.0a3**. Core compilation is stable and test-covered; error
+This page tracks PyMCU **v0.1.0a5**. Core compilation is stable and test-covered; error
 messages and tooling still have rough edges. Where a feature is target-dependent, the target
 list is stated inline.
 :::

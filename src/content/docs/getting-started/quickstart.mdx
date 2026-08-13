@@ -227,7 +227,7 @@ pymcu build
 ```
 
 ```text
-Flash: 162 / 32768 bytes (0% of program storage)
+Flash: 46 / 32768 bytes (0% of program storage)
   Done! ---------------------------------------- 0:00:02
 Build successful! Artifacts in: dist/
 ```
@@ -236,22 +236,23 @@ The artefacts land in `dist/`: `firmware.hex` for AVR and PIC, `firmware.bin` pl
 drag-and-drop `firmware.uf2` for ARM, and alongside them the assembly listing
 (`firmware.asm`) and IR dump (`firmware.mir`) used for inspecting code generation.
 
-:::note[That figure excludes a fixed 106-byte preamble]
-On AVR the driver subtracts the constant startup preamble every PyMCU binary carries — 26
-interrupt-vector slots of 4 bytes each, plus a 2-byte `__bad_interrupt` jump — so the number
-is comparable with an `avr-gcc -Os` build, whose `crt0` costs the same. Run `avr-size` on
-`dist/firmware.hex` and you will see 106 bytes more. The ARM path reports the raw
-`firmware.bin` size with no deduction.
+:::note[That figure excludes a fixed 104-byte vector table]
+On AVR the driver subtracts the interrupt vector table every PyMCU binary carries — 26 slots
+of 4 bytes each — so the number is comparable with an `avr-gcc -Os` build, whose `crt0` costs
+the same. It counts everything else, including the `__bad_interrupt` jump, so it matches what
+you count in the disassembly. Run `avr-size` on `dist/firmware.hex` and you will see 104
+bytes more. The ARM path reports the raw `firmware.bin` size with no deduction.
 :::
 
-Those 162 bytes are not a typo. For this blink:
+Those 46 bytes are not a typo. Written to the chip, vector table included, this blink is
+150 bytes:
 
 | Source | Total flash | SRAM |
 |---|---|---|
 | C (`avr-gcc -Os`) | 176 B | 0 B |
-| **PyMCU** (native HAL) | **162 B** | 0 B |
-| **PyMCU** (MicroPython API) | **162 B** | 0 B |
-| **PyMCU** (CircuitPython API) | **164 B** | 0 B |
+| **PyMCU** (native HAL) | **150 B** | 0 B |
+| **PyMCU** (MicroPython API) | **150 B** | 0 B |
+| **PyMCU** (CircuitPython API) | **152 B** | 0 B |
 | Arduino (IDE defaults) | ~1 024 B | 9 B |
 
 `Pin(13, Pin.OUT)` and `sleep_ms(500)` are resolved entirely at compile time — the compiler
@@ -273,9 +274,9 @@ pymcu flash --port COM3                # Windows
 A successful upload ends with avrdude reporting the bytes written and verified:
 
 ```text
-avrdude: 162 bytes of flash written
+avrdude: 150 bytes of flash written
 avrdude: verifying ...
-avrdude: 162 bytes of flash verified
+avrdude: 150 bytes of flash verified
 ```
 
 ### Did it work?

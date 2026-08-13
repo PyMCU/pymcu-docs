@@ -315,11 +315,15 @@ Flash: 46 / 32768 bytes (0% of program storage)
 ```
 
 On AVR that number is **not** what `avr-size` reports for the same `.hex`. The driver
-subtracts the **104-byte interrupt vector table** — 26 slots at 4 bytes each — that every
-PyMCU binary carries whether it uses interrupts or not. The deduction exists so the figure is
-comparable with an `avr-gcc -Os` build, whose `crt0` costs the same. Nothing else comes off:
-the `__bad_interrupt` jump is code the program branches to and is counted, so the figure
-matches what you count in `dist/firmware.asm`. Add 104 back to compare against a raw tool.
+subtracts a constant **104-byte preamble** that every PyMCU binary carries whether it uses
+interrupts or not: the interrupt vector table, which measures 102 bytes because the linker
+drops the padding `nop` of the last slot, plus the 2-byte `__bad_interrupt` jump the unused
+vectors point at. That is exactly what precedes the first instruction of your program, and
+the deduction exists so the figure is comparable with an `avr-gcc -Os` build, whose `crt0`
+costs the same. Add 104 back to compare against a raw tool.
+
+What remains still includes the avr-libc startup stub — clearing `r1`, loading the stack
+pointer — so the figure is your program plus its entry sequence, not the loop alone.
 
 The ARM path reports the raw size of `dist/firmware.bin` with no deduction, so the two
 architectures' figures are not measured the same way.

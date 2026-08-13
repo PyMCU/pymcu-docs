@@ -13,8 +13,8 @@ are AVR-specific. The same program for a Raspberry Pi Pico is on the
 [RP2040 / RP2350 page](/examples/rp2040/).
 :::
 
-**Flash:** 150 bytes written to the chip — 46 of them your code, the rest the interrupt
-vector table, which is what `pymcu build` reports.  **SRAM:** 0 bytes
+**Flash:** 150 bytes written to the chip. `pymcu build` reports **46** — the difference is
+the fixed 104-byte preamble every AVR binary carries.  **SRAM:** 0 bytes
 
 ## Blink the built-in LED
 

@@ -191,13 +191,15 @@ after it is in place, stdlib edits are picked up on the next build with no copyi
 
 Both numbers are right; they are measuring different things.
 
-`pymcu build` parses the Intel HEX and then **subtracts a constant 106-byte startup
-preamble** - 26 interrupt vector slots at 4 bytes each, plus a 2-byte `__bad_interrupt`
-jump. Every PyMCU binary carries it whatever the program does, and deducting it keeps
-size comparisons between two builds (or against an avr-gcc build, whose crt0 footprint is
-the same shape) about *your* code rather than about the fixed runtime.
+`pymcu build` parses the Intel HEX and then **subtracts the 104-byte interrupt vector
+table** - 26 slots at 4 bytes each. Every PyMCU binary carries it whatever the program does,
+and deducting it keeps size comparisons between two builds (or against an avr-gcc build,
+whose crt0 footprint is the same shape) about *your* code rather than about the fixed
+runtime. Nothing else is deducted: the `__bad_interrupt` jump is an instruction the program
+branches to, so it counts as code, exactly as it does when you count bytes in the
+disassembly.
 
-`avr-size` reports the whole image, preamble included. So expect `avr-size` to be about 106
+`avr-size` reports the whole image, vector table included. So expect `avr-size` to be 104
 bytes larger on AVR. If you need the raw flash figure, use `avr-size` - and remember that
 the `.hex` file's data bytes are the real number that gets programmed.
 

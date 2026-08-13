@@ -34,7 +34,7 @@ move between alpha compiler releases, so they are no longer published here — a
 is worse than none. `pymcu build` prints the real size for your build:
 
 ```text
-Flash: 162 / 32768 bytes (0% of program storage)
+Flash: 46 / 32768 bytes (0% of program storage)
 ```
 
 See [`pymcu build`](/driver/#pymcu-build) for what that number does and does not include.

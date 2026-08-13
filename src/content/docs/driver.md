@@ -268,6 +268,7 @@ pymcu build
 pymcu build -v                       # verbose: assembler output and the full build log
 pymcu build --stdlib micropython     # override the pyproject stdlib flavour
 pymcu build --debug                  # emit debug symbols and a source line map
+pymcu build --explain                # list what the build did on your behalf
 ```
 
 | Flag | Description |
@@ -275,6 +276,7 @@ pymcu build --debug                  # emit debug symbols and a source line map
 | `-v`, `--verbose` | Assembler output and the full build log |
 | `--stdlib FLAVOUR` | **Replaces** the `stdlib` key from `pyproject.toml` for this build. Repeatable |
 | `--debug` | Emit debug symbols and a line map alongside the firmware |
+| `--explain` | After the build, list everything that happened implicitly |
 
 **Output files**
 
@@ -290,19 +292,34 @@ pymcu build --debug                  # emit debug symbols and a source line map
 The only requirement is a valid `pyproject.toml` in the project root; the toolchain for the
 selected target is bundled with the corresponding compiler extra.
 
+### `--explain`
+
+Firmware builds inject setup you never wrote — a UART for `print()`, a millisecond timer for
+`ticks_ms()`, clock configuration — and register ISRs against numbered vectors. `--explain`
+prints that list after a successful build, so the magic is inspectable rather than assumed:
+
+```text
+Implicit in this build: nothing -- everything your firmware does is written in your source.
+```
+
+A blink that touches no peripherals earns that line. A program using `print()` and an
+interrupt handler lists each injection, each ISR with its vector, and the globals shared
+between an ISR and `main`.
+
 ### The reported flash size
 
 A successful build ends with a line like:
 
 ```text
-Flash: 162 / 32768 bytes (0% of program storage)
+Flash: 46 / 32768 bytes (0% of program storage)
 ```
 
 On AVR that number is **not** what `avr-size` reports for the same `.hex`. The driver
-subtracts a constant **106-byte startup preamble** — 26 interrupt-vector slots at 4 bytes
-each, plus a 2-byte `__bad_interrupt` jump — that every PyMCU binary carries whether it uses
-interrupts or not. The deduction exists so the figure is comparable with an `avr-gcc -Os`
-build, whose `crt0` costs the same. Add 106 back to compare against a raw tool.
+subtracts the **104-byte interrupt vector table** — 26 slots at 4 bytes each — that every
+PyMCU binary carries whether it uses interrupts or not. The deduction exists so the figure is
+comparable with an `avr-gcc -Os` build, whose `crt0` costs the same. Nothing else comes off:
+the `__bad_interrupt` jump is code the program branches to and is counted, so the figure
+matches what you count in `dist/firmware.asm`. Add 104 back to compare against a raw tool.
 
 The ARM path reports the raw size of `dist/firmware.bin` with no deduction, so the two
 architectures' figures are not measured the same way.

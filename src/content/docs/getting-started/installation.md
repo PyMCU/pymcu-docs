@@ -240,5 +240,11 @@ for the full layout.
 
 ## Next steps
 
-- [Quick Start](/getting-started/quickstart/) — create a project and blink an LED
+:::tip[Installed? Go blink an LED]
+The [**Quick Start**](/getting-started/quickstart/) takes you from an empty directory to a
+blinking Arduino Uno, and shows the assembly your Python turned into along the way. It is
+about five minutes, and it is the fastest way to find out whether PyMCU fits what you want
+to build.
+:::
+
 - [Supported Targets](/targets/) — chips, peripherals and per-architecture capabilities

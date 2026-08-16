@@ -14,16 +14,51 @@ Pick an API in the first tab set below and the rest of the page follows you — 
 
 ## 1. Create a project
 
+Pass the API you picked above and the board, and `pymcu new` skips those two questions —
+the project it scaffolds then matches the rest of this page exactly:
+
+<Tabs syncKey="api">
+<TabItem label="MicroPython">
+
 ```bash
-pymcu new blink
+pymcu new blink --board arduino_uno --stdlib micropython
 cd blink
 ```
 
-`pymcu new` is interactive. It asks for:
+</TabItem>
+<TabItem label="CircuitPython">
+
+```bash
+pymcu new blink --board arduino_uno --stdlib circuitpython
+cd blink
+```
+
+</TabItem>
+<TabItem label="Native HAL">
+
+```bash
+pymcu new blink --board arduino_uno
+cd blink
+```
+
+The native HAL needs no compatibility package: `pymcu.hal.*` ships with the compiler.
+
+</TabItem>
+</Tabs>
+
+Run it without flags (`pymcu new blink`) and it asks instead. Either way, `pymcu new` is
+interactive for what you have not answered:
 
 - the **compatibility layer** — `micropython` or `circuitpython`
 - the **board** (manufacturer, then model) — e.g. Arduino → Arduino Uno
 - whether to **initialise a git repository** and **install dependencies** — both default to no
+
+:::caution[Say yes to installing dependencies]
+That prompt defaults to **no**, and the compatibility layer you picked is one of those
+dependencies. Decline it and the project scaffolds fine but the first `pymcu build` fails
+with `ImportError: Module not found: machine`. If you already said no, install them from
+inside the project with `uv sync`, `poetry install` or `pip install -e .`.
+:::
 
 It does *not* ask which package manager to use: it detects `uv`, then `poetry`, and tells
 you which it picked. Only if neither is on your PATH does it ask anything, and the question

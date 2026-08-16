@@ -257,6 +257,13 @@ Those 46 bytes are not a typo. Written to the chip, vector table included, this 
 | **PyMCU** (CircuitPython API) | **152 B** | 0 B |
 | Arduino (IDE defaults) | ~1 024 B | 9 B |
 
+:::note[Why other pages quote 38 bytes]
+The landing page and the [playground](https://playground.pymcu.org) show a slightly
+different blink — one that calls `led.toggle()` instead of setting the pin on and off — and
+that one compiles to **38 bytes**, 142 written to the chip. Same compiler, one instruction
+fewer per cycle. Both numbers are real; they are just two programs.
+:::
+
 `Pin(13, Pin.OUT)` and `sleep_ms(500)` are resolved entirely at compile time — the compiler
 sees through the Python objects and emits the same `SBI` / `CBI` port toggles a C programmer
 would write by hand. The MicroPython and native-HAL variants are byte-for-byte identical;

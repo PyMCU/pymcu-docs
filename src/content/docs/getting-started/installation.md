@@ -15,10 +15,27 @@ for them, so every command on this page carries a `--pre` flag. Once `0.1.0` sta
 
 ## Requirements
 
-- **Python 3.11 or newer**
-- One of `pipx`, `uv` or `pip`
+- **Python 3.11 or newer** — [download it from python.org](https://www.python.org/downloads/)
+- One installer: [**pipx**](https://pipx.pypa.io/stable/how-to/install-pipx.html) (recommended),
+  [**uv**](https://docs.astral.sh/uv/getting-started/installation/) or
+  [**pip**](https://pip.pypa.io/en/stable/installation/)
 
 That is the whole list. No `avr-gcc`, no ARM GNU toolchain, no MPLAB.
+
+:::note[Starting from a machine with nothing installed?]
+On **macOS**, typing `python3` for the first time opens a dialog offering to install the
+Xcode Command Line Tools. Accept it, or install Python from python.org instead; either
+gets you a working `python3`. `pipx` is not preinstalled.
+
+On **Windows**, install Python from python.org or the Microsoft Store, and make sure
+"Add python.exe to PATH" is ticked.
+
+On **Linux**, the distribution's `python3` is usually recent enough, but `pipx` normally
+comes as its own package.
+
+After installing `pipx`, run `pipx ensurepath` and open a new terminal so the `pymcu`
+command is found.
+:::
 
 ## Install with pipx (recommended)
 

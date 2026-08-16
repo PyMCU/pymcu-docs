@@ -120,13 +120,27 @@ Two optional packages give you the MicroPython and CircuitPython APIs. **During 
 these are the recommended way to write firmware** — they are stable and community-specified,
 while the native `pymcu.hal.*` API may still change between releases.
 
+| Package | What it gives you |
+|---|---|
+| `pymcu-micropython` | `machine` (Pin, UART, ADC, PWM, SPI, I2C, Timer, WDT), `utime` |
+| `pymcu-circuitpython` | `board`, `digitalio`, `analogio`, `busio`, `pwmio`, `time`, `neopixel` |
+
+**Do not install these globally.** They are not tools you run: they are *project*
+dependencies that the compiler reads when it builds your firmware, so they belong to the
+project's environment, not to your interpreter. Installed anywhere else they do nothing.
+
+You do not normally install them by hand at all. `pymcu new` asks which API you want, writes
+the matching package into your `pyproject.toml`, and offers to install it:
+
 ```bash
-pip install --pre pymcu-micropython     # machine (Pin/UART/ADC/PWM/SPI/I2C/Timer/WDT), utime
-pip install --pre pymcu-circuitpython   # board, digitalio, analogio, busio, pwmio, time, neopixel
+pymcu new blink --stdlib micropython
 ```
 
-In a project, add the one you want to `[project] dependencies` in `pyproject.toml` — see the
-[Quick Start](/getting-started/quickstart/).
+To add one to a project that already exists, put it in `[project] dependencies` in
+`pyproject.toml` and install with whatever manages that project (`uv sync`, `poetry install`,
+or `pip install -e .` inside its virtual environment). The [Quick Start](/getting-started/quickstart/)
+walks through a project from scratch, and the [CLI Driver](/driver/#pymcu-new-name) page
+documents every `pymcu new` flag.
 
 ## Per-target notes
 

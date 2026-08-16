@@ -20,7 +20,14 @@ for them, so every command on this page carries a `--pre` flag. Once `0.1.0` sta
   [**uv**](https://docs.astral.sh/uv/getting-started/installation/) or
   [**pip**](https://pip.pypa.io/en/stable/installation/)
 
-That is the whole list. No `avr-gcc`, no ARM GNU toolchain, no MPLAB.
+That is the whole list **to compile**: on every supported platform each extra bundles its own
+assembler and linker, so there is no `avr-gcc`, no ARM GNU toolchain and no MPLAB to install.
+(The one exception is ARM on a platform with no prebuilt toolchain wheel, noted below.)
+
+**Flashing** is the one step that reaches outside PyMCU. Each target needs its own uploader
+on your machine — `avrdude` for AVR, nothing at all for a Pico in bootloader mode, `pk2cmd`
+for PIC — and the [per-target notes](#per-target-notes) below say exactly what to do for
+yours.
 
 :::note[Starting from a machine with nothing installed?]
 On **macOS**, typing `python3` for the first time opens a dialog offering to install the

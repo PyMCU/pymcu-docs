@@ -146,6 +146,23 @@ documents every `pymcu new` flag.
 
 ### AVR
 
+:::caution[Apple Silicon needs Rosetta 2, for now]
+The bundled AVR toolchain is the prebuilt PlatformIO `avr-gcc`, and it is an x86_64 build.
+On an M1 or newer Mac it runs through **Rosetta 2**, which macOS does not install until
+something asks for it — on a Mac that has never run an Intel binary it is simply not there,
+and the build fails with `bad CPU type in executable`.
+
+Install it once:
+
+```bash
+softwareupdate --install-rosetta --agree-to-license
+```
+
+A native arm64 toolchain is being built to remove this step. Intel Macs are not supported:
+there is no macOS x86_64 wheel, so install `avr-gcc` with Homebrew instead
+(`brew tap osx-cross/avr && brew install avr-gcc avr-binutils`).
+:::
+
 Everything needed to *compile* is bundled. To *flash* an Arduino Uno you need **avrdude** on
 your host:
 

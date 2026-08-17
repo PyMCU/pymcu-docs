@@ -16,6 +16,10 @@ linting. It comes with `pymcu-compiler` — see
 | [`pymcu flash`](#pymcu-flash) | Upload the firmware to a device |
 | [`pymcu clean`](#pymcu-clean) | Remove build artefacts |
 | [`pymcu lint <path>`](#pymcu-lint-path) | Vet a MicroPython / CircuitPython port |
+| [`pymcu search`](#pymcu-search) | Search the library index |
+| [`pymcu install <name>`](#pymcu-install-name) | Add a library to this project |
+| [`pymcu uninstall <name>`](#pymcu-uninstall-name) | Remove a library from this project |
+| [`pymcu libraries`](#pymcu-libraries) | List the libraries installed in this project |
 | [`pymcu boards`](#pymcu-boards) | List the supported boards and chips |
 | [`pymcu toolchain`](#pymcu-toolchain) | Manage assemblers and linkers |
 | [`pymcu backend`](#pymcu-backend) | Manage code-generation backend plugins |
@@ -455,6 +459,11 @@ pymcu lint src/ --json           # machine-readable findings
 | `--flavor NAME` | Override the detected flavour — `micropython` or `circuitpython` |
 | `--errors-only` | Show only hard `ERROR` findings |
 | `--json` | Emit findings as JSON on stdout |
+| `--library` | Switch to the **library publication** checks instead. Takes the package directory, not a file |
+| `--write-surface` | With `--library`, rewrite `api-surface.lock` rather than comparing against it |
+
+`--library` is a different set of checks for a different job — see
+[Publishing a library](/libraries/authoring/#7-publishing).
 
 Findings come in three severities:
 
@@ -471,6 +480,92 @@ exits non-zero when there is at least one `ERROR`, which makes it usable as a CI
 See also the migration guides for
 [MicroPython](/migration/from-micropython/) and
 [CircuitPython](/migration/from-circuitpython/).
+
+## `pymcu search`
+
+Searches the [library index](/libraries/) by name, summary and category. With no query it
+lists everything.
+
+```bash
+pymcu search                 # the whole catalogue
+pymcu search sensor
+pymcu search --all           # include libraries that do not fit this project's chip
+pymcu search --refresh       # re-download the index first
+pymcu search --json
+```
+
+| Flag | Description |
+|---|---|
+| `--all` | Do not filter by the project's chip and layer |
+| `--refresh` | Re-download the index instead of using the cached copy |
+| `--json` | Emit results as JSON on stdout |
+
+Run from a project directory, results are filtered to what fits that project's chip and
+declared layer, and a footer says how many were hidden. Run anywhere else, there is no chip
+to filter by and you get the whole list. The index is cached under `~/.pymcu/`; when the
+cached copy is used, the command says so.
+
+## `pymcu install <name>`
+
+Installs a library into **this project's** environment, never globally — the compiler reads
+libraries out of the project's `.venv`, so one installed anywhere else does nothing.
+
+```bash
+pymcu install dht
+pymcu install dht --no-verify
+pymcu install --from-pypi pymcu-lib-something
+```
+
+| Flag | Description |
+|---|---|
+| `--from-pypi` | Skip the index and install this **distribution** name straight from PyPI. The manifest is still required |
+| `--verify` / `--no-verify` | Compile the library's declared modules for this project's chip after installing. On by default |
+| `--refresh` | Re-download the index first |
+| `--pre` / `--no-pre` | Allow pre-release versions. On by default, because PyMCU is in alpha |
+
+The order matters: the name is resolved against the index, the index's measurements are
+checked against your chip and layer, and only then is anything downloaded. An install that
+would not build is refused before the download, not after. The requirement is written into
+`[project] dependencies` and handed to `uv add` or to the project's `pip`, whichever the
+project uses.
+
+With `--verify` (the default), a small program importing the modules from the manifest's
+`provides.modules` is compiled for your chip. If it does not build, the install is **rolled
+back** — the package is removed and the dependency unwritten — so a failed verify leaves the
+project as it was.
+
+On success the command prints the import line to use, names the compat adapter if one applies
+to your layer, and reports the flash figure the index measured for your chip.
+
+## `pymcu uninstall <name>`
+
+Removes a library and stops recording it as a dependency. Takes either the short library name
+or the distribution name.
+
+```bash
+pymcu uninstall dht
+```
+
+## `pymcu libraries`
+
+Lists the libraries installed in the current project, with their version, the top-level
+modules each claims, and whether it is usable on this project's chip and layer.
+
+```bash
+pymcu libraries
+pymcu libraries --all      # include the ones that do not fit this target
+pymcu libraries --json
+```
+
+| Flag | Description |
+|---|---|
+| `--all` | List every installed library, not only the usable ones |
+| `--json` | Emit the list as JSON on stdout |
+
+Two things are reported that a plain package list would not show. **Collisions**: two
+libraries claiming the same top-level module name, which is a resolution error rather than a
+silent shadowing. And **invalid libraries**: a package whose manifest cannot be read is named
+and left out of the include path, instead of taking the build down with it.
 
 ## `pymcu boards`
 
@@ -587,9 +682,11 @@ A non-empty `sources` list is what switches the build onto the GNU binutils pipe
 `include_dirs`, `cflags` and `linker_script` are all optional. Paths are resolved relative
 to the project root.
 
-On AVR, C sources are compiled with `avr-gcc` and C++ sources (`.cpp`, `.cc`, `.cxx`) with
-`avr-g++` under `-fno-exceptions -fno-rtti`, which is what makes calling Arduino libraries
-from PyMCU firmware possible. Declare the symbols on the Python side with `@extern`.
+On AVR, C sources are compiled with GCC's `cc1` and C++ sources (`.cpp`, `.cc`, `.cxx`) with
+`cc1plus` under `-fno-exceptions -fno-rtti`, which is what makes calling Arduino libraries
+from PyMCU firmware possible. Declare the symbols on the Python side with `@extern`. Both
+front ends ship as WebAssembly in the AVR toolchain wheel, so C interop needs no extra
+package — see [Installation](/getting-started/installation/#the-avr-toolchain-is-webassembly).
 
 The `extern-call`, `ffi-abi`, `ffi-arduino`, `ffi-crc8` and `ffi-dsp`
 [examples](/examples/#c--c-interop-ffi) are complete working projects using this table.

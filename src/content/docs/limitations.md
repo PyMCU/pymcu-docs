@@ -500,8 +500,17 @@ explicit `def main()` — they run at startup before `main()`'s body, mirroring 
 - **String literals live in flash:** read-only, sent to UART through the flash string pool.
   They cannot be compared, indexed or modified at runtime (except via `const[str]`).
 - **C/C++ interop:** supported via `@extern` and `[tool.pymcu.ffi]` in `pyproject.toml`.
-  C sources use `avr-gcc`; C++ sources (`.cpp` / `.cc` / `.cxx`) use `avr-g++` with
-  `-fno-exceptions -fno-rtti`, which makes Arduino libraries usable.
+  C sources go through GCC's `cc1`, C++ sources (`.cpp` / `.cc` / `.cxx`) through `cc1plus`
+  with `-fno-exceptions -fno-rtti`, which makes Arduino libraries usable. No extra to
+  install: the front ends ride in the same WebAssembly toolchain wheel as the assembler and
+  linker. One known limit, and it predates that wheel: a **namespace-scope C++ object with a
+  constructor does not link**, because PyMCU links `-nostartfiles` with its own linker script
+  and neither `__do_global_ctors` nor `__bss_start` / `__bss_end` is provided. It fails the
+  same way on a native toolchain — it is a linker-script gap, not a compiler one.
+- **Toolchain:** the assembler, linker and C/C++ front ends are `wasm32-wasip1` modules run
+  through wasmtime, so there is one wheel for all platforms and firmware identical to the
+  native toolchain's, verified by sha256 across 59 examples on five hosts. See
+  [Installation](/getting-started/installation/#the-avr-toolchain-is-webassembly).
 
 ---
 

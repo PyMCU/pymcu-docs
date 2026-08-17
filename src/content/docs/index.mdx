@@ -5,11 +5,11 @@ description: "PyMCU compiles typed, allocation-free Python to native AVR, RP2040
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
-:::tip[Alpha 5 is out]
-The whole `pipx install` → `new` → `build` → `flash` flow was rehearsed on Ubuntu, Windows
-and macOS before the tag: macOS wheels install again, the flash figure matches the
-disassembly, and `pymcu toolchain clean` reclaims the cache —
-[read the release notes](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a5), or see
+:::tip[Alpha 8 is out]
+The AVR toolchain is now [WebAssembly](/getting-started/installation/#the-avr-toolchain-is-webassembly) —
+one wheel for every platform, no Rosetta, firmware verified identical by sha256 — and
+third-party [libraries](/libraries/) have a measured index behind `pymcu install` —
+[read the release notes](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a8), or see
 [what changed](/changelog/).
 :::
 
@@ -114,7 +114,9 @@ pipx install --pip-args=--pre "pymcu-compiler[pic]"    # PIC16
 pipx install --pip-args=--pre "pymcu-compiler[all]"    # everything
 ```
 
-Each extra bundles its full toolchain — no system packages needed.
+Each extra bundles its full toolchain — no system packages needed. On AVR that toolchain is
+[WebAssembly](/getting-started/installation/#the-avr-toolchain-is-webassembly): one wheel that
+works wherever wasmtime does.
 
 ### Create a project
 
@@ -177,6 +179,7 @@ to change.
 - [CLI Driver](/driver/) — `pymcu new` / `build` / `flash` / `lint` and every `pyproject.toml` key
 - [Language Reference](/language-reference/) — complete syntax and type reference
 - [Standard Library](/stdlib/) — GPIO, UART, ADC, Timer, SPI, I2C and more
+- [Libraries](/libraries/) — find, install and publish third-party drivers
 - [Supported Targets](/targets/) — per-architecture peripheral and language coverage
 - [Examples Gallery](/examples/) — annotated firmware, AVR and Pico
 - [Limitations](/limitations/) — what PyMCU deliberately does not compile, and why

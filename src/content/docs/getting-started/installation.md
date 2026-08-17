@@ -4,11 +4,11 @@ description: Install the PyMCU compiler and the toolchain for your target — AV
 ---
 
 PyMCU ships as a single PyPI package, `pymcu-compiler`, plus one extra per architecture.
-Each extra pulls in its own backend **and** its own assembler/linker binaries, so there is
+Each extra pulls in its own backend **and** its own assembler and linker, so there is
 nothing to install from your system package manager.
 
 :::caution[Alpha release]
-The current release is **v0.1.0a5**. `pip`, `uv` and `pipx` skip pre-releases unless you ask
+The current release is **v0.1.0a8**. `pip`, `uv` and `pipx` skip pre-releases unless you ask
 for them, so every command on this page carries a `--pre` flag. Once `0.1.0` stable ships,
 `--pre` will no longer be needed.
 :::
@@ -19,9 +19,13 @@ for them, so every command on this page carries a `--pre` flag. Once `0.1.0` sta
 - One installer: [**pipx**](https://pipx.pypa.io/stable/how-to/install-pipx.html) (recommended),
   [**uv**](https://docs.astral.sh/uv/getting-started/installation/) or
   [**pip**](https://pip.pypa.io/en/stable/installation/)
+- A **supported platform**: Linux x86-64 or arm64, macOS on Apple Silicon, or Windows on
+  x64 or arm64. Those are the platforms PyMCU publishes wheels for; Intel Macs are not
+  among them — see [below](#macos-on-intel).
 
-That is the whole list **to compile**: on every supported platform each extra bundles its own
-assembler and linker, so there is no `avr-gcc`, no ARM GNU toolchain and no MPLAB to install.
+That is the whole list **to compile**: each extra brings its own assembler and linker, so
+there is no `avr-gcc`, no ARM GNU toolchain and no MPLAB to install. On AVR they are not
+even native binaries — [the toolchain is WebAssembly](#the-avr-toolchain-is-webassembly).
 (The one exception is ARM on a platform with no prebuilt toolchain wheel, noted below.)
 
 **Flashing** is the one step that reaches outside PyMCU. Each target needs its own uploader
@@ -99,7 +103,7 @@ This prints a small table rather than a single version string:
 +----------------+-----------------------+----------+
 | Package        | Description           | Version  |
 +----------------+-----------------------+----------+
-| pymcu-compiler | Compiler & CLI Driver | 0.1.0a5  |
+| pymcu-compiler | Compiler & CLI Driver | 0.1.0a8  |
 | pymcu-stdlib   | Standard Library      | ...      |
 | python         | Python Interpreter    | 3.11+    |
 +----------------+-----------------------+----------+
@@ -142,29 +146,64 @@ or `pip install -e .` inside its virtual environment). The [Quick Start](/gettin
 walks through a project from scratch, and the [CLI Driver](/driver/#pymcu-new-name) page
 documents every `pymcu new` flag.
 
+## macOS on Intel
+
+**There is no macOS x86-64 wheel, so `pip` finds no candidate and the install stops.** That
+is the whole of it today: `pymcu-compiler` and `pymcu-avr` are published for Linux x64 and
+arm64, macOS arm64, and Windows x64 and arm64, and macOS Intel is not on the list.
+
+The reason it left the list has since gone away. The blocker used to be the AVR toolchain: a
+native `avr-gcc` bundle that existed only for Apple Silicon, and building an Intel one meant
+compiling GCC for hardware Apple has stopped shipping. That argument is spent — the AVR
+toolchain is now [architecture-independent WebAssembly](#the-avr-toolchain-is-webassembly),
+and `wasmtime` does publish a `macosx_10_13_x86_64` wheel. What remains is that PyMCU's own
+wheels, dropped while the toolchain was the obstacle, have not come back.
+
+Whether it would then work is a **reasoned expectation, not a measurement**: GitHub retired
+the `macos-13` runner, so there is nowhere to verify it. Nothing in the current design points
+against it and nobody has run it.
+
+Meanwhile, the practical options for an Intel Mac are a Linux machine, a Linux virtual
+machine, or WSL on Windows. All three are supported.
+
 ## Per-target notes
 
 ### AVR
 
-:::caution[Apple Silicon needs Rosetta 2, for now]
-The bundled AVR toolchain is the prebuilt PlatformIO `avr-gcc`, and it is an x86_64 build.
-On an M1 or newer Mac it runs through **Rosetta 2**, which macOS does not install until
-something asks for it — on a Mac that has never run an Intel binary it is simply not there,
-and the build fails with `bad CPU type in executable`.
+#### The AVR toolchain is WebAssembly
 
-Install it once:
+`avr-as`, `avr-ld`, `avr-objcopy` and the C/C++ front ends (`cc1`, `cc1plus`) ship as
+`wasm32-wasip1` modules in **`pymcu-avr-toolchain-wasi`**, and `pymcu build` runs them
+in-process through [wasmtime](https://wasmtime.dev/). It is a single **22.9 MB
+`py3-none-any` wheel for every platform**, where the native toolchain was five separate
+builds of 70.7 MB each. `wasmtime` is the only piece left that carries per-platform
+binaries, and PyMCU asks for `wasmtime>=20`.
 
-```bash
-softwareupdate --install-rosetta --agree-to-license
-```
+**The firmware is unchanged.** All 59 AVR examples — 53 plain plus 6 going through the C/C++
+path, one of them C++ — were compared against the native toolchain's output **by sha256**,
+not merely by whether the build succeeded: 59 of 59 identical on Linux x64 and arm64, macOS
+arm64, and Windows x64 and arm64, from the same modules. It is also faster in ordinary use
+(0.27 s against 0.51 s for 53 builds), because the modules are compiled once per process
+rather than a tool being forked per stage.
 
-A native arm64 toolchain is being built to remove this step. Intel Macs are not supported:
-there is no macOS x86_64 wheel, so install `avr-gcc` with Homebrew instead
-(`brew tap osx-cross/avr && brew install avr-gcc avr-binutils`).
-:::
+Three things follow for you:
 
-Everything needed to *compile* is bundled. To *flash* an Arduino Uno you need **avrdude** on
-your host:
+- **Rosetta 2 is no longer needed.** The old bundled `avr-gcc` was an x86_64 PlatformIO
+  build, so on Apple Silicon it ran under Rosetta and failed with `bad CPU type in
+  executable` on a Mac that had never installed it. That step is gone.
+- **C and C++ interop needs no extra.** `cc1` and `cc1plus` travel in the same wheel, so
+  `@extern` and `[tool.pymcu.ffi]` work out of the box.
+- **`PYMCU_AVR_WASI=0`** forces the old native path, for anyone who has a native toolchain
+  installed and wants to compare against it.
+
+**The first build on a machine is slower**, and says so while it happens. wasmtime compiles
+the modules to native code once and caches the result, keyed by your OS, CPU and wasmtime
+version; after that a build reuses it. The measured figures are **0.82 s for a first build and
+0.23 s for later ones**, with 6.2 MB of cache on disk. Nothing is downloaded at build time —
+the wheel already carries everything, and the wait is compilation.
+
+Everything needed to *compile* is bundled. Flashing is the part WASI cannot do — `avrdude`
+talks to a serial port — so to *flash* an Arduino Uno you still need **avrdude** on your host:
 
 ```bash
 brew install avrdude          # macOS

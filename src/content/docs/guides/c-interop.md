@@ -96,7 +96,7 @@ frequency = 16000000
 sources = "src"
 entry = "main.py"
 
-# C interop: build c_src/math_helper.c with avr-gcc and link via avr-ld.
+# C interop: compile c_src/math_helper.c and link it into the firmware.
 [tool.pymcu.ffi]
 sources = ["c_src/math_helper.c"]
 include_dirs = ["c_src"]
@@ -123,13 +123,22 @@ A non-empty `sources` list is the trigger. `pymcu build` swaps the default assem
 pipeline for the GNU binutils one and runs four steps:
 
 1. **Assemble** the generated `firmware.asm` to an ELF object with `avr-as`.
-2. **Compile** each declared source. `.c` goes to `avr-gcc`; `.cpp`, `.cc`, `.cxx` and `.C`
-   go to `avr-g++` with `-fno-exceptions -fno-rtti -std=c++17` added ahead of your
+2. **Compile** each declared source. `.c` goes to GCC's `cc1`; `.cpp`, `.cc`, `.cxx` and
+   `.C` go to `cc1plus` with `-fno-exceptions -fno-rtti -std=c++17` added ahead of your
    `cflags`. Both get `-mmcu=<target> -Os -c` and your `include_dirs`.
-3. **Link** `firmware.o` plus every C object into `firmware.elf`, using `avr-gcc` as the
-   linker driver with `-nostartfiles`. Driving the link through the compiler is what makes
-   `libgcc.a` resolve, so C code calling `__divmodhi4` or `__mulhi3` just works.
+3. **Link** `firmware.o` plus every C object into `firmware.elf` with `avr-ld`, using
+   `-nostartfiles` and the `libgcc.a` for the chip's multilib, so C code calling
+   `__divmodhi4` or `__mulhi3` just works.
 4. **Convert** the ELF to Intel HEX with `avr-objcopy`.
+
+Nothing here is a native binary on your machine. All five tools are `wasm32-wasip1` modules
+run in-process through wasmtime, which is why there is no extra to install for C interop and
+no `avr-gcc` to find — see
+[Installation](/getting-started/installation/#the-avr-toolchain-is-webassembly). PyMCU builds
+the linker command line itself, from tables read out of `avr-gcc -mmcu=<chip> -###` rather
+than inferred from chip names, because the two do not agree: `atmega1280` is `avr51` and not
+the `avr6` its family name suggests, and `attiny13` links against `avr25/tiny-stack` where
+`attiny85` links against plain `avr25`.
 
 Those two C++ flags are the point of the exercise. Turning off exceptions and RTTI is what
 makes an Arduino C++ library linkable into a bare-metal AVR image without dragging in a
@@ -225,6 +234,11 @@ cflags = ["-std=c11", "-Os"]
 - **The C side is on its own.** It is freestanding code linked with `-nostartfiles`. There
   is no C runtime startup, no `malloc` you should be calling, and no interaction with
   PyMCU's exception model — a C function cannot raise a Python exception.
+- **No C++ global constructors.** A namespace-scope object with a constructor fails to link
+  with `undefined reference to __do_global_ctors` (and `__do_clear_bss`, `__bss_start`,
+  `__bss_end`). That follows from the previous point: PyMCU's linker script provides no
+  startup code to run them. Classes, methods, templates and `extern "C"` are all fine —
+  construct your objects inside a function.
 - **Symbols must be unmangled.** Use `extern "C"` for anything you call from C++.
 
 ## Where this is tested

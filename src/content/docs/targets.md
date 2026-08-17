@@ -23,8 +23,10 @@ pipx install --pip-args=--pre "pymcu-compiler[all]"
 ## AVR
 
 The reference board is the **Arduino Uno (ATmega328P @ 16 MHz)** — it is the target with the
-deepest test coverage and the widest driver set. The backend emits AVR assembly directly and
-assembles it in-process; no external `avr-gcc` is required to build.
+deepest test coverage and the widest driver set. The backend emits AVR assembly directly, and
+the assembler, linker and C/C++ front ends run in-process as WebAssembly modules under
+wasmtime — one architecture-independent wheel, no `avr-gcc` on your host. See
+[Installation](/getting-started/installation/#the-avr-toolchain-is-webassembly).
 
 ### HAL modules
 

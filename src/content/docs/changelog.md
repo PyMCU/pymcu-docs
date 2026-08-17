@@ -1,7 +1,103 @@
 ---
 title: Changelog
-description: "Release notes for every PyMCU alpha: what landed in v0.1.0a5, v0.1.0a4 and the earlier pre-releases, listed by language feature, backend and driver."
+description: "Release notes for every PyMCU alpha: what landed in v0.1.0a8, v0.1.0a7, v0.1.0a6, v0.1.0a5 and the earlier pre-releases, listed by language feature, backend and driver."
 ---
+
+## v0.1.0a8 — Alpha 8 (2026-08-17)
+
+Full notes: [GitHub release](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a8)
+
+**The library index stops blaming libraries for being used out of scope.** The published
+catalogue reported `pymcu-lib-dht` as **failed** on the RP2040, quoting a `TypeError` — for a
+library whose manifest declares `arch = ["avr"]` and which the driver correctly skips on ARM.
+That reads as "this library is broken" about something it never promised.
+
+- A failure on an architecture the author never declared is now
+  [`unsupported`](/libraries/#reading-the-index), not `failed`. Measuring with the
+  compatibility filter off stays as it was — code that beats a cautious manifest is still
+  published as `ok`; what was wrong was the label
+- A **declared** architecture that does not build is still `failed`: a broken promise is
+  exactly what the index has to be able to state
+- **Declaring nothing claims everything** — silence in a manifest is not a way out of being
+  measured — and a specific **chip list wins** over the architecture
+
+## v0.1.0a7 — Alpha 7 (2026-08-17)
+
+Full notes: [GitHub release](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a7)
+
+### Fixed
+- **HTTPS works on a stock macOS Python**: every request the driver makes — the library index,
+  sdists, tool downloads — failed with `CERTIFICATE_VERIFY_FAILED` on a python.org install
+  until the user happened to run `Install Certificates.command`, and the error read like the
+  server being down. `certifi` is now a real dependency rather than something the code hoped
+  was installed
+- **A missing backend no longer counts against a library**: the index reports `unmeasured`
+  rather than `failed` when the build never ran, so the compatibility matrix stops reflecting
+  whichever extras the measuring machine happened to have
+- A local TLS failure is no longer published as "no sdist available" beside projects that do
+  publish one
+- `pymcu install` no longer prints `? bytes RAM`: the index does not measure RAM yet, and a
+  question mark reads as a figure that got lost rather than one never taken
+
+### Releases are tested before they are published
+- `tools/smoke_release.py` installs the artifacts in a clean environment and puts them to work
+  before anything reaches PyPI. Each check maps to a release that shipped broken while the
+  build stayed green — including a package left unbumped, whose wheel `skip-existing` then
+  discarded in silence
+
+## v0.1.0a6 — Alpha 6 (2026-08-17)
+
+Full notes: [GitHub release](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a6)
+
+### Third-party libraries
+The compiler no longer sees a library's whole package, only its declared source directory
+(`[library] sources`, `mcu/` by default). Before, anything a wheel carried was exposed: a
+library's `examples/` answered `import examples` from any firmware in the world, and two
+libraries shipping one shadowed each other with no diagnostic.
+
+- A library package is now an ordinary Python package with `__init__.py`. Examples, tests and
+  docs live at the distribution root and travel in the sdist, not the wheel
+- `pymcu lint --library` rejects any `.py` outside the source tree
+- `pymcu install --verify` compiles the modules the library declares instead of its example, so
+  it needs nothing but the wheel
+- `pymcu index build` measures examples from the sdist — one download per library
+- A library with a broken manifest no longer aborts the build of projects that never used it:
+  it is named and left out of the include path
+
+Published libraries need the new layout; `pymcu-lib-neopixel` ships 0.2.0 for this reason. See
+[Writing a library](/libraries/authoring/).
+
+### Fixed
+- **WS2812 on PB0** sent every bit as a zero (312 ns for a one, where ~800 is needed), so a
+  strip on that pin stayed dark while the build reported success. The other eleven pins were
+  fixed earlier; a comment threw the patch off this one
+- **Port auto-detection**: the rule was written twice and `flash()` ran the copy the tests did
+  not cover
+- **`pymcu-sdk` is published again**: its surface had grown without a version bump, so the
+  package in the repo and the `0.1.0a4` on PyPI were different under one number
+
+### AVR toolchain moves to WebAssembly
+The AVR backend is versioned separately; this landed in **`pymcu-avr` 0.1.0a6**, which the
+`[avr]` extra now resolves to.
+
+- `avr-as`, `avr-ld`, `avr-objcopy`, `cc1` and `cc1plus` ship as `wasm32-wasip1` modules in
+  `pymcu-avr-toolchain-wasi` — **the same five modules on every platform**, 22.9 MB in one
+  `py3-none-any` wheel, against 70.7 MB per platform for five native builds
+- **Firmware is byte-identical**: 59 of 59 examples verified by sha256 against the native
+  toolchain — 53 plain and 6 through the FFI path, C++ included — on Linux x64 and arm64,
+  macOS arm64, and Windows x64 and arm64
+- No Rosetta 2 on Apple Silicon, no MSYS2 on Windows, and no extra for C interop. An existing
+  native install keeps working, and `PYMCU_AVR_WASI=0` forces it
+- Fixes a latent defect along the way: `firmware.asm` is no longer rewritten in place, so a
+  second preprocessing pass — which would have doubled the interrupt vector table's spacing and
+  pointed every vector at a wrong address, silently — is impossible rather than merely unlikely
+
+**`pymcu-avr` 0.1.0a7** then made the first build fast again: the C front ends are 48 of the 50
+MB of modules and were being compiled whether or not a project had a line of C. They are now
+built on the first C compilation and never before, and the one-time warm-up says what it is
+doing instead of looking like a hang — first build **5.56 s → 0.82 s**, later builds
+**2.30 s → 0.23 s**, cache on disk **114 MB → 6.2 MB**, same firmware. See
+[Installation](/getting-started/installation/#the-avr-toolchain-is-webassembly).
 
 ## v0.1.0a5 — Alpha 5 (2026-08-13)
 

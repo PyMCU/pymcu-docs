@@ -141,6 +141,14 @@ MicroPython-side module.
 Only DHT11 and DS18B20 have their own reference page so far. For the rest, the class docstring
 plus the [roadmap](/roadmap/) entry are the current documentation.
 
+## Everything on this page ships with PyMCU
+
+Nothing above needs installing: it comes with `pymcu-stdlib` and the compat packages. Drivers
+outside that set are distributed separately, as **libraries** — `pymcu search` finds them and
+`pymcu install` adds one to a project, with the flash cost measured per chip rather than
+claimed. See [Using libraries](/libraries/), and
+[Writing a library](/libraries/authoring/) if you have a driver of your own to publish.
+
 ## Architecture support matrix
 
 | Module | AVR | ARM (RP2040 / RP2350) | PIC |

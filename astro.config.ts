@@ -109,6 +109,15 @@ export default defineConfig({
           ],
         },
         {
+          // Third-party code, kept apart from Standard Library: one group is
+          // what ships with PyMCU, the other is what you install into a project.
+          label: 'Libraries',
+          items: [
+            { label: 'Using libraries', slug: 'libraries' },
+            { label: 'Writing a library', slug: 'libraries/authoring' },
+          ],
+        },
+        {
           label: 'Examples',
           collapsed: true,
           items: [

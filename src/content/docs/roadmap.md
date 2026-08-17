@@ -4,8 +4,8 @@ description: What PyMCU already implements across AVR, ARM and PIC, and what is 
 ---
 
 This page tracks which language and HAL features are implemented, how far each target has
-come, and what is planned next. The current release is **v0.1.0a5**
-([release notes](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a5)).
+come, and what is planned next. The current release is **v0.1.0a8**
+([release notes](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a8)).
 
 :::note[Alpha status]
 Core compilation is stable and test-covered, but tooling and error messages still have rough
@@ -153,6 +153,8 @@ an analog sensor, so read it with [`AnalogPin`](/stdlib/adc/). See
 |---|---|
 | `pymcu lint` | MicroPython / CircuitPython porting assistant: flags constructs PyMCU cannot compile — unbounded `dict` / `set`, reflection, unbounded `append`, `*args` / `**kwargs`, untyped params, … — with a severity and a suggestion per finding |
 | `pymcu new` / `build` / `flash` / `clean` | Project scaffolding, compilation, upload and cleanup — see the [CLI driver](/driver/) |
+| `pymcu search` / `install` / `uninstall` / `libraries` | Third-party [libraries](/libraries/), resolved against a curated index that measures rather than asks: an install is refused before the download when the library does not build for your chip |
+| `pymcu lint --library` | The publication checks for a library of your own — manifest, ASCII, architecture dispatch and API surface. See [Writing a library](/libraries/authoring/) |
 | `pymcu-test` (AVR) | Turnkey pytest fixtures over the avr8sharp emulator |
 
 ---
@@ -178,8 +180,9 @@ C/C++ interop.
 | `try / except / raise / finally` | ✅ Zero-cost T-flag propagation |
 | `float` (soft-float) | ✅ `__fp_*` assembly helpers |
 | `list[T]` + GC, generators, `async` / `await` | ✅ |
-| `@extern` C/C++ interop | ✅ `avr-gcc` / `avr-g++`, Arduino libraries usable |
+| `@extern` C/C++ interop | ✅ GCC's `cc1` / `cc1plus`, Arduino libraries usable; no extra to install |
 | `@interrupt`, `Pin.irq()`, GPIOR flag promotion | ✅ |
+| Toolchain | ✅ Assembler, linker and C/C++ front ends as WebAssembly — [one wheel for every platform](/getting-started/installation/#the-avr-toolchain-is-webassembly) |
 
 ### ARM (RP2040 / RP2350)
 

@@ -1,4 +1,4 @@
 User-agent: *
 Disallow: /decapcms/
 
-Sitemap: https://docs.pymcu.dev/sitemap-index.xml
+Sitemap: https://docs.pymcu.org/sitemap-index.xml

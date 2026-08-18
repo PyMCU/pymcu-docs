@@ -141,7 +141,9 @@ The implementation differs per target, the semantics do not:
 | RP2040 (Cortex-M0+) | The bootrom **fast-float** library; `crt0` resolves the SF table and the `__aeabi_f*` shims |
 | RP2350 (Cortex-M33) | Hardware FPU (FPv5-SP, softfp calling convention) |
 
-`print(x)` on a `float` emits a one-decimal representation on both AVR and ARM.
+`print(x)` on a `float` — and a `float` interpolated into a streamed f-string — emits two
+rounded decimals on both AVR and ARM, with a trailing zero trimmed but never past the first
+decimal: `3.25`, `-2.25`, `0.05`, `123.75` and `1234.5` all print exactly.
 
 ```python
 a: float = 2.5
@@ -153,7 +155,15 @@ if d > 5.0:
     print("high")
 
 n: uint16 = int(d * 10.0)  # 57 — int() truncates toward zero
-print(d)                   # 5.7
+print(d)                   # 5.75
+```
+
+A cast from `float` truncates toward zero on the **value**, not on its raw bit pattern, so
+the usual round-to-integer idiom works as written:
+
+```python
+volts: float = 3.256
+centivolts: uint32 = uint32(volts * 100.0 + 0.5)   # 326
 ```
 
 Subnormals are flushed to zero; NaN and Inf propagate correctly. `float` is not supported on
@@ -181,6 +191,12 @@ assign a runtime expression to a `const[T]` variable.
 ```python
 BAUD: const[uint16] = 9600
 ```
+
+A `const[T]` **parameter** accepts compile-time float constants as well as integers and
+strings, so `Timer(freq=2.5)` binds. Passing an argument that varies at runtime is a located
+`CompileError` naming the parameter, rather than a silent fold of whatever the variable held
+— `Pin(n)` with a runtime `n` is the case you are most likely to hit, since a pin identity
+has to be constant for the GPIO access to stay zero-cost.
 
 ### Arrays
 

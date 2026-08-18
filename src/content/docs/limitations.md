@@ -90,6 +90,11 @@ uart.println(f"err 0x{code:02X}")
 lcd.print_str(f"{hours:02d}:{mins:02d}")
 ```
 
+A streamed interpolation also accepts a `float`, and prints it the way CPython does for the
+common cases — two decimals, rounded, with a trailing zero trimmed but never past the first
+decimal, so `3.25`, `-2.25`, `0.05`, `123.75` and `1234.5` all print exactly. `print(x)` on a
+`float` uses the same formatter.
+
 It is also supported **as a value**: `s = f"t={t} C"` builds the string into a
 compiler-managed fixed `bytearray` whose size is statically bounded per part. On the value
 form, `len(s)` is the formatted length, `s[i]` indexes bytes, `print(s)` /
@@ -102,6 +107,21 @@ f-strings inline in other expression positions (assign to a name first).
 **Format specs** supported in interpolations: `{x:02x}`, `{x:X}`, `{x:08b}`, `{x:o}`,
 `{x:5d}`, `{x:04d}` — width, zero-pad, and the `x` / `X` / `b` / `o` / `d` bases.
 Compile-time constant interpolations (`f"text={const}"`) are folded into the flash string.
+
+### `print()` of a buffer
+
+`print()` renders a `bytearray`, a slice of a fixed-size array (`print(arr[a:b])`) and a slice
+of an object with `__getitem__` / `__len__` (`print(obj[a:b])`) as the faithful CPython repr,
+escapes and all:
+
+```python
+buf: bytearray = bytearray(b"\xcc\x10\xca\xfe")
+print(buf)              # bytearray(b'\xcc\x10\xca\xfe')
+print(buf[0:2])         # bytearray(b'\xcc\x10')
+```
+
+The length has to be a compile-time constant — the repr is unrolled into direct writes, so
+`print(buf[0:n])` with a runtime `n` has nothing to unroll.
 
 ---
 
@@ -273,7 +293,8 @@ no runtime-computed targets.
 **Supported:** zero-cost abstraction (ZCA) `@inline` classes (zero SRAM), `@property` / `@name.setter`,
 single-level class inheritance with `super()`, `with obj:` context managers
 (`__enter__` / `__exit__`), `@staticmethod`, class-typed fields nested inside another class
-(a `machine.Pin` wrapping the native HAL `Pin`, including through facade re-exports), and operator
+(a `machine.Pin` wrapping the native HAL `Pin`, including through facade re-exports, and
+including a **value-returning** method on the nested field — `self.pin.read()`), and operator
 dunder methods (`__add__`, `__sub__`, `__mul__`, `__len__`, `__contains__`, `__getitem__`,
 `__setitem__`, and all comparison / bitwise dunders).
 
@@ -295,7 +316,18 @@ IEEE 754 single-precision `float` works on **AVR** (pure-assembly `__fp_*` helpe
 ~200-400 cycles per operation), on **RP2040** (the bootrom fast-float library, reached
 through `__aeabi_f*` shims) and on **RP2350** (natively on the Cortex-M33 FPU).
 `print(float)` works on AVR and ARM. Subnormals are treated as zero; NaN and Inf propagate
-correctly. Float interpolations inside an f-string **value** are the one remaining gap.
+correctly. A cast from `float` truncates toward zero on the **value**, not on its raw bit
+pattern, so `uint32(x * 100.0 + 0.5)` rounds as written. Float interpolations inside an
+f-string **value** are the one remaining gap.
+:::
+
+:::note[`const[T]` takes float constants, and only constants]
+A `const[T]` parameter accepts compile-time **float** constants as well as integers and
+strings, so `Timer(freq=2.5)` binds. What it does not accept is a value that varies at
+runtime: passing one is a located `CompileError` naming the parameter, rather than a silent
+fold of whatever the variable happened to hold. `Pin(n)` with a runtime `n` is the case you
+are most likely to hit — a pin identity has to be known at compile time for the GPIO access
+to stay zero-cost.
 :::
 
 ---
@@ -374,6 +406,8 @@ _loop:
 | Feature | Why it fails | Alternative |
 |---|---|---|
 | List comprehension over a **runtime** iterable | Length not known at compile time | `for` loop with a fixed-size array |
+| `if`-filtered comprehension with a **runtime** condition | The result length would vary at runtime | Keep the filter compile-time constant, or a `for` loop with an explicit index |
+| Runtime tuples | A tuple is a compile-time construct here | Separate variables, or a fixed-size array |
 | Dict comprehension | Would build a container at runtime | Closed dict literal, or fill a `FixedDict` in a loop |
 | Set comprehension | Would build a container at runtime | Closed set literal, or a `uint8` bitmask |
 | Generator **expressions** (`(x for x in ...)`) | No lazy iterator object | Write a generator function with `yield`, or an explicit `for` loop |
@@ -385,10 +419,31 @@ _loop:
 **Supported:** `for i in range(N)` (runtime or constant N), `for x in array`,
 `for x in [...]`, `for i, x in enumerate(iterable)`, `for x, y in zip(list1, list2)`,
 `for x in reversed([...])`, list comprehensions with compile-time constant bounds, nested
-list comprehensions, `if`-filtered list comprehensions, and
+list comprehensions, `if`-filtered list comprehensions (constant condition), and
 `for pin in [DigitalInOut(p) for p in (...)]` /
 `for bit, pin in enumerate([DigitalInOut(p) for p in (...)])` (compile-time unroll of ZCA
 instance arrays).
+
+### Slices
+
+| Form | Status |
+|---|---|
+| `b = arr[1:3]` / `arr[::2]` (slice **read**) | Compile-time constant bounds only — the result is a fixed-size array sized at compile time |
+| `arr[a:b] = src` (slice **assignment**) | Supported, equal length, from a list / `bytes` literal / array / slice, including overlapping copies of the same array (snapshot semantics) |
+| `obj[a:b] = src` through `__setitem__` | Supported — lowers to one `__setitem__` call per byte |
+| `for x in buf[lo:hi]` (slice **iteration**) | Supported with **runtime** bounds; rewritten to a `range` loop over the backing array |
+| `for x in buf[lo:hi:step]` with a runtime `step` | Rejected with a diagnostic — the step has to be a compile-time constant |
+
+A slice *read* with runtime bounds (`b = buf[0:n]`) has no lowering: the result would need a
+runtime-sized array. Iterate it instead, or index the backing array directly.
+
+The `__setitem__` form is what makes the canonical CircuitPython persistence pattern compile:
+
+```python
+import microcontroller
+
+microcontroller.nvm[0:4] = b"\xcc\x10\xca\xfe"   # one byte-write per element
+```
 
 ### Generators (`yield`)
 
@@ -438,6 +493,12 @@ for external pin interrupts, and atomic flag patterns via `GPIOR0` on AVR.
 normal overflow mode. Do **not** use Timer0 for PWM, CTC or anything else while
 `ticks_ms()` / `millis()` is active in the same program.
 
+A Timer0 overflow is 1024 µs, not 1000 µs. `millis()` — and everything layered on it:
+`ticks_ms()`, `time.monotonic()`, `supervisor.ticks_ms()` — carries the Arduino-style
+fractional correction (1 ms per overflow plus 3/125 accumulated in eighths), so it counts
+real milliseconds instead of running 2.4 % slow. `micros()` reads the raw overflow count
+plus `TCNT0` and is monotonic across an overflow.
+
 `delay_ms()` and `delay_us()` are unaffected — on AVR they are a software busy-loop with no
 hardware timer dependency.
 :::
@@ -463,7 +524,9 @@ explicit `def main()` — they run at startup before `main()`'s body, mirroring 
 
 | Built-in | Status | Notes |
 |---|---|---|
-| `print(str)` / `print(int)` / `print(float)` | ✅ Supported | Routes to UART; `print(float)` on AVR and ARM |
+| `print(str)` / `print(int)` | ✅ Supported | Routes to UART; `sep=` and `end=` take a compile-time string literal, `file=` is not supported |
+| `print(float)` | ✅ Supported | Two rounded decimals, trailing zero trimmed (`3.25`, `1234.5`); AVR and ARM |
+| `print(bytearray)` / `print(arr[a:b])` | ✅ Supported | CPython repr — `bytearray(b'\xcc\x10')`; the length must be compile-time |
 | `range(n)` | ✅ Supported | For-loop bounds; runtime or constant |
 | `len(arr)` / `len(b"...")` | ✅ Supported | Compile-time constant fold |
 | `abs(x)` | ✅ Supported | Intrinsic |
@@ -497,6 +560,12 @@ explicit `def main()` — they run at startup before `main()`'s body, mirroring 
 - **No heap by default:** every variable must have a size known at compile time. The one
   opt-in exception is `list[T]`, which links a bounded bump allocator and a GC — and only
   into firmware that uses it.
+- **Capacity is checked at build time, not at flash time:** an image larger than the chip's
+  flash fails the build with the exact overage (`firmware is 32864 bytes but atmega328p has
+  32768 bytes of flash (96 bytes over)`), and static data that does not fit in SRAM fails in
+  the backend with the same shape (`static data needs 2700 bytes but atmega328p has 2048
+  bytes of SRAM`). The SRAM check reserves 64 bytes for the hardware call stack, which grows
+  down into the same space.
 - **String literals live in flash:** read-only, sent to UART through the flash string pool.
   They cannot be compared, indexed or modified at runtime (except via `const[str]`).
 - **C/C++ interop:** supported via `@extern` and `[tool.pymcu.ffi]` in `pyproject.toml`.

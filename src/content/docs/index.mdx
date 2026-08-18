@@ -1,6 +1,13 @@
 ---
 title: PyMCU Documentation
 description: "PyMCU compiles typed, allocation-free Python to native AVR, RP2040 / RP2350 and PIC firmware - no interpreter, no heap. Install, blink and flash in five minutes."
+head:
+  # La portada es el sitio, no un articulo; Starlight pone og:type article
+  # por defecto y este head de frontmatter lo sobreescribe solo aqui.
+  - tag: meta
+    attrs:
+      property: og:type
+      content: website
 ---
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';

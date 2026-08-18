@@ -86,8 +86,8 @@ name = "extern-call"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
-    "pymcu-stdlib>=0.1.2a5",
-    "pymcu>=0.1.0a27"
+    "pymcu-stdlib>=0.1.0a10",
+    "pymcu-compiler[avr]>=0.1.0a10"
 ]
 
 [tool.pymcu]

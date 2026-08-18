@@ -67,7 +67,8 @@ parses.
 | Module | Classes / functions | Status | Notes |
 |---|---|---|---|
 | `machine` (portable) | `Pin`, `UART`, `Signal`, `mem8` / `mem16`, `freq()`, `disable_irq` / `enable_irq`, `time_pulse_us` | Complete | Compiles for AVR, RP2040 and RP2350 |
-| `machine` (AVR only) | `ADC`, `PWM`, `SPI`, `I2C`, `Timer`, `WDT`, `reset()`, `idle` / `lightsleep` / `deepsleep` | Complete on AVR | Imported inside an `arch == "avr"` guard; unavailable on the Pico |
+| `machine` (AVR only) | `ADC`, `PWM`, `SPI`, `I2C`, `SoftI2C`, `Timer`, `WDT`, `reset()`, `idle` / `lightsleep` / `deepsleep` | Complete on AVR | Imported inside an `arch == "avr"` guard; unavailable on the Pico |
+| `machine.unique_id()` | — | Not available | The ATmega328P has no factory ID; the call is a compile error pointing at EEPROM storage |
 | `utime` | `sleep_ms`, `sleep_us`, `sleep`, `ticks_diff`, `ticks_add` | Complete | Portable — the delays are software loops, the tick arithmetic is pure integer maths |
 | `utime` | `ticks_ms`, `ticks_us`, `ticks_cpu` | AVR only | They read `pymcu.hal.timer.millis` / `micros`, which raises a `CompileError` on ARM |
 | `micropython` | `const()` (treated as an integer literal); `@native` / `@viper` accepted and ignored | Complete | Portable |
@@ -159,7 +160,8 @@ data = uart.read()          # one byte; read() takes no argument
 Unlike MicroPython, `UART.read()` has the signature `read(self) -> uint8` and returns a single
 byte — there is no `read(n)` overload, because returning a `bytes` object would need a heap.
 To fill a buffer use `uart.readline(buf)`, which reads until `\n` (or until `buf` is full) and
-returns the byte count.
+returns the byte count. The no-arg `readline()` is a compile error that names that form,
+rather than a confusing arity mismatch.
 :::
 
 ### `machine.ADC`
@@ -178,11 +180,97 @@ val = adc.read_u16()       # 0-65535 (0-1023 scaled)
 val = adc.read()           # 0-1023 (10-bit)
 ```
 
-`ADC` has exactly one constructor, `ADC(pin: Pin)` — there is no `ADC(0)` channel-number
-overload. Pass a `Pin` built from the analog pin number (14-19 on the Uno) or from the port
-string. `Pin("A0")` is **not** a valid pin name: the AVR GPIO HAL rejects it with
-`NotImplementedError('Unsupported Pin')`. Valid analog names are `"PC0"`-`"PC5"`, plus the
-internal `"TEMP"`, `"VBG"` and `"ADC8"` channels via `pymcu.hal.adc.AnalogPin`.
+The ESP-style channel form from the MicroPython quick reference works too — channels `0`-`5`
+are A0-A5 (PC0-PC5) on the Arduino Uno:
+
+```python
+adc = ADC(0)          # same converter as ADC(Pin(14))
+adc = ADC(5)          # A5
+adc = ADC(6)          # CompileError — this chip has channels 0-5
+```
+
+Both spellings produce identical firmware, and a channel above 5 is a compile error naming
+the range rather than a silent read of the wrong pin.
+
+`Pin("A0")` is **not** a valid pin name: the AVR GPIO HAL rejects it with
+`NotImplementedError('Unsupported Pin')`. Valid analog port names are `"PC0"`-`"PC5"`, plus
+the internal `"TEMP"`, `"VBG"` and `"ADC8"` channels via `pymcu.hal.adc.AnalogPin`.
+
+### `machine.PWM`
+
+:::caution[AVR only]
+Like `ADC`, `PWM` lives behind the `arch == "avr"` guard.
+:::
+
+```python
+from machine import Pin, PWM
+from pymcu.types import uint16
+
+pwm = PWM(Pin(6), freq=490, duty_u16=32768)
+
+pwm.freq(1000)                 # set
+pwm.duty_u16(49152)            # set — 75 %, 16-bit
+f: uint16 = pwm.freq()         # get — 1000
+d: uint16 = pwm.duty_u16()     # get — 49152
+```
+
+:::note[The getters return what you asked for]
+An AVR timer reaches only a handful of frequencies — the prescaler buckets. `freq(value)`
+selects the closest reachable one and `freq()` reports `value`, not the frequency the timer is
+actually running at. If you need the physical figure, derive it from `__FREQ__` and the
+prescaler; the buckets are listed under [PWM](/stdlib/pwm/).
+
+D5 (OC0B) and D6 (OC0A) share Timer0, so changing the frequency on one changes it on both.
+They can be driven at the same time, though: configuring the second channel ORs its COM bits
+into the shared register instead of overwriting it, so the first channel keeps its output.
+:::
+
+### `machine.I2C` and `machine.SoftI2C`
+
+Hardware I2C (TWI) uses fixed pins on the ATmega328P — A4 (SDA = PC4) and A5 (SCL = PC5) —
+and needs 4.7 kΩ external pull-ups on both lines. Passing `scl`, `sda`, a non-zero `id` or a
+`freq` other than 100000 is a **compile error** naming the fixed pin, rather than a silent
+acceptance that builds a bus you did not ask for:
+
+```
+CompileError: machine.I2C: the TWI pins are fixed on this chip (PC5 = SCL); drop the scl argument.
+```
+
+For a bus on arbitrary pins, `machine.SoftI2C` takes `scl` / `sda` / `freq` for real:
+
+```python
+from machine import Pin, SoftI2C
+from pymcu.types import uint8
+
+i2c = SoftI2C(scl=Pin(9), sda=Pin(8), freq=100000)
+
+count: uint8 = i2c.scan()             # count of responding devices
+i2c.writeto(0x3C, 0x00)               # single byte
+val: uint8 = i2c.readfrom(0x48)
+```
+
+`freq` is a compile-time constant: the half-period is derived from it during compilation
+(100 kHz → 5 µs), so there is no runtime division. At `freq >= 500000` the delays drop out
+entirely and the bus runs as fast as the GPIO loop allows, with no timing guarantee. Both
+lines still need external pull-ups. `avr.SoftI2C` is the same controller under the
+port-specific name; new code should prefer `machine.SoftI2C`, which is what a MicroPython
+script already imports.
+
+`I2C.scan()` returns a **count**, not a list of addresses — building a list would need a
+heap. `scan(buf, max_count)` fills a caller-provided buffer and returns the count.
+
+### `machine.unique_id`
+
+Calling it is a compile error. The ATmega328P has no factory-programmed unique ID — its
+signature row is identical on every part — so there is nothing honest to return, and a
+fabricated constant would silently become a duplicate device address in a ported sketch:
+
+```
+CompileError: machine.unique_id: this chip has no unique hardware ID (the ATmega328P
+signature row is the same for every part). Store an ID in EEPROM via the avr module instead.
+```
+
+Write your own identifier once and read it back with `avr.EEPROM` instead.
 
 ### `utime`
 
@@ -301,15 +389,25 @@ MicroPython.
 | `Pin.irq()` callbacks | Supported | Supported — `btn.irq(handler=cb, trigger=Pin.IRQ_FALLING)` registers the real ISR |
 | `Timer` callbacks | Supported | Supported on AVR — `Timer(1, freq=10, callback=on_tick)` auto-selects the prescaler |
 | `machine.mem8[addr]` | Supported | Supported; `ptr(addr).value` is the typed, compile-time-checked alternative |
-| `ticks_ms()` / `ticks_us()` | Supported on every port | AVR only — the driver injects `millis_init()` (Timer0) automatically. `pymcu.hal.timer` has no RP implementation, so these raise a `CompileError` on the Pico; `ticks_diff()` / `ticks_add()` are portable |
+| `ticks_ms()` / `ticks_us()` | Supported on every port | AVR only — the driver injects `millis_init()` (Timer0) automatically. `pymcu.hal.timer` has no RP implementation, so these raise a `CompileError` on the Pico; `ticks_diff()` / `ticks_add()` are portable. A Timer0 overflow is 1024 µs and the ISR carries the Arduino-style fractional correction, so `ticks_ms()` counts **real** milliseconds; `ticks_us()` is monotonic across an overflow |
+| `ADC(n)` channel number | Supported | Supported — `ADC(0)`-`ADC(5)` are A0-A5, alongside `ADC(Pin(14))` |
+| `PWM.freq()` / `PWM.duty_u16()` getters | Read back from hardware | Supported — they return the **requested** value; the timer runs at the nearest reachable prescaler bucket |
+| `SoftI2C(scl, sda, freq)` | Supported | Supported — `freq` is compile-time; `>= 500 kHz` drops the delays |
+| `I2C(scl=…, sda=…, freq=…)` | Configurable | The TWI pins and 100 kHz are fixed — passing them is a compile error, not a silent no-op |
+| `machine.unique_id()` | Factory unique ID | No such ID on this silicon — a compile error pointing at EEPROM storage |
+| `Pin(n)` with a runtime `n` | Supported | A compile error — a pin identity has to be constant for the access to stay zero-cost |
+| `print(3.25)` | `3.25` | `3.25` — two rounded decimals, trailing zero trimmed |
+| `print(bytearray(b"\xcc\x10"))` | `bytearray(b'\xcc\x10')` | The same repr; the length must be compile-time |
+| `print(…, sep=…, end=…)` | Any value | A compile-time string literal; `file=` is not supported (no filesystem) |
 | `f"..."` strings | Runtime evaluation | Supported streamed (`print(f"…")`, `uart.write_str(f"…")`) and as values (`s = f"…"` into a fixed buffer) |
 | `float` | Supported | Supported — IEEE-754 f32 (soft-float on AVR, bootrom fast-float on RP2040, M33 FPU on RP2350) |
 | `try / except / raise` | Supported (heap-based) | Supported on AVR and ARM — zero-cost flag-propagation model, no heap |
 | `dict` / `set` | Dynamic hash maps | Closed literals are compile-time lookup tables; `pymcu.collections.FixedDict(capacity)` for mutation; unbounded growth is not supported |
 | `yield` / generators | Supported | Supported at top level (lowered to a state machine); not inside `@inline` functions or methods |
 | `async` / `await` | Supported (`uasyncio`) | `await asyncio.sleep_ms(…)` anywhere in a body, plus `asyncio.run` / `gather`; awaiting another coroutine is not supported yet |
-| `bytearray` | Dynamic heap allocation | Fixed-size `uint8[N]` only |
+| `bytearray` | Dynamic heap allocation | The same spelling — `bytearray(8)` and `bytearray(b"…")` lower to a fixed `uint8[N]`; the size must be compile-time and cannot grow |
 | `UART.any()` | Byte count | Returns `1` / `0`, not an exact count |
+| `UART.readline()` | Returns `bytes`, no args | `readline(buf)` — the caller provides the buffer and `len(buf)` is the limit; the no-arg call is a compile error naming this form |
 | `I2C.scan()` | List of addresses | Returns a count; `scan(buf, max_count)` fills a caller-owned buffer |
 | `network.WLAN` | Every WiFi port | Pico 2 W (RP2350) only, open networks only — no WPA |
 | Target hardware | STM32, RP2040, ESP32, … | AVR (ATmega / ATtiny) and ARM (RP2040 / RP2350) |

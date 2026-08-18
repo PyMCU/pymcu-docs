@@ -84,7 +84,7 @@ the [Pico examples](/examples/rp2040/).
 | `supervisor` | `ticks_ms` | AVR only | Same Timer0 dependency. Ticks wrap at 2^29 ms (~6.2 days), exactly as in CircuitPython |
 | `supervisor` | `reload()` | AVR only | Implemented as a watchdog reset; the watchdog HAL is AVR-only |
 | `alarm` | `time.TimeAlarm`, `pin.PinAlarm`, `sleep_until_alarms` | Complete on AVR | Sleep modes come from the AVR power HAL |
-| `microcontroller` | `cpu.frequency`, `cpu.voltage`, `cpu.uid`, `reset`, `delay_us` | Partial, AVR only | Frequency is a compile-time constant |
+| `microcontroller` | `cpu.frequency`, `cpu.voltage`, `cpu.uid`, `cpu.reset_reason`, `nvm`, `watchdog`, `reset`, `delay_us` | Partial, AVR only | Frequency is a compile-time constant; `nvm` is EEPROM-backed |
 | `wifi`, `socketpool`, `adafruit_minimqtt` | `radio.connect`, `SocketPool`, `MQTT.connect` / `publish` | Pico 2 W only | CYW43439 over gSPI; open networks only |
 
 ## Usage
@@ -160,11 +160,15 @@ import busio, board
 from pymcu.types import uint8
 
 uart = busio.UART(board.TX, board.RX, baudrate=9600)
-uart.write(b"hello")
+uart.write(b"hello")        # returns the number of bytes written
 
 buf: uint8[1] = bytearray(1)
 uart.readinto(buf)          # fills the caller's buffer; returns the count
 ```
+
+`write()` takes a **buffer** — a `bytes` literal or a `bytearray` / `uint8[N]` array — exactly
+as CircuitPython does, where a `str` is not a buffer. Use `print()` or the native
+`uart.write_str()` when what you have is text.
 
 :::caution[`read()` and `readline()` are no-ops]
 `busio.UART.read(nbytes)` and `busio.UART.readline()` would have to return a `bytes` object,
@@ -218,6 +222,54 @@ import microcontroller
 freq = microcontroller.cpu.frequency  # CPU frequency in Hz (compile-time constant)
 ```
 
+`cpu.temperature` and `cpu.uid` are accepted for API compatibility but are not functionally
+implemented on the ATmega328P — that part has no factory temperature sensor and no UID.
+
+`cpu.reset_reason` reports what brought the chip up (`ResetReason.POWER_ON`, `BROWNOUT`,
+`WATCHDOG`, `RESET_PIN`). It reads `MCUSR` live and PyMCU does not snapshot or clear it at
+boot, so flags accumulate across resets — clear `MCUSR` early if you need a single-event
+reading.
+
+### `microcontroller.nvm`
+
+Byte-addressable persistent storage, backed by the on-chip EEPROM. Every accessor expands
+inline to the EEPROM HAL:
+
+```python
+import microcontroller
+from pymcu.types import uint8, uint16
+
+size: uint16 = len(microcontroller.nvm)     # 1024 on the ATmega328P
+microcontroller.nvm[0] = 42                 # one byte
+b: uint8 = microcontroller.nvm[0]
+
+# Slice assignment - the canonical CircuitPython pattern, compiled to byte writes
+microcontroller.nvm[0:4] = b"\xcc\x10\xca\xfe"
+
+print(microcontroller.nvm[0:4])             # bytearray(b'\xcc\x10\xca\xfe')
+```
+
+Slice *assignment* goes through `__setitem__`, one write per byte, with the length checked at
+compile time — so the source and the destination range must match. Binding a slice to a name
+(`buf = microcontroller.nvm[0:4]`) is still not available: the result would need a
+heap-allocated `bytearray`. Read it back a byte at a time, or `print()` it directly as above.
+
+### `microcontroller.watchdog`
+
+```python
+import microcontroller
+from microcontroller import WatchDogMode
+
+microcontroller.watchdog.timeout = 2.0                  # seconds (soft-float)
+microcontroller.watchdog.mode = WatchDogMode.RESET      # arms it
+microcontroller.watchdog.feed()
+microcontroller.watchdog.deinit()                       # disable
+```
+
+AVR implements reset mode only: `WatchDogMode.RAISE` is defined for API compatibility but
+behaves as `RESET`. Assigning `timeout` pulls in the soft-float runtime for the
+seconds ↔ milliseconds conversion; the compiler warns once, so the cost is not a surprise.
+
 ### `supervisor`
 
 `ticks_ms()` is kept modulo 2^29 and `ticks_diff()` returns a signed value, exactly matching
@@ -227,6 +279,10 @@ the canonical CircuitPython reference implementation — so the counter wraps af
 `ticks_ms()` reads the Timer0 counter through `pymcu.hal.timer` and is AVR-only;
 `ticks_add()`, `ticks_diff()` and `supervisor.runtime` are portable. `supervisor.reload()`
 performs a watchdog reset and is therefore AVR-only too.
+
+A Timer0 overflow is 1024 µs rather than 1000 µs, and the ISR carries the Arduino-style
+fractional correction — so this counter, and `time.monotonic()` above it, measures real
+milliseconds instead of running 2.4 % slow.
 
 ## On the Raspberry Pi Pico
 
@@ -311,7 +367,10 @@ changes in order.
 | `try / except / raise` | Supported | Supported on AVR and ARM — zero-cost flag-propagation model, no heap |
 | `float` | Supported | Supported — IEEE-754 f32 (soft-float on AVR, bootrom fast-float on RP2040, M33 FPU on RP2350) |
 | `dict` / `set` | Dynamic hash maps | Closed literals are compile-time lookup tables; `pymcu.collections.FixedDict(capacity)` for mutation; unbounded growth is not supported |
-| `bytearray` | Dynamic heap | Fixed-size `uint8[N]` only |
+| `bytearray` | Dynamic heap | The same spelling — `bytearray(8)` and `bytearray(b"…")` lower to a fixed `uint8[N]`; the size must be compile-time and cannot grow. `print(buf)` gives the CPython repr |
+| `microcontroller.nvm[a:b] = …` | Supported | Slice assignment compiles to byte writes; a slice *read* bound to a name still needs a heap |
+| `microcontroller.watchdog` | Reset and raise modes | Reset mode only — `WatchDogMode.RAISE` behaves as `RESET`; `timeout` links soft-float |
+| `cpu.reset_reason` | Snapshot at boot | Reads `MCUSR` live and never clears it, so flags accumulate across resets |
 | Dynamic pin assignment | Supported | Pin must be a compile-time constant |
 | `Pull.DOWN` | Supported where the pad has one | RP2040 / RP2350 only — a `CompileError` on AVR |
 | `DriveMode.OPEN_DRAIN` | Real open-drain | Accepted but not honoured — no open-drain hardware on AVR or RP |

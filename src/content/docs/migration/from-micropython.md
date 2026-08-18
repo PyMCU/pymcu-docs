@@ -80,8 +80,13 @@ data = bytearray(8)
 
 # PyMCU
 count: uint16 = 0
-data: uint8[8] = [0, 0, 0, 0, 0, 0, 0, 0]
+data: bytearray = bytearray(8)                 # SRAM uint8[8]; no heap
+data: uint8[8] = [0, 0, 0, 0, 0, 0, 0, 0]      # equivalent, explicit about the width
 ```
+
+`bytearray(8)` and `bytearray(b"…")` carry over unchanged — they lower to a fixed `uint8[N]`
+in SRAM. What does not carry over is a size known only at runtime (`bytearray(n)`) or one that
+grows.
 
 ## Step 4: Adjust the few things that differ
 

@@ -1,7 +1,90 @@
 ---
 title: Changelog
-description: "Release notes for every PyMCU alpha: what landed in v0.1.0a8, v0.1.0a7, v0.1.0a6, v0.1.0a5 and the earlier pre-releases, listed by language feature, backend and driver."
+description: "Release notes for every PyMCU alpha: what landed in v0.1.0a10, v0.1.0a9, v0.1.0a8, v0.1.0a7 and the earlier pre-releases, listed by language feature, backend and driver."
 ---
+
+## v0.1.0a10 — Alpha 10 (2026-08-18)
+
+Full notes: [GitHub release](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a10)
+
+**The hardware-validation release.** Everything here came out of a sustained bug hunt on a
+real Arduino Uno with a logic analyzer, plus a sweep of the official MicroPython quick
+reference and the CircuitPython Essentials examples — 63 projects, of which 53 compile and
+the rest fail on purpose with a clear diagnostic. Suites at release: 517 unit, 508 driver and
+1549 AVR integration tests.
+
+### Fixed — the silent-miscompile class
+These are the bugs that produced wrong numbers rather than a build error, so only silicon
+could find them.
+
+- Copy propagation no longer forwards through same-width float ↔ int casts: `uint32(float_var)`
+  handed back the raw float bits (16464 for 3.25 on a real Uno)
+- An unannotated module global widens to its call-result type instead of wrapping at a `uint8`
+  store — `f0 = pwm.freq()` printed 232 for 1000
+- A user global no longer shadows a same-named function parameter, neither of an `@inline`
+  (`data = 5` broke `uart.write('hello')`) nor of a plain `def` (`start_low_ms = 250` drove
+  the DHT driver's start pulse for 250 ms instead of 18)
+- `raise CompileError` inside an `@inline` body aborts the build even when the call site sits
+  under runtime control flow — a swallowed raise had let `readline()` compile to an unbound
+  temporary written to `UDR0`
+- [`print(bytearray)`](/limitations/#print-of-a-buffer) printed garbage; it now emits the
+  CPython `bytearray(b'…')` repr
+- [`millis()` / `ticks_ms` / `monotonic`](/stdlib/time/) count real milliseconds (a 1 s blink
+  measured 1024 ms before), and `micros()` no longer jumps backward across a Timer0 overflow
+- The [second PWM channel of a timer](/stdlib/pwm/#two-channels-on-one-timer) no longer
+  disconnects the first — the shared `TCCRxA` COM bits are OR-ed in
+- `print(3.25)` prints two rounded decimals with the trailing zero trimmed; it printed `3.2`
+  before, and `0.05` printed `0.0`
+
+### Language surface
+- [Slice assignment](/limitations/#slices) dispatches through `__setitem__` with a `bytes` or
+  list literal source: `microcontroller.nvm[0:4] = b'\xcc\x10\xca\xfe'`
+- `for b in buf[0:n]` accepts runtime bounds, rewritten to a `range` loop
+- `str.join` in an assignment: compile-time strings fold to a constant, and
+  `''.join([chr(b) for b in buf])` builds a runtime string
+- [`const` parameters](/limitations/#type-system-limitations) accept compile-time float
+  constants (`Timer(freq=2.5)`)
+- Exception catch-all forms, user exception classes, bare `except`; `__bool__` / `__len__`
+  truthiness; `__call__`; n-ary `min` / `max`; `dict.get` on literal dicts
+- A nested constructor argument types as its class in overload resolution, so `ADC(Pin(14))`
+  picks the `Pin` overload; resolution now matches parameter types rather than declaration
+  order
+
+### Guardrails — was silent, now a located error
+- A `const[...]` parameter rejects a runtime-varying argument; a loop variable passed to
+  `Pin()` used to drive one fixed pin in silence
+- An image larger than the chip's flash, and static data beyond its SRAM, are build errors
+  quoting the part's real numbers
+- Runtime tuples, filtered comprehensions with a runtime condition, `list` parameters,
+  instance interpolation and iterator-protocol loops each get a specific diagnostic instead
+  of misbehaving quietly
+
+### Compatibility layers
+- `machine.ADC(0)`-`ADC(5)` channel form beside `ADC(Pin(14))`; `machine.PWM.freq()` and
+  `duty_u16()` getters; `machine.SoftI2C` on any two pins
+- Honest errors where the silicon cannot deliver: `machine.unique_id()`, the no-arg
+  `UART.readline()`, and `machine.I2C(scl=…)` on fixed TWI pins
+- CircuitPython `microcontroller.nvm` slices end to end, plus `watchdog` and `cpu.reset_reason`
+
+Requires `pymcu-avr >= 0.1.0a9` for the paired codegen fixes — float conversions and
+comparisons, wide constants, and linker `MEMORY` regions.
+
+## v0.1.0a9 — Alpha 9 (2026-08-17)
+
+Full notes: [GitHub release](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a9)
+
+**macOS Intel comes back.** It had been dropped from the publish matrix because no native AVR
+toolchain existed for it, and building one meant compiling GCC for hardware Apple has stopped
+shipping. [The toolchain is architecture-independent WebAssembly
+now](/getting-started/installation/#the-avr-toolchain-is-webassembly), so that justification
+is spent — and `pymcu-arm` and `pymcu-pic` were still shipping the wheel anyway, because
+their removal never reached a release. Restoring it costs a publish step rather than an Intel
+machine: .NET cross-compiles `osx-x64` from the Apple Silicon runner. What it does not buy is
+certainty — GitHub retired the `macos-13` runner, so nothing here is verified on that platform.
+
+- The library authoring guide no longer opens by warning that the index is offline and telling
+  authors to install with `--from-pypi`. The [index](/libraries/) had been online since
+  the day before
 
 ## v0.1.0a8 — Alpha 8 (2026-08-17)
 

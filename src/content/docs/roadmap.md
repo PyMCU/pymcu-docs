@@ -4,8 +4,8 @@ description: What PyMCU already implements across AVR, ARM and PIC, and what is 
 ---
 
 This page tracks which language and HAL features are implemented, how far each target has
-come, and what is planned next. The current release is **v0.1.0a8**
-([release notes](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a8)).
+come, and what is planned next. The current release is **v0.1.0a10**
+([release notes](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a10)).
 
 :::note[Alpha status]
 Core compilation is stable and test-covered, but tooling and error messages still have rough
@@ -38,7 +38,7 @@ alpha releases. Drop to `pymcu.hal.*` for what the compat APIs do not expose, an
 | Module-level statements alongside an explicit `def main()` | Module-scope constructions and calls run at startup before `main()`'s body, mirroring Python |
 | `class` | Zero-cost abstraction (ZCA) `@inline` flattening, constructors, `@property` / `@name.setter` |
 | Single-level class inheritance | ZCA base + derived; `super()` calls |
-| Nested class-typed ZCA fields | Method calls and field reads on a class-typed field (a `machine.Pin` wrapping the native HAL `Pin`) dispatch correctly, including through facade re-exports |
+| Nested class-typed ZCA fields | Method calls and field reads on a class-typed field (a `machine.Pin` wrapping the native HAL `Pin`) dispatch correctly, including a **value-returning** method (`self.pin.read()`), through facade re-exports and single-level inheritance |
 | `class Foo(Enum)` | Zero-cost integer constants; no SRAM |
 | `with obj:` / `with a as x, b as y:` | `__enter__` / `__exit__`; zero-cost for `@inline` methods |
 | `assert condition, msg` | Compile-time only; statically false → `CompileError` |
@@ -50,7 +50,7 @@ alpha releases. Drop to `pymcu.hal.*` for what the compat APIs do not expose, an
 | `pymcu.collections.FixedDict` | Mutable fixed-capacity integer dict (open addressing over per-instance fixed arrays — no heap, no GC): `d[k]` / `d[k] = v`, `KeyError` / `ValueError`, `k in d`, `len(d)`, `get(k, default)`, `pop(k)`, `clear()`. Capacity is a compile-time constant |
 | Integer arithmetic promotion | `+` / `-` / `*` / `<<` promote to the next wider type (`uint8 255 + 45 == 300`); the annotation is a storage width; `uint8(a + b)` is the fixed-width escape hatch; out-of-range literals and folded constants are a `CompileError` |
 | True division `/` vs `//` | `/` yields `float` (warns on integer operands); `//` and `%` are integer floor div / mod; a runtime divide-by-zero raises `ZeroDivisionError` |
-| f-strings (streamed) | `print(f"...")`, `uart.write_str/println(f"...")`, `lcd.print_str(f"...")` with runtime interpolations and format specs (`{x:02x}`, `{x:08b}`, `{x:04d}`, …); lowered to direct writes, no heap |
+| f-strings (streamed) | `print(f"...")`, `uart.write_str/println(f"...")`, `lcd.print_str(f"...")` with runtime interpolations and format specs (`{x:02x}`, `{x:08b}`, `{x:04d}`, …); lowered to direct writes, no heap. `float` interpolations print two rounded decimals |
 | f-string as a **value** | `s = f"t={t} C"` builds the string into a compiler-managed fixed `bytearray` (statically bounded per part, lowered via `pymcu.strfmt`). `len(s)`, `s[i]`, `print(s)`, `uart.write_str(s)`, buffer reuse on re-assignment in a loop, passing as a `bytearray` param |
 | Functions with more than 5 arguments | Overflow arguments passed via a fixed SRAM spill region |
 | `in` / `not in` | Compile-time fold on a constant list; runtime equality chain |
@@ -67,10 +67,13 @@ alpha releases. Drop to `pymcu.hal.*` for what the compat APIs do not expose, an
 | `int.from_bytes(b, 'little'/'big')` | Compile-time fold or runtime |
 | Raw strings `r"\n"` | No escape processing |
 | Extended unpacking `first, *rest = tup` | Compile-time tuples only (PEP 3132) |
-| Nested list comprehensions | Full outer × inner product unroll; `if` filter supported |
+| Nested list comprehensions | Full outer × inner product unroll; an `if` filter is supported when its condition is compile-time constant |
 | `for v in [Cls(p) for p in (...)]` | Compile-time unroll of ZCA instance arrays; plain for-in and `enumerate` both supported |
-| Slice indexing `arr[1:3]`, `arr[::2]` | Compile-time constant indices |
-| Equal-length slice **assignment** `arr[a:b] = src` | List, array and slice sources, including overlapping same-array copies (snapshot semantics) |
+| Slice **read** `arr[1:3]`, `arr[::2]` | Compile-time constant bounds; the result is a fixed-size array sized at compile time |
+| Equal-length slice **assignment** `arr[a:b] = src` | List, `bytes` literal, array and slice sources, including overlapping same-array copies (snapshot semantics), and through `__setitem__` objects (`nvm[0:4] = b'…'`) |
+| Slice **iteration** `for x in buf[lo:hi]` | Runtime bounds accepted; rewritten to a `range` loop over the backing array. A runtime `step` is a diagnostic |
+| `print()` of a buffer | `print(bytearray)`, `print(arr[a:b])` and `print(obj[a:b])` (via `__getitem__` / `__len__`) emit the CPython repr — `bytearray(b'\xcc\x10\xca\xfe')`; the length must be compile-time |
+| `print(float)` | Two rounded decimals, trailing zero trimmed but never past the first: `3.25`, `-2.25`, `0.05`, `123.75`, `1234.5` |
 | `lambda x: expr` (no capture) | Inlined as an anonymous `@inline` function |
 | Dunder operator overloading | `__add__`, `__sub__`, `__mul__`, `__len__`, `__contains__`, `__getitem__`, `__setitem__`, comparisons, bitwise |
 | `@extern("symbol")` | External C/C++ symbol interop with the AVR ABI (AVR only) |
@@ -85,12 +88,12 @@ alpha releases. Drop to `pymcu.hal.*` for what the compat APIs do not expose, an
 |---|---|
 | `uint8 / int8 / uint16 / int16 / uint32 / int32` | Annotation for variables; unannotated outlined `def` params and returns are inferred from call sites |
 | `int` (built-in) | Maps to `int16`; no import required |
-| `float` | IEEE 754 single-precision on every ARM and AVR target — AVR via `__fp_*` assembly helpers, RP2040 via the bootrom fast-float library (`__aeabi_f*` shims), RP2350 natively on the Cortex-M33 FPU. `print(float)` on AVR and ARM; float ↔ int conversions truncate toward zero |
+| `float` | IEEE 754 single-precision on every ARM and AVR target — AVR via `__fp_*` assembly helpers, RP2040 via the bootrom fast-float library (`__aeabi_f*` shims), RP2350 natively on the Cortex-M33 FPU. `print(float)` on AVR and ARM — two rounded decimals; float → int conversions truncate toward zero on the **value**, not on the raw bit pattern |
 | `ptr[T]` / `ptr(addr)` | Memory-mapped I/O |
-| `const[T]` / `const[uint8[N]]` | Compile-time constants; flash-resident arrays via `LPM Z` on AVR and `.rodata` on ARM |
+| `const[T]` / `const[uint8[N]]` | Compile-time constants — integer, string and **float** (`Timer(freq=2.5)`); flash-resident arrays via `LPM Z` on AVR and `.rodata` on ARM. A runtime-varying argument is a located `CompileError`, not a silent fold |
 | `asm("instr")` | Inline assembly; register constraints `%N` on AVR, textual operand constraints on ARM |
 | `delay_ms(n)` / `delay_us(n)` | Busy-wait on AVR / PIC; hardware TIMER on ARM |
-| `millis()` / `micros()` | Timer0 overflow; atomic 32-bit read under CLI/SEI |
+| `millis()` / `micros()` | Timer0 overflow; atomic 32-bit read under CLI/SEI. `millis()` carries the Arduino-style fractional correction (an overflow is 1024 µs, not 1000 µs); `micros()` is monotonic across an overflow |
 | `@inline` | Zero-cost expansion |
 | `@interrupt(vector)` | ISR handler generation with automatic `sei` |
 | `@property` / `@name.setter` | Compile-time expansion |
@@ -109,7 +112,7 @@ alpha releases. Drop to `pymcu.hal.*` for what the compat APIs do not expose, an
 | `pymcu.hal.uart` | `UART` — `write` / `read` / `read_line` / `write_str` / `println` / `print_byte` / `available` + RX interrupt |
 | `pymcu.hal.adc` | `AnalogPin` — poll + interrupt; channels `"PC0"`–`"PC5"`, plus `"TEMP"` (internal sensor), `"VBG"` and `"ADC8"` |
 | `pymcu.hal.timer` | `Timer(n, prescaler)` — Timer0/1/2 unified; CTC mode |
-| `pymcu.hal.pwm` | `PWM` — `start` / `stop` / `set_duty` / `set_freq`; multi-channel |
+| `pymcu.hal.pwm` | `PWM` — `start` / `stop` / `set_duty` / `set_freq`; multi-channel (two channels of one timer coexist — the COM bits are OR-ed). `set_freq` picks the **nearest** reachable prescaler bucket |
 | `pymcu.hal.spi` | `SPI` (bit-banged `SoftSPI` lives in `pymcu.hal.softspi`) |
 | `pymcu.hal.i2c` | `I2C`; `write_to` / `read_from` / `write_bytes` / `writeto_mem(addr, reg, data)` / `readfrom_mem(addr, reg, buf, n)` (bit-banged `SoftI2C` lives in `pymcu.hal.softi2c`) |
 | `pymcu.hal.eeprom` | `EEPROM` — `write(addr, val)` / `read(addr)` |
@@ -136,8 +139,8 @@ an analog sensor, so read it with [`AnalogPin`](/stdlib/adc/). See
 
 | Package | Activation | Coverage |
 |---|---|---|
-| `pymcu-micropython` | `stdlib = ["micropython"]` | `machine` (Pin, UART, ADC, PWM, SPI, I2C, `Timer(id, period, callback)`, WDT), `utime`, `micropython`; `network.WLAN` + `umqtt` on the Pico 2 W (RP2350) only |
-| `pymcu-circuitpython` | `stdlib = ["circuitpython"]` | `board`, `digitalio`, `analogio`, `busio` (SPI + I2C), `pwmio`, `time`, `neopixel.NeoPixel`; `wifi` + `socketpool` + `adafruit_minimqtt` on the Pico 2 W (RP2350) only |
+| `pymcu-micropython` | `stdlib = ["micropython"]` | `machine` (Pin, UART, ADC — pin or channel number, PWM with `freq()` / `duty_u16()` getters, SPI, I2C, `SoftI2C`, `Timer(id, period, callback)`, WDT), `utime`, `micropython`; `network.WLAN` + `umqtt` on the Pico 2 W (RP2350) only |
+| `pymcu-circuitpython` | `stdlib = ["circuitpython"]` | `board`, `digitalio`, `analogio`, `busio` (SPI + I2C), `pwmio`, `time`, `supervisor`, `alarm`, `microcontroller` (`cpu`, `nvm`, `watchdog`, `reset_reason`); `wifi` + `socketpool` + `adafruit_minimqtt` on the Pico 2 W (RP2350) only |
 
 ### Boards
 
@@ -155,6 +158,7 @@ an analog sensor, so read it with [`AnalogPin`](/stdlib/adc/). See
 | `pymcu new` / `build` / `flash` / `clean` | Project scaffolding, compilation, upload and cleanup — see the [CLI driver](/driver/) |
 | `pymcu search` / `install` / `uninstall` / `libraries` | Third-party [libraries](/libraries/), resolved against a curated index that measures rather than asks: an install is refused before the download when the library does not build for your chip |
 | `pymcu lint --library` | The publication checks for a library of your own — manifest, ASCII, architecture dispatch and API surface. See [Writing a library](/libraries/authoring/) |
+| Build-time capacity checks | An image larger than the chip's flash, or static data beyond its SRAM, fails the build with the part's real numbers instead of surfacing at flash time; the SRAM check reserves 64 bytes for the hardware call stack |
 | `pymcu-test` (AVR) | Turnkey pytest fixtures over the avr8sharp emulator |
 
 ---

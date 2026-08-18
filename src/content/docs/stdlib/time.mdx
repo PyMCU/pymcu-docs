@@ -135,6 +135,13 @@ emits a warning to that effect.
 | `ticks_diff(new, old)` | plain subtraction | plain subtraction | 32-bit difference |
 | `ticks_add(ticks, delta)` | plain addition | plain addition | Wraps at the 32-bit boundary |
 
+At 16 MHz with prescaler 64 a Timer0 overflow takes **1024 µs**, not 1000 µs. `millis()` does
+not return the raw overflow count: the ISR applies the Arduino-style fractional correction —
+one millisecond per overflow plus 3/125 accumulated in eighths — so `millis()`, and therefore
+`ticks_ms()`, `monotonic()` and `supervisor.ticks_ms()`, counts real milliseconds. `micros()`
+reads the raw overflow count together with `TCNT0` and is monotonic across an overflow, so a
+difference of two readings is never negative.
+
 `millis()` and `micros()` come from `pymcu.hal.timer`, are backed by Timer0, and are **ATmega
 only** — on ATtiny85/45/25 they compile to no-ops. `millis_init()` is auto-injected by the build
 driver when it sees `ticks_ms()` in your source, so you do not need to call it yourself. The

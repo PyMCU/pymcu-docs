@@ -13,6 +13,23 @@ export default defineConfig({
       description:
         'PyMCU compiles a statically-typed, allocation-free subset of Python to bare-metal firmware for AVR, ARM (RP2040 / RP2350) and PIC.',
       favicon: '/favicon.ico',
+      // Fallback OG image for every page: Starlight emits twitter:card
+      // summary_large_image but no image on its own. Absolute URL, required
+      // by the scrapers.
+      head: [
+        {
+          tag: 'meta',
+          attrs: { property: 'og:image', content: 'https://docs.pymcu.org/og-default.png' },
+        },
+        {
+          tag: 'meta',
+          attrs: { property: 'og:image:alt', content: 'PyMCU Docs: compile typed Python to bare-metal MCU firmware' },
+        },
+        {
+          tag: 'meta',
+          attrs: { name: 'twitter:image', content: 'https://docs.pymcu.org/og-default.png' },
+        },
+      ],
       // origin is https://github.com/PyMCU/website.git, default branch main.
       editLink: {
         baseUrl: 'https://github.com/PyMCU/website/edit/main/',

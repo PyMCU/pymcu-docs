@@ -8,7 +8,7 @@ Each extra pulls in its own backend **and** its own assembler and linker, so the
 nothing to install from your system package manager.
 
 :::caution[Alpha release]
-The current release is **v0.1.0a8**. `pip`, `uv` and `pipx` skip pre-releases unless you ask
+The current release is **v0.1.0a10**. `pip`, `uv` and `pipx` skip pre-releases unless you ask
 for them, so every command on this page carries a `--pre` flag. Once `0.1.0` stable ships,
 `--pre` will no longer be needed.
 :::
@@ -103,7 +103,7 @@ This prints a small table rather than a single version string:
 +----------------+-----------------------+----------+
 | Package        | Description           | Version  |
 +----------------+-----------------------+----------+
-| pymcu-compiler | Compiler & CLI Driver | 0.1.0a8  |
+| pymcu-compiler | Compiler & CLI Driver | 0.1.0a10 |
 | pymcu-stdlib   | Standard Library      | ...      |
 | python         | Python Interpreter    | 3.11+    |
 +----------------+-----------------------+----------+

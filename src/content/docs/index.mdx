@@ -12,11 +12,12 @@ head:
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
-:::tip[Alpha 8 is out]
-The AVR toolchain is now [WebAssembly](/getting-started/installation/#the-avr-toolchain-is-webassembly) —
-one wheel for every platform, no Rosetta, firmware verified identical by sha256 — and
-third-party [libraries](/libraries/) have a measured index behind `pymcu install` —
-[read the release notes](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a8), or see
+:::tip[Alpha 10 is out]
+The hardware-validation release. A sustained bug hunt on a real Arduino Uno with a logic
+analyzer closed out a class of silent miscompiles, and the official MicroPython quickref
+plus the CircuitPython Essentials examples now double as a test suite (53 of the 63
+projects compile; the rest fail on purpose with a clear diagnostic).
+[Read the release notes](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a10), or see
 [what changed](/changelog/).
 :::
 

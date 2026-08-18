@@ -189,23 +189,19 @@ after it is in place, stdlib edits are picked up on the next build with no copyi
 
 ## `ValueError: shift count 256 out of range` on a Pico
 
-A known bug, not something in your code: `machine.Pin` does not compile for RP2040 / RP2350
-targets. The constructor alone triggers it, so a project scaffolded with
-`pymcu new --board raspberry_pi_pico --stdlib micropython` fails on its first build. It is
-not new in v0.1.0a5 — v0.1.0a4 fails identically.
+A compiler-side bug from older releases, not something in your code. With
+`pymcu-micropython` 0.1.0a1 or older, `machine.Pin` did not compile for RP2040 / RP2350
+targets; the constructor alone triggered it, so a project scaffolded with
+`pymcu new --board raspberry_pi_pico --stdlib micropython` failed on its first build.
 
-Everything else on that target builds, so the workaround is to drive pins through another
-API. The native HAL:
+Fixed in `pymcu-micropython` 0.1.0a1.post2. If you still see this error, upgrade the
+MicroPython layer:
 
-```python
-from pymcu.hal.gpio import Pin
-
-led = Pin(25, Pin.OUT)
-led.toggle()
+```sh
+uv sync --upgrade          # inside the project
+# or, with pip:
+pip install --pre --upgrade pymcu-micropython
 ```
-
-or CircuitPython's `digitalio.DigitalInOut`. `machine.UART` is unaffected, so a program that
-mixes `machine.UART` with a HAL `Pin` compiles today.
 
 ## `avr-size` reports a bigger binary than `pymcu build`
 

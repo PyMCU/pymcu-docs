@@ -603,10 +603,6 @@ a `CompileError`.
 
 Remaining ARM-specific caveats:
 
-- **`machine.Pin` does not compile:** on an RP target it fails the build with
-  `ValueError: shift count 256 out of range (expected 0..31)`, triggered by the constructor
-  alone. Present in v0.1.0a4 and v0.1.0a5. `machine.UART`, `digitalio.DigitalInOut` and
-  `pymcu.hal.gpio.Pin` are unaffected — use one of those for pins meanwhile.
 - **Single core:** only core 0 runs. Dual-core launch and the SIO FIFO are not exposed yet.
 - **Delays:** `delay_ms` / `delay_us` poll the hardware **TIMER** (the free-running 1 MHz
   microsecond counter), so timing is accurate on real silicon regardless of CPU clock and

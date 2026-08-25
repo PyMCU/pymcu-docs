@@ -19,6 +19,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# `npm ci` va con --legacy-peer-deps mientras el sitio siga en Astro 6 con
+# @astrojs/tailwind, cuya ultima version (6.0.2) aun declara peer astro ^3||^4||^5.
+# El paquete no tiene sucesor para Astro 6: la salida es migrar a Tailwind 4 con
+# @tailwindcss/vite, que es trabajo aparte y toca los estilos.
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -34,7 +38,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
-      - run: npm ci
+      - run: npm ci --legacy-peer-deps
       - run: npm run build
       # - run: npm test
 
@@ -47,7 +51,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      - run: npm ci --legacy-peer-deps
       - run: npm run check
 
   deploy:
@@ -56,9 +60,12 @@ jobs:
     # on somebody remembering to run `npm run deploy` by hand.
     name: Deploy docs.pymcu.org
     if: github.event_name == 'push' && github.ref == 'refs/heads/starlight-docs'
+    # Depende de `build` y no de `check` a proposito: `npm run check` incluye
+    # prettier, que falla en 54 ficheros por deuda anterior a este workflow.
+    # La puerta correcta para publicar es que el sitio compile; el formato se
+    # sigue reportando en su propio job sin bloquear el despliegue.
     needs:
       - build
-      - check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -67,7 +74,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      - run: npm ci --legacy-peer-deps
       - run: npm run build
       - name: Check the Cloudflare credentials are present
         env:

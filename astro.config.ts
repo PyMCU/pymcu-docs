@@ -40,12 +40,8 @@ export default defineConfig({
       components: {
         SiteTitle: './src/components/starlight/SiteTitle.astro',
       },
-      customCss: [
-        './src/styles/custom.css',
-      ],
-      social: [
-        { label: 'GitHub', href: 'https://github.com/PyMCU/PyMCU', icon: 'github' },
-      ],
+      customCss: ['./src/styles/custom.css'],
+      social: [{ label: 'GitHub', href: 'https://github.com/PyMCU/PyMCU', icon: 'github' }],
       sidebar: [
         {
           label: 'Getting Started',

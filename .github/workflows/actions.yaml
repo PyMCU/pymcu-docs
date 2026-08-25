@@ -18,10 +18,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# `npm ci` va con --legacy-peer-deps mientras el sitio siga en Astro 6 con
-# @astrojs/tailwind, cuya ultima version (6.0.2) aun declara peer astro ^3||^4||^5.
-# El paquete no tiene sucesor para Astro 6: la salida es migrar a Tailwind 4 con
-# @tailwindcss/vite, que es trabajo aparte y toca los estilos.
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -38,7 +34,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
-      - run: npm ci --legacy-peer-deps
+      - run: npm ci
       - run: npm run build
       # - run: npm test
 
@@ -51,5 +47,5 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci --legacy-peer-deps
+      - run: npm ci
       - run: npm run check

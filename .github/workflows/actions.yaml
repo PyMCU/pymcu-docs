@@ -1,12 +1,23 @@
 name: GitHub Actions
 
+# This repository holds two sites on two branches: `main` is pymcu.org and
+# `starlight-docs` is docs.pymcu.org. Both are listed here so a push to either
+# one gets built and checked; only the docs branch deploys from CI, because
+# pymcu.org is deployed by Cloudflare Workers Builds on its own.
 on:
   pull_request:
     branches:
       - main
+      - starlight-docs
   push:
     branches:
       - main
+      - starlight-docs
+
+# A newer push supersedes an in-flight run rather than racing it to the deploy.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -38,3 +49,43 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+
+  deploy:
+    # docs.pymcu.org was the one site nobody deployed automatically: the worker
+    # has no git repository connected in Cloudflare, so every release depended
+    # on somebody remembering to run `npm run deploy` by hand.
+    name: Deploy docs.pymcu.org
+    if: github.event_name == 'push' && github.ref == 'refs/heads/starlight-docs'
+    needs:
+      - build
+      - check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Check the Cloudflare credentials are present
+        env:
+          API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          missing=""
+          [ -z "$API_TOKEN" ] && missing="$missing CLOUDFLARE_API_TOKEN"
+          [ -z "$ACCOUNT_ID" ] && missing="$missing CLOUDFLARE_ACCOUNT_ID"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repository secret(s):$missing"
+            echo "Create them under Settings -> Secrets and variables -> Actions."
+            echo "The API token needs the 'Edit Cloudflare Workers' template."
+            exit 1
+          fi
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy

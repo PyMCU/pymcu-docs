@@ -52,6 +52,7 @@ export default defineConfig({
             { label: 'Installation', slug: 'getting-started/installation' },
             { label: 'Quick Start', slug: 'getting-started/quickstart' },
             { label: 'Supported Targets', slug: 'targets' },
+            { label: 'Arduino Uno', slug: 'targets/arduino-uno' },
             { label: 'Troubleshooting & FAQ', slug: 'troubleshooting' },
             // Debugging & Profiling is unpublished (draft) until the debugger,
             // profiler and editor extensions ship.

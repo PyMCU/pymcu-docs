@@ -58,11 +58,11 @@ nowhere on the chip. That is the whole idea behind
 Three different things get called "Python on the Arduino Uno", and they are not
 interchangeable.
 
-| Approach | Where Python runs | Board works standalone? |
-|---|---|---|
-| **PySerial / pyFirmata** | On your PC | No. The Uno is a peripheral of a running computer |
+| Approach                        | Where Python runs              | Board works standalone?                                 |
+| ------------------------------- | ------------------------------ | ------------------------------------------------------- |
+| **PySerial / pyFirmata**        | On your PC                     | No. The Uno is a peripheral of a running computer       |
 | **MicroPython / CircuitPython** | On the chip, as an interpreter | Not on an Uno. The runtime does not fit in 32 KB / 2 KB |
-| **PyMCU** | Nowhere. It is compiled away | Yes. The board runs native firmware |
+| **PyMCU**                       | Nowhere. It is compiled away   | Yes. The board runs native firmware                     |
 
 If you want to plot sensor data on a laptop, PySerial is the right tool and always was.
 If you want the board to run on its own, on battery, with deterministic timing, you have
@@ -91,35 +91,35 @@ These constants are resolved at compile time, so using them costs nothing.
 
 ### Digital pins
 
-| Board pin | Chip pin | Also |
-|---|---|---|
-| `D0` | `PD0` | UART RX |
-| `D1` | `PD1` | UART TX |
-| `D2` | `PD2` | INT0 |
-| `D3` | `PD3` | INT1, PWM OC2B |
-| `D4` | `PD4` | |
-| `D5` | `PD5` | PWM OC0B |
-| `D6` | `PD6` | PWM OC0A |
-| `D7` | `PD7` | |
-| `D8` | `PB0` | |
-| `D9` | `PB1` | PWM OC1A |
-| `D10` | `PB2` | SPI SS, PWM OC1B |
-| `D11` | `PB3` | SPI MOSI, PWM OC2A |
-| `D12` | `PB4` | SPI MISO |
-| `D13` | `PB5` | SPI SCK, built-in LED (`LED_BUILTIN`) |
+| Board pin | Chip pin | Also                                  |
+| --------- | -------- | ------------------------------------- |
+| `D0`      | `PD0`    | UART RX                               |
+| `D1`      | `PD1`    | UART TX                               |
+| `D2`      | `PD2`    | INT0                                  |
+| `D3`      | `PD3`    | INT1, PWM OC2B                        |
+| `D4`      | `PD4`    |                                       |
+| `D5`      | `PD5`    | PWM OC0B                              |
+| `D6`      | `PD6`    | PWM OC0A                              |
+| `D7`      | `PD7`    |                                       |
+| `D8`      | `PB0`    |                                       |
+| `D9`      | `PB1`    | PWM OC1A                              |
+| `D10`     | `PB2`    | SPI SS, PWM OC1B                      |
+| `D11`     | `PB3`    | SPI MOSI, PWM OC2A                    |
+| `D12`     | `PB4`    | SPI MISO                              |
+| `D13`     | `PB5`    | SPI SCK, built-in LED (`LED_BUILTIN`) |
 
 ### Analog pins
 
 All six work as plain GPIO too.
 
-| Board pin | Chip pin | Also |
-|---|---|---|
-| `A0` | `PC0` | |
-| `A1` | `PC1` | |
-| `A2` | `PC2` | |
-| `A3` | `PC3` | |
-| `A4` | `PC4` | I2C SDA |
-| `A5` | `PC5` | I2C SCL |
+| Board pin | Chip pin | Also    |
+| --------- | -------- | ------- |
+| `A0`      | `PC0`    |         |
+| `A1`      | `PC1`    |         |
+| `A2`      | `PC2`    |         |
+| `A3`      | `PC3`    |         |
+| `A4`      | `PC4`    | I2C SDA |
+| `A5`      | `PC5`    | I2C SCL |
 
 The ADC also reaches the internal temperature sensor (`"TEMP"`), the bandgap reference
 (`"VBG"`) and `"ADC8"`. See [ADC](/stdlib/adc/).
@@ -135,19 +135,19 @@ that silently writes to the wrong registers.
 Every peripheral on the ATmega328P is available, through the HAL or through the
 MicroPython and CircuitPython APIs, which compile to the same firmware.
 
-| Peripheral | Module | Notes |
-|---|---|---|
-| GPIO | [`gpio`](/stdlib/gpio/) | high / low / toggle / irq / `pulse_in` |
-| UART | [`uart`](/stdlib/uart/) | write / read / println, RX interrupt |
-| ADC | [`adc`](/stdlib/adc/) | polling and interrupt driven |
-| Timers | [`timer`](/stdlib/timer/) | CTC mode, `millis()` and `micros()` |
-| PWM | [`pwm`](/stdlib/pwm/) | multi-channel, `set_duty` / `set_freq` |
-| SPI | [`spi`](/stdlib/spi/) | hardware, plus bit-banged `SoftSPI` on any pins |
-| I2C | [`i2c`](/stdlib/i2c/) | hardware TWI, plus bit-banged `SoftI2C` |
-| EEPROM | [`eeprom`](/stdlib/eeprom/) | the 1 KB of on-chip EEPROM |
-| Watchdog | [`watchdog`](/stdlib/watchdog/) | enable / disable / feed |
-| Sleep modes | [`power`](/stdlib/power/) | all six ATmega328P modes |
-| Interrupts | [`interrupts`](/stdlib/interrupts/) | ISRs written in Python |
+| Peripheral  | Module                              | Notes                                           |
+| ----------- | ----------------------------------- | ----------------------------------------------- |
+| GPIO        | [`gpio`](/stdlib/gpio/)             | high / low / toggle / irq / `pulse_in`          |
+| UART        | [`uart`](/stdlib/uart/)             | write / read / println, RX interrupt            |
+| ADC         | [`adc`](/stdlib/adc/)               | polling and interrupt driven                    |
+| Timers      | [`timer`](/stdlib/timer/)           | CTC mode, `millis()` and `micros()`             |
+| PWM         | [`pwm`](/stdlib/pwm/)               | multi-channel, `set_duty` / `set_freq`          |
+| SPI         | [`spi`](/stdlib/spi/)               | hardware, plus bit-banged `SoftSPI` on any pins |
+| I2C         | [`i2c`](/stdlib/i2c/)               | hardware TWI, plus bit-banged `SoftI2C`         |
+| EEPROM      | [`eeprom`](/stdlib/eeprom/)         | the 1 KB of on-chip EEPROM                      |
+| Watchdog    | [`watchdog`](/stdlib/watchdog/)     | enable / disable / feed                         |
+| Sleep modes | [`power`](/stdlib/power/)           | all six ATmega328P modes                        |
+| Interrupts  | [`interrupts`](/stdlib/interrupts/) | ISRs written in Python                          |
 
 Seven device drivers ship in the standard library and all of them run on the Uno:
 [DHT11](/stdlib/drivers/dht11/), [DS18B20](/stdlib/drivers/ds18b20/),

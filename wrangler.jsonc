@@ -1,19 +1,20 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  // Compiler documentation worker. Served publicly through the docs hub
-  // (docs.pymcu.org/pymcu/* -> this worker, prefix stripped by the hub);
-  // the site is built with base '/pymcu' so every link round-trips the hub.
+  // Worker behind docs.pymcu.org. The comment here used to describe a
+  // sub-path setup (/pymcu/* proxied by the hub, site built with base
+  // '/pymcu'); that is long gone. astro.config.ts has no `base` and the
+  // site is served 1:1 from the root.
   "name": "pymcu-docs",
   "compatibility_date": "2025-09-27",
   "workers_dev": true,
   "assets": {
     "directory": "dist",
-    "not_found_handling": "404-page"
+    "not_found_handling": "404-page",
   },
   "observability": {
     "logs": {
       "enabled": false,
-      "invocation_logs": true
-    }
-  }
+      "invocation_logs": true,
+    },
+  },
 }

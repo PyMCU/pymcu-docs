@@ -1,5 +1,5 @@
 {
-  "name": "pymcu-landing",
+  "name": "pymcu-docs",
   "version": "1.0.0",
   "description": "PyMCU Landing Page - Modern web application for PyMCU project built with Astro, Tailwind CSS, Supabase, and AWS SES.",
   "type": "module",

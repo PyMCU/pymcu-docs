@@ -30,11 +30,8 @@ export default defineConfig({
           attrs: { name: 'twitter:image', content: 'https://docs.pymcu.org/og-default.png' },
         },
       ],
-      // origin is https://github.com/PyMCU/website.git, whose default branch is
-      // main. Docs do NOT live there: main is pymcu.org and this content is on
-      // starlight-docs, so the edit link has to name that branch explicitly.
       editLink: {
-        baseUrl: 'https://github.com/PyMCU/website/edit/starlight-docs/',
+        baseUrl: 'https://github.com/PyMCU/pymcu-docs/edit/main/',
       },
       lastUpdated: true,
       components: {

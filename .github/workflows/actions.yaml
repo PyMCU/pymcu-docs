@@ -1,8 +1,10 @@
 name: GitHub Actions
 
-# This repository is the source of docs.pymcu.org and nothing else. It used to
-# be a branch of PyMCU/website, which is why the workflow carried per-branch
-# rules; they are gone now that the site has its own repo.
+# This repository is the source of docs.pymcu.org and nothing else.
+#
+# CI builds and checks; it does NOT deploy. Publishing is Cloudflare Workers
+# Builds, connected to this repo's main branch, so the deploy command lives in
+# the Cloudflare dashboard and no API token is stored here.
 on:
   pull_request:
     branches:
@@ -51,46 +53,3 @@ jobs:
           cache: npm
       - run: npm ci --legacy-peer-deps
       - run: npm run check
-
-  deploy:
-    # Until this repo existed, every release depended on somebody remembering to
-    # run `npm run deploy` from their laptop: the worker had no repository
-    # connected in Cloudflare and the workflow never ran on the docs branch.
-    name: Deploy docs.pymcu.org
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    # Depende de `build` y no de `check` a proposito: `npm run check` incluye
-    # prettier, que falla en 54 ficheros por deuda anterior a este workflow.
-    # La puerta correcta para publicar es que el sitio compile; el formato se
-    # sigue reportando en su propio job sin bloquear el despliegue.
-    needs:
-      - build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci --legacy-peer-deps
-      - run: npm run build
-      - name: Check the Cloudflare credentials are present
-        env:
-          API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          missing=""
-          [ -z "$API_TOKEN" ] && missing="$missing CLOUDFLARE_API_TOKEN"
-          [ -z "$ACCOUNT_ID" ] && missing="$missing CLOUDFLARE_ACCOUNT_ID"
-          if [ -n "$missing" ]; then
-            echo "::error::Missing repository secret(s):$missing"
-            echo "Create them under Settings -> Secrets and variables -> Actions."
-            echo "The API token needs the 'Edit Cloudflare Workers' template."
-            exit 1
-          fi
-      - name: Deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy

@@ -4,7 +4,7 @@
   "description": "PyMCU Landing Page - Modern web application for PyMCU project built with Astro, Tailwind CSS, Supabase, and AWS SES.",
   "type": "module",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.12.0"
   },
   "scripts": {
     "dev": "astro dev",

@@ -579,18 +579,32 @@ pymcu boards --json     # machine-readable catalogue
 
 ## `pymcu toolchain`
 
-Manages the assemblers and linkers cached under `~/.pymcu/tools/`. In normal use the
-toolchain is fetched automatically on the first build for a target, so these are
-troubleshooting commands.
+Manages the assemblers and linkers each backend needs. In normal use they arrive on
+the first build for a target, so these are troubleshooting commands.
 
 ```bash
 pymcu toolchain list              # every toolchain family and its install status
-pymcu toolchain install avr       # fetch one into the local cache
-pymcu toolchain update avr        # re-download to pick up a newer version
+pymcu toolchain install arm       # fetch one into the local cache
+pymcu toolchain update arm        # re-download to pick up a newer version
 pymcu toolchain clean             # drop superseded versions from the cache
 ```
 
 `list` prints family, description, version and status.
+
+**Where the binaries come from differs by family**, so the cache is not the whole
+story:
+
+| Family | Where the tools live | Cached under `~/.pymcu/tools/`? |
+|---|---|---|
+| **AVR** | inside the `pymcu-avr-toolchain-wasi` pip package | **no** — nothing is downloaded |
+| **ARM** (RP2040 / RP2350) | fetched on first use | yes |
+| **PIC** | fetched on first use | yes |
+
+On AVR there is nothing to install or clean: the WebAssembly modules ship in the
+wheel, and `install` only tells you which package to pip-install. What it does keep
+is a compilation cache in `~/.cache/pymcu`, written the first time the modules are
+prepared for your machine — a different directory, and not what `toolchain clean`
+touches. See [the AVR toolchain](/getting-started/installation/#the-avr-toolchain-is-webassembly).
 
 ### `pymcu toolchain clean`
 

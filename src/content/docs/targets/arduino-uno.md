@@ -197,6 +197,13 @@ confirm what your Python actually became, as in the blink above.
 The [playground](https://playground.pymcu.org) compiles and simulates an Arduino Uno in
 the browser against a register-accurate emulator. No install, no board.
 
+## Elsewhere
+
+There is a write-up of this exact setup on
+[Arduino Project Hub](https://projecthub.arduino.cc/begeistert/python-on-a-classic-uno-38-bytes-of-code-zero-ram-534299),
+covering why the classic Uno never got to speak Python and what changes when the
+interpreter is gone.
+
 ## See also
 
 - [Quick Start](/getting-started/quickstart/), the same blink walked through step by step

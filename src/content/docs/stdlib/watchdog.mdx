@@ -9,7 +9,7 @@ A watchdog resets the MCU if the firmware stops feeding it within the configured
 standard way to recover a production board from an unexpected hang.
 
 All three APIs cover it. **MicroPython** (`machine.WDT`) and **CircuitPython**
-(`microcontroller.watchdog`) are the recommended ones — they are stable, community-specified,
+(`microcontroller.watchdog`) are the recommended ones — they track APIs specified elsewhere,
 and compile to exactly the same register writes as the native `pymcu.hal.watchdog.Watchdog`
 underneath them.
 

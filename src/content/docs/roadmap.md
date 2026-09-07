@@ -11,8 +11,9 @@ come, and what is planned next. The current release is **v0.1.0a10**
 Core compilation is stable and test-covered, but tooling and error messages still have rough
 edges. Prefer the [MicroPython](/compat/micropython/) or
 [CircuitPython](/compat/circuitpython/) compat APIs wherever they cover your use case — they
-are stable and community-specified, while the native HAL (`pymcu.hal.*`) may change between
-alpha releases. Drop to `pymcu.hal.*` for what the compat APIs do not expose, and run
+track APIs specified elsewhere rather than defining their own, which is what makes them the
+surface designed to hold still, while the native HAL (`pymcu.hal.*`) may change between
+releases without a deprecation cycle. Drop to `pymcu.hal.*` for what the compat APIs do not expose, and run
 `pymcu lint` to vet a port before you build it.
 :::
 

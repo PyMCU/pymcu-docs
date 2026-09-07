@@ -6,7 +6,7 @@ description: Hardware serial — machine.UART, busio.UART and the native HAL (US
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
 Serial is available through three APIs. **MicroPython** (`machine.UART`) and **CircuitPython**
-(`busio.UART`) are the recommended ones — they are stable, community-specified, and compile down
+(`busio.UART`) are the recommended ones — they track APIs specified elsewhere, and compile down
 to the same register writes as the native HAL. The native `pymcu.hal.uart.UART` is the layer
 underneath; reach for it when you need something the compat APIs do not expose, such as the
 interrupt-driven RX ring buffer or the width-specific decimal printers.

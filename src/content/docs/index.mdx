@@ -120,11 +120,14 @@ Starting from a machine with neither, or prefer `uv` or `pip`? The
 [Installation page](/getting-started/installation/) walks through all of it.
 
 ```bash
-pipx install --pip-args=--pre "pymcu-compiler[avr]"    # AVR (ATmega / ATtiny)
-pipx install --pip-args=--pre "pymcu-compiler[arm]"    # RP2040 / RP2350
-pipx install --pip-args=--pre "pymcu-compiler[pic]"    # PIC16
-pipx install --pip-args=--pre "pymcu-compiler[all]"    # everything
+pipx install --pip-args=--pre "pymcu-compiler[avr]"    # AVR (ATmega / ATtiny)  -- beta
+pipx install --pip-args=--pre "pymcu-compiler[arm]"    # RP2040 / RP2350        -- alpha
+pipx install --pip-args=--pre "pymcu-compiler[pic]"    # PIC16                  -- alpha
+pipx install --pip-args=--pre "pymcu-compiler[all]"    # all of the above
 ```
+
+`[avr]` is beta; `[arm]` and `[pic]` are alpha, and `[all]` installs the alpha backends
+alongside the beta one. See [Supported targets](#supported-targets).
 
 Each extra bundles its full toolchain — no system packages needed. On AVR that toolchain is
 [WebAssembly](/getting-started/installation/#the-avr-toolchain-is-webassembly): one wheel that
@@ -148,14 +151,19 @@ pymcu flash --port /dev/cu.usbmodem*
 
 ## Supported targets
 
-| Architecture | Chips |
-|---|---|
-| **AVR** (ATmega) | ATmega48/88/168/328P, ATmega2560, ATmega32U4 |
-| **AVR** (ATtiny) | ATtiny25/45/85, ATtiny24/44/84, ATtiny13/13A, ATtiny2313/4313 |
-| **ARM** (Cortex-M0+ / M33) | RP2040 (Pico / Pico W), RP2350 (Pico 2 / Pico 2 W) — PIO on both; CYW43 WiFi on the Pico 2 W (RP2350) only |
-| **PIC** (mid-range) | PIC16F84A, PIC16F877A — new in alpha 3 |
+The compiler frontend and the **AVR** backend are **beta**. **ARM and PIC remain alpha**:
+they build and run, but parts of the language surface are missing on them, they do not
+carry AVR's continuous silicon validation, and their APIs may change between releases.
 
-See [Supported Targets](/targets/) for the per-architecture peripheral and language coverage.
+| Architecture | Status | Chips |
+|---|---|---|
+| **AVR** (ATmega) | **beta** | ATmega48/88/168/328P, ATmega2560, ATmega32U4 |
+| **AVR** (ATtiny) | **beta** | ATtiny25/45/85, ATtiny24/44/84, ATtiny13/13A, ATtiny2313/4313 |
+| **ARM** (Cortex-M0+ / M33) | alpha | RP2040 (Pico / Pico W), RP2350 (Pico 2 / Pico 2 W) — PIO on both; CYW43 WiFi on the Pico 2 W (RP2350) only |
+| **PIC** (mid-range) | alpha | PIC16F84A, PIC16F877A |
+
+See [Supported Targets](/targets/) for what beta and alpha mean here, and for the
+per-architecture peripheral and language coverage.
 
 ---
 
@@ -169,17 +177,22 @@ Pick the API that matches your background — all three compile to the same bare
 | [`pymcu-circuitpython`](/compat/circuitpython/) | `board`, `digitalio`, `analogio`, `busio`, `pwmio`, `time`, `neopixel`; `wifi` on the Pico 2 W | **Recommended** |
 | [`pymcu.hal.*`](/stdlib/) | Direct register-level native HAL, `@interrupt`, `asm()`, `@extern` | Advanced |
 
-Start with MicroPython or CircuitPython. They are stable, community-specified, backed by real
-hardware compatibility guarantees, and they cost nothing at runtime — the compiler sees
-through them to the same registers.
+Start with MicroPython or CircuitPython. They track APIs specified elsewhere rather than
+defining their own, which is what makes them the surface designed to hold still, and they cost
+nothing at runtime: the compiler sees through them to the same registers.
 
 Drop to `pymcu.hal.*` when you need what the compat APIs do not expose: direct register
 access, interrupt handlers, inline assembly or C interop.
 
-:::caution[The native HAL is alpha-unstable]
-`pymcu.hal.*` works and is well tested, but it is the layer being actively reshaped — its API
-may change between alpha releases. Code written against `machine` or `digitalio` will not need
-to change.
+:::caution[Build against a compat layer, not against the native HAL]
+`pymcu.hal.*` works and is well tested, but it is deliberately low-level and it is the layer
+being actively reshaped: its API **may change between releases without a deprecation cycle**.
+
+`pymcu-circuitpython` and `pymcu-micropython` are the surfaces designed to hold still,
+because they do not define their own shape — they track `digitalio` / `board` and
+`machine` / `utime` as specified by CircuitPython and MicroPython. That is a reason you can
+check rather than a guarantee: both packages are still pre-1.0 and the beta label covers the
+compiler frontend and the AVR backend, not every API reachable through them.
 :::
 
 ---

@@ -6,7 +6,7 @@ description: Hardware SPI — machine.SPI, busio.SPI and the native HAL (AVR SPI
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
 SPI is available through three APIs. **MicroPython** (`machine.SPI`) and **CircuitPython**
-(`busio.SPI`) are the recommended ones — they are stable, community-specified, and compile to the
+(`busio.SPI`) are the recommended ones — they track APIs specified elsewhere, and compile to the
 same register writes as the native HAL. The native `pymcu.hal.spi.SPI` is the layer underneath;
 reach for it for peripheral (target) mode, the SPI-complete interrupt, and the RP2040 / RP2350.
 

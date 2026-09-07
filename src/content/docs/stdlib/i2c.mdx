@@ -6,7 +6,7 @@ description: I2C / TWI bus — machine.I2C, busio.I2C and the native HAL (AVR TW
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
 I2C is available through three APIs. **MicroPython** (`machine.I2C`) and **CircuitPython**
-(`busio.I2C`) are the recommended ones — they are stable, community-specified, and compile to the
+(`busio.I2C`) are the recommended ones — they track APIs specified elsewhere, and compile to the
 same TWI register writes as the native HAL. The native `pymcu.hal.i2c.I2C` is the layer
 underneath; reach for it for transaction-level control (`start()` / `read_ack()` / `read_nack()`),
 the TWI interrupt, and the RP2040 / RP2350.

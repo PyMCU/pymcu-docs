@@ -6,7 +6,7 @@ description: Delays and tick counters — utime, CircuitPython time, and the nat
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
 Waiting is available through three APIs. **MicroPython** (`utime`, also importable as `time`) and
-**CircuitPython** (`time`) are the recommended ones — they are stable, community-specified, and
+**CircuitPython** (`time`) are the recommended ones — they track APIs specified elsewhere, and
 both compile down to the same `pymcu.time` busy-wait loops. The native `pymcu.time.delay_ms` /
 `delay_us` is the layer underneath, and it never claims a hardware timer, so it can never collide
 with your own timer or PWM setup.

@@ -6,7 +6,7 @@ description: Hardware PWM — machine.PWM, pwmio.PWMOut and the native HAL (AVR 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
 PWM is available through three APIs. **MicroPython** (`machine.PWM`) and **CircuitPython**
-(`pwmio.PWMOut`) are the recommended ones — they are stable, community-specified, and compile to
+(`pwmio.PWMOut`) are the recommended ones — they track APIs specified elsewhere, and compile to
 the same timer register writes as the native HAL. The native `pymcu.hal.pwm.PWM` is the layer
 underneath; reach for it on the RP2040 / RP2350, where the compat wrappers are not wired up yet.
 

@@ -48,13 +48,24 @@ After installing `pipx`, run `pipx ensurepath` and open a new terminal so the `p
 command is found.
 :::
 
+## Which extra to install
+
+:::caution[The extras are not equally mature]
+The compiler frontend and the **AVR** backend are **beta** as of 0.1.0b1. **ARM and PIC
+remain alpha**: they build and run, but parts of the language surface are missing on them,
+they do not carry AVR's continuous silicon validation, and their APIs may change between
+releases. `[all]` installs the alpha backends alongside the beta one. See
+[Supported Targets](/targets/#what-beta-and-alpha-mean-here) for exactly what is missing
+where.
+:::
+
 ## Install with pipx (recommended)
 
 ```bash
-pipx install --pip-args=--pre "pymcu-compiler[avr]"    # AVR (ATmega / ATtiny)
-pipx install --pip-args=--pre "pymcu-compiler[arm]"    # RP2040 / RP2350 (Pico / Pico 2)
-pipx install --pip-args=--pre "pymcu-compiler[pic]"    # PIC16
-pipx install --pip-args=--pre "pymcu-compiler[all]"    # everything
+pipx install --pip-args=--pre "pymcu-compiler[avr]"    # AVR (ATmega / ATtiny)  -- beta
+pipx install --pip-args=--pre "pymcu-compiler[arm]"    # RP2040 / RP2350 (Pico) -- alpha
+pipx install --pip-args=--pre "pymcu-compiler[pic]"    # PIC16                  -- alpha
+pipx install --pip-args=--pre "pymcu-compiler[all]"    # all of the above
 ```
 
 `pipx` installs into an isolated environment and puts the `pymcu` command on your PATH.
@@ -63,10 +74,10 @@ If the command is not found afterwards, run `pipx ensurepath` and open a new she
 ## Install with uv
 
 ```bash
-uv tool install --pre "pymcu-compiler[avr]"
-uv tool install --pre "pymcu-compiler[arm]"
-uv tool install --pre "pymcu-compiler[pic]"
-uv tool install --pre "pymcu-compiler[all]"
+uv tool install --pre "pymcu-compiler[avr]"    # beta
+uv tool install --pre "pymcu-compiler[arm]"    # alpha
+uv tool install --pre "pymcu-compiler[pic]"    # alpha
+uv tool install --pre "pymcu-compiler[all]"    # all of the above
 ```
 
 `uv tool install` also places `pymcu` on your PATH globally, isolated in its own virtual
@@ -121,8 +132,10 @@ and project configs will stay compatible.
 ## Compat packages
 
 Two optional packages give you the MicroPython and CircuitPython APIs. **During the alpha
-these are the recommended way to write firmware** — they are stable and community-specified,
-while the native `pymcu.hal.*` API may still change between releases.
+these are the recommended way to write firmware** — they track APIs specified elsewhere
+rather than defining their own, which is what makes them the surface designed to hold still,
+while the native `pymcu.hal.*` API may change between releases without a deprecation cycle.
+Both packages are still pre-1.0.
 
 | Package | What it gives you |
 |---|---|

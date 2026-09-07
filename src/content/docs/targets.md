@@ -6,19 +6,80 @@ description: The chips PyMCU compiles for — AVR (ATmega / ATtiny), ARM (RP2040
 PyMCU targets three architectures. Each one is a separate backend, installed through an
 extra on the compiler package (see [Installation](/getting-started/installation/)).
 
-| Architecture | Chips |
-|---|---|
-| **AVR** (ATmega) | ATmega48/88/168/328P, ATmega2560, ATmega32U4 |
-| **AVR** (ATtiny) | ATtiny25/45/85, ATtiny24/44/84, ATtiny13/13A, ATtiny2313/4313 |
-| **ARM** (Cortex-M0+ / M33) | RP2040 (Pico / Pico W), RP2350 (Pico 2 / Pico 2 W) — PIO on both; CYW43 WiFi on the Pico 2 W (RP2350) only |
-| **PIC** (mid-range) | PIC16F84A, PIC16F877A — new in alpha 3 |
+:::caution[The backends are not equally mature]
+The compiler frontend and the **AVR** backend are **beta** as of 0.1.0b1. **ARM and PIC
+remain alpha.** Read [What beta and alpha mean here](#what-beta-and-alpha-mean-here) below
+before you pick a target.
+:::
+
+| Architecture | Status | Chips |
+|---|---|---|
+| **AVR** (ATmega) | **beta** | ATmega48/88/168/328P, ATmega2560, ATmega32U4 |
+| **AVR** (ATtiny) | **beta** | ATtiny25/45/85, ATtiny24/44/84, ATtiny13/13A, ATtiny2313/4313 |
+| **ARM** (Cortex-M0+ / M33) | alpha | RP2040 (Pico / Pico W), RP2350 (Pico 2 / Pico 2 W) — PIO on both; CYW43 WiFi on the Pico 2 W (RP2350) only |
+| **PIC** (mid-range) | alpha | PIC16F84A, PIC16F877A |
 
 ```bash
-pipx install --pip-args=--pre "pymcu-compiler[avr]"
-pipx install --pip-args=--pre "pymcu-compiler[arm]"
-pipx install --pip-args=--pre "pymcu-compiler[pic]"
-pipx install --pip-args=--pre "pymcu-compiler[all]"
+pipx install --pip-args=--pre "pymcu-compiler[avr]"    # beta
+pipx install --pip-args=--pre "pymcu-compiler[arm]"    # alpha
+pipx install --pip-args=--pre "pymcu-compiler[pic]"    # alpha
+pipx install --pip-args=--pre "pymcu-compiler[all]"    # all of the above
 ```
+
+`[all]` installs the alpha backends alongside the beta one.
+
+## What beta and alpha mean here
+
+**Beta (frontend + AVR).** The whole language surface documented on this site is
+implemented and test-covered on this backend, and it is validated on real silicon (an
+Arduino Uno with a logic analyzer).
+
+The label covers the compiler frontend and the AVR backend. It is not a promise about
+every API you can reach through them: `pymcu.hal.*` is deliberately low-level and may
+change between releases without a deprecation cycle, while
+[`pymcu-circuitpython` and `pymcu-micropython`](/#which-api-should-i-write) are the
+surfaces designed to hold still, because they track APIs specified elsewhere. Build
+against a compat layer unless you need direct register access.
+
+**Alpha (ARM, PIC).** It builds and it runs, but three things are different:
+
+1. **Parts of the language are missing.** The table below is measured, not estimated.
+
+   | | AVR (beta) | ARM | PIC16 | PIC18 |
+   |---|---|---|---|---|
+   | `float` | yes | yes | **no** | yes |
+   | `try` / `except` / `raise` | yes | yes | **no** | **no** |
+   | f-strings | yes | yes | **no** | **no** |
+   | generators (`yield`) | yes | yes | **no** | yes |
+   | `async` / `await` | yes | yes | **no** | yes |
+   | `list[T]` bounded heap | yes | **no** | **no** | **no** |
+   | `@interrupt` | yes | yes | **no** | yes |
+
+   Everything else, from fixed arrays with runtime indexing, `dict`/`set` literals,
+   `FixedDict`, `//` and `%`, signed and 32-bit integers, classes, inheritance with
+   `super()`, `match`/`case`, `asm()`, `const[T]` flash tables and `bytearray`, compiles on
+   all of them.
+
+2. **They do not carry AVR's continuous silicon validation.** How far each backend has
+   actually been run on hardware differs a great deal, so it is worth stating one by one
+   rather than in a single sentence:
+
+   | Backend | Hardware record |
+   |---|---|
+   | **AVR** (beta) | Continuously validated on silicon. A logic-analyzer harness on an Arduino Uno decodes the board's UART and diffs it against CPython running the same source, so a semantic divergence is caught rather than argued about. |
+   | **ARM** | Confirmed running on real Raspberry Pi silicon (Pico, Pico 2): blink, native f-strings, and the Python RTOS doing preemptive multitasking on the Cortex-M33, with clock and timer timing verified on a logic analyzer to better than 0.01%. What it does not yet have is the continuous differential harness AVR runs. |
+   | **PIC** | Partially exercised on silicon (PIC18 GPIO, `delay_ms`, UART TX); most testing is on the PicSharp emulator. For the PIC16 parts this page lists, the build emits no configuration word, so the image does not boot until you program the fuses yourself. |
+   | **RISC-V** | Emulation only, in qemu. It has never been run on a physical CH32V003. |
+
+3. **The API may change between releases**, including HAL module paths and constructor
+   signatures.
+
+One alpha caveat is worth calling out on its own: **PIC16F84A and PIC16F877A builds emit
+no configuration word**, so the image will not boot on real hardware until you program the
+fuses yourself. The build prints a warning saying so.
+
+RISC-V (CH32V003/V203) has a working backend in the monorepo, but it is **not published on
+PyPI** and has no install extra, so an ordinary install never provides it.
 
 ## AVR
 
@@ -46,9 +107,10 @@ wasmtime — one architecture-independent wheel, no `avr-gcc` on your host. See
 | `pymcu.hal.power` | `sleep_idle` / `sleep_adc_noise` / `sleep_power_down` / `sleep_power_save` / `sleep_standby` / `sleep_extended_standby` |
 
 :::note
-During the alpha, prefer the [MicroPython](/compat/micropython/) or
-[CircuitPython](/compat/circuitpython/) compat API over `pymcu.hal.*` — they compile to the
-same firmware and their surface is stable.
+Prefer the [MicroPython](/compat/micropython/) or
+[CircuitPython](/compat/circuitpython/) compat API over `pymcu.hal.*`: they compile to the
+same firmware, and because they track APIs specified elsewhere they are the surface designed
+to hold still. `pymcu.hal.*` may change between releases without a deprecation cycle.
 :::
 
 ### Device drivers

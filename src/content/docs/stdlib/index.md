@@ -15,9 +15,9 @@ There are two ways to reach that hardware, and they are not equal in status.
 **MicroPython** (`machine`, `utime`) and **CircuitPython** (`board`, `digitalio`, `analogio`,
 `busio`, `pwmio`, `time`, `neopixel`) are the **recommended** APIs for application code:
 
-- They are **stable and community-specified** — the shape of `machine.Pin` or
-  `digitalio.DigitalInOut` is defined by an ecosystem, not by PyMCU, so it does not move under
-  you between alpha releases.
+- They are **designed to hold still** — the shape of `machine.Pin` or
+  `digitalio.DigitalInOut` is defined by an ecosystem, not by PyMCU, so PyMCU has far less
+  reason to move it than it has to reshape its own HAL. Both packages are still pre-1.0.
 - They **cost nothing**. Each compat class is a thin `@inline` shim over the native HAL, so
   `machine.Pin(13).toggle()` compiles to exactly the same machine code as the native HAL's
   `Pin("PB5").toggle()` — the same instructions, the same flash bytes, no runtime layer.

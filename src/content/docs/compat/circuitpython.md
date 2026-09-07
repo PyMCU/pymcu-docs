@@ -70,7 +70,7 @@ the [Pico examples](/examples/rp2040/).
 
 | Module | Classes / functions | Status | Notes |
 |---|---|---|---|
-| `board` | Pin constants (D0-D13, A0-A5, GP0-GP28, LED, TX, RX, SDA, SCL, SCK, MOSI, MISO, …) | Complete | Auto-generated from the selected board; no Pico 2 board file |
+| `board` | Pin constants (D0-D13, A0-A5, GP0-GP28, LED, TX, RX, SDA, SCL, SCK, MOSI, MISO, …) | Varies by board | Auto-generated from the selected board, so the names depend on which one. The four Arduino boards define the full list. The ATtiny dev boards and the Pico define `LED`; the **bare ATtiny chips do not**, because the part has no on-board LED — blink a pin the chip actually has (`board.PB0` on the 8-pin parts, `board.D0` on the 14-pin). No Pico 2 board file |
 | `digitalio` | `DigitalInOut`, `Direction`, `Pull`, `DriveMode` | Complete | Portable. ZCA properties for `.direction`, `.value`, `.pull`, `.drive_mode` |
 | `busio` | `UART` | Complete | Portable — the only `busio` class that compiles on the Pico |
 | `busio` | `SPI`, `I2C` | AVR only | Imported inside an `arch == "avr"` guard |
@@ -83,7 +83,7 @@ the [Pico examples](/examples/rp2040/).
 | `supervisor` | `ticks_add`, `ticks_diff`, `runtime` | Complete | Portable — pure integer arithmetic and compile-time constants |
 | `supervisor` | `ticks_ms` | AVR only | Same Timer0 dependency. Ticks wrap at 2^29 ms (~6.2 days), exactly as in CircuitPython |
 | `supervisor` | `reload()` | AVR only | Implemented as a watchdog reset; the watchdog HAL is AVR-only |
-| `alarm` | `time.TimeAlarm`, `pin.PinAlarm`, `sleep_until_alarms` | Complete on AVR | Sleep modes come from the AVR power HAL |
+| `alarm` | `time.TimeAlarm`, `pin.PinAlarm`, `sleep_until_alarms`, `light_sleep_until_alarms`, `exit_and_deep_sleep_until_alarms`, `wake_alarm` | Complete on AVR | Sleep modes come from the AVR power HAL |
 | `microcontroller` | `cpu.frequency`, `cpu.voltage`, `cpu.uid`, `cpu.reset_reason`, `nvm`, `watchdog`, `reset`, `delay_us` | Partial, AVR only | Frequency is a compile-time constant; `nvm` is EEPROM-backed |
 | `wifi`, `socketpool`, `adafruit_minimqtt` | `radio.connect`, `SocketPool`, `MQTT.connect` / `publish` | Pico 2 W only | CYW43439 over gSPI; open networks only |
 

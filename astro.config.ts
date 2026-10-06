@@ -148,6 +148,7 @@ export default defineConfig({
           label: 'Reference',
           items: [
             { label: 'Language Reference', slug: 'language-reference' },
+            { label: 'Language oracle', slug: 'language-oracle' },
             { label: 'pymcu CLI', slug: 'driver' },
             { label: 'Limitations', slug: 'limitations' },
           ],

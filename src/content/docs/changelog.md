@@ -1,7 +1,86 @@
 ---
 title: Changelog
-description: "Release notes for every PyMCU alpha: what landed in v0.1.0a10, v0.1.0a9, v0.1.0a8, v0.1.0a7 and the earlier pre-releases, listed by language feature, backend and driver."
+description: "Release notes for PyMCU beta and alpha releases, listed by language feature, backend and driver."
 ---
+
+## v0.1.0b1, Beta 1 (2026-10-05)
+
+Full notes: [GitHub release](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0b1) and
+[full CHANGELOG](https://github.com/PyMCU/PyMCU/blob/v0.1.0b1/CHANGELOG.md)
+
+**The frontend and AVR backend become a matched beta.** Beta 1 was cut from `main` after
+1,732 commits since Alpha 10. The compiler, AVR backend, SDK, MicroPython layer and
+CircuitPython layer moved together so the parser, IR and code generator could be validated
+as one release. ARM, PIC and RISC-V deliberately remain alpha, although the shared frontend
+fixes apply to them too.
+
+The release focused on measured Python compatibility and silent-wrong-code bugs:
+
+- Runtime-tagged `Optional` and scalar `Union` values now cross function returns,
+  parameters, locals and fields, with narrowing through `is None`, `isinstance` and
+  `match`.
+- Compile-time strings gained methods, split iteration and runtime selection between flash
+  strings. f-strings gained fixed and floating-point format specs, and float printing now
+  follows the MicroPython float32 policy instead of always printing two decimals.
+- Classes gained descriptor dispatch, nested classes, compile-time `namedtuple`, richer
+  list and buffer fields, flattened two-dimensional grids, and more reliable field-width
+  inference.
+- Built-ins grew to include runtime `hex` / `bin` / `oct`, `round`, runtime `pow`, selected
+  `math` functions, reduction generator expressions, `memoryview`, compile-time module
+  `getattr`, and read-only ROMFS `open()`.
+- Import and compatibility behavior now covers package re-exports, star and relative
+  imports, `__future__`, `os.uname()`, `sys.platform` and `sys.implementation` guards.
+- Startup now zeroes static-duration AVR state explicitly. This fixed an I2C lock that
+  could hang on a real Uno even though it passed in an emulator whose SRAM started at zero.
+
+The release also added grouped peripheral registers, wider and better-checked bus-transfer
+counts, Timer0-aware PWM checks, I2C pull-ups enabled by default, and diagnostics for several
+constructs that previously compiled to a wrong value.
+
+### Hardware validation
+
+Two unmodified Adafruit CircuitPython libraries ran on a real Arduino Uno with this exact
+compiler:
+
+- `adafruit_ssd1306`, together with `adafruit_framebuf` and `adafruit_bus_device`, drove an
+  SSD1306 128x32 OLED over I2C. Two Game of Life programs and a font-backed text program ran
+  correctly.
+- `adafruit_hcsr04` ran its upstream simpletest with only the trigger and echo pins changed,
+  and reported correct distances.
+
+These are the only two Adafruit libraries claimed as silicon-tested for Beta 1. Other
+library figures are compile or AVR-emulator measurements. See
+[State of the beta](/state-of-the-beta/#what-ran-on-real-hardware-for-this-release) for the
+scope and test-suite counts.
+
+### Known issues
+
+Five silent wrong values were found after the candidate was cut. Beta 1 contains all five,
+so use the linked workarounds until a release containing each fix is installed.
+
+| Issue in v0.1.0b1 | Status on `main`, 2026-10-05 |
+|---|---|
+| Reassigning a top-level literal string to a runtime-built string keeps printing the old literal | Fixed for Beta 2 |
+| `f"{'literal string'}"` prints the compiler's internal string id | Fixed for Beta 2 |
+| `list.append()` loses fields from appended class instances | Fix in review on `fix/silent-list-tuple` |
+| Unpacking a returned `(bytearray, scalar)` loses the buffer | Fix in review on `fix/silent-list-tuple` |
+| Two indexed calls to the same tuple-returning `@inline` function in one expression read the second result twice | Fixed for Beta 2 |
+
+Minimal reproducers and working alternatives are in
+[Five silent wrong values found after the candidate was cut](/state-of-the-beta/#five-silent-wrong-values-found-after-the-candidate-was-cut).
+
+### Update, 2026-10-05
+
+Installing the release from PyPI on a clean machine exposed three driver issues. All are
+fixed on `main` for Beta 2:
+
+- `pymcu install <library>` reused the first downloaded library index forever. If an entry
+  appears missing, rerun with `--refresh`.
+- `pymcu install dht` rejected the library because its verification program contained only
+  imports, even though the library works in a real program. Use
+  `pymcu install dht --no-verify` with Beta 1.
+- `pymcu new --stdlib none` generated a dependency on a nonexistent `pymcu-none` package.
+  Remove that dependency line; a project with no compatibility layer needs no replacement.
 
 ## v0.1.0a10 — Alpha 10 (2026-08-18)
 

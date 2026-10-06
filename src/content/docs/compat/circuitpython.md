@@ -363,11 +363,12 @@ changes in order.
 | `time.sleep(s)` | Float seconds, runtime value | Float seconds, folded at compile time to a millisecond delay (constant argument, `<= ~65 s`) |
 | `time.sleep_ms()` | Not in CircuitPython either | Not provided — use `time.sleep(0.5)` |
 | Module scope | Whole flavour on every board | `board`, `digitalio`, `busio.UART` and `time.sleep()` are portable; `analogio`, `pwmio`, `busio.SPI` / `I2C`, `neopixel`, `microcontroller`, `time.monotonic*` and `supervisor.ticks_ms` / `reload()` are AVR-only |
-| `f"..."` strings | Runtime evaluation | Supported streamed (`print(f"…")`) and as values (`s = f"…"` into a fixed buffer) |
+| `f"..."` strings | Runtime evaluation | Supported streamed and as fixed-buffer values, including integer and float format specs |
 | `try / except / raise` | Supported | Supported on AVR and ARM — zero-cost flag-propagation model, no heap |
 | `float` | Supported | Supported — IEEE-754 f32 (soft-float on AVR, bootrom fast-float on RP2040, M33 FPU on RP2350) |
 | `dict` / `set` | Dynamic hash maps | Closed literals are compile-time lookup tables; `pymcu.collections.FixedDict(capacity)` for mutation; unbounded growth is not supported |
-| `bytearray` | Dynamic heap | The same spelling — `bytearray(8)` and `bytearray(b"…")` lower to a fixed `uint8[N]`; the size must be compile-time and cannot grow. `print(buf)` gives the CPython repr |
+| `bytearray` | Dynamic heap | Constant sizes lower to fixed arrays. On AVR a runtime size is allowed where allocation is proven to run once, using a static arena with no `free()`. `print(buf)` gives the CPython repr |
+| Platform guards | `sys.implementation`, `sys.platform`, `os.uname()` reflect the board | The same guards fold at compile time to the configured CircuitPython target |
 | `microcontroller.nvm[a:b] = …` | Supported | Slice assignment compiles to byte writes; a slice *read* bound to a name still needs a heap |
 | `microcontroller.watchdog` | Reset and raise modes | Reset mode only — `WatchDogMode.RAISE` behaves as `RESET`; `timeout` links soft-float |
 | `cpu.reset_reason` | Snapshot at boot | Reads `MCUSR` live and never clears it, so flags accumulate across resets |

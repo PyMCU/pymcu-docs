@@ -81,6 +81,10 @@ fuses yourself. The build prints a warning saying so.
 RISC-V (CH32V003/V203) has a working backend in the monorepo, but it is **not published on
 PyPI** and has no install extra, so an ordinary install never provides it.
 
+It also has a known declared-width bug: narrowing is not emitted, so `uint8(a + b)` can keep
+the full 32-bit sum and comparisons use signed 32-bit behavior. Do not rely on fixed-width
+wrapping there until [PyMCU#222](https://github.com/PyMCU/PyMCU/issues/222) is closed.
+
 ## AVR
 
 The reference board is the **Arduino Uno (ATmega328P @ 16 MHz)** — it is the target with the

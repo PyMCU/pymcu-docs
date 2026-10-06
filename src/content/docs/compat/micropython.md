@@ -384,19 +384,20 @@ MicroPython.
 | `ADC(n)` channel number | Supported | Supported — `ADC(0)`-`ADC(5)` are A0-A5, alongside `ADC(Pin(14))` |
 | `PWM.freq()` / `PWM.duty_u16()` getters | Read back from hardware | Supported — they return the **requested** value; the timer runs at the nearest reachable prescaler bucket |
 | `SoftI2C(scl, sda, freq)` | Supported | Supported — `freq` is compile-time; `>= 500 kHz` drops the delays |
-| `I2C(scl=…, sda=…, freq=…)` | Configurable | The TWI pins and 100 kHz are fixed — passing them is a compile error, not a silent no-op |
+| `I2C(scl=…, sda=…, freq=…)` | Configurable | The AVR TWI pins and 100 kHz are fixed; internal pull-ups are enabled by default. Passing alternate pins or frequency is a compile error |
 | `machine.unique_id()` | Factory unique ID | No such ID on this silicon — a compile error pointing at EEPROM storage |
 | `Pin(n)` with a runtime `n` | Supported | A compile error — a pin identity has to be constant for the access to stay zero-cost |
-| `print(3.25)` | `3.25` | `3.25` — two rounded decimals, trailing zero trimmed |
+| Unformatted float text | MicroPython float32 formatter | The same 6 to 9 significant-digit policy, including scientific notation thresholds |
 | `print(bytearray(b"\xcc\x10"))` | `bytearray(b'\xcc\x10')` | The same repr; the length must be compile-time |
 | `print(…, sep=…, end=…)` | Any value | A compile-time string literal; `file=` is not supported (no filesystem) |
-| `f"..."` strings | Runtime evaluation | Supported streamed (`print(f"…")`, `uart.write_str(f"…")`) and as values (`s = f"…"` into a fixed buffer) |
+| `f"..."` strings | Runtime evaluation | Supported streamed and as fixed-buffer values, including integer and float format specs |
 | `float` | Supported | Supported — IEEE-754 f32 (soft-float on AVR, bootrom fast-float on RP2040, M33 FPU on RP2350) |
 | `try / except / raise` | Supported (heap-based) | Supported on AVR and ARM — zero-cost flag-propagation model, no heap |
 | `dict` / `set` | Dynamic hash maps | Closed literals are compile-time lookup tables; `pymcu.collections.FixedDict(capacity)` for mutation; unbounded growth is not supported |
-| `yield` / generators | Supported | Supported at top level (lowered to a state machine); not inside `@inline` functions or methods |
+| `yield` / generators | Supported | Functions and bound methods lower to state machines and support `yield from`; not inside `@inline` functions |
 | `async` / `await` | Supported (`uasyncio`) | `await asyncio.sleep_ms(…)` anywhere in a body, plus `asyncio.run` / `gather`; awaiting another coroutine is not supported yet |
-| `bytearray` | Dynamic heap allocation | The same spelling — `bytearray(8)` and `bytearray(b"…")` lower to a fixed `uint8[N]`; the size must be compile-time and cannot grow |
+| `bytearray` | Dynamic heap allocation | Constant sizes lower to fixed arrays. On AVR a runtime size is allowed where allocation is proven to run once, using a static arena with no `free()` |
+| Platform guards | `sys.implementation`, `sys.platform`, `os.uname()` reflect the board | The same guards fold at compile time to the configured MicroPython target |
 | `UART.any()` | Byte count | Returns `1` / `0`, not an exact count |
 | `UART.readline()` | Returns `bytes`, no args | `readline(buf)` — the caller provides the buffer and `len(buf)` is the limit; the no-arg call is a compile error naming this form |
 | `I2C.scan()` | List of addresses | Returns a count; `scan(buf, max_count)` fills a caller-owned buffer |

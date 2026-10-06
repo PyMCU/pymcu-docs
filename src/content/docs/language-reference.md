@@ -125,7 +125,7 @@ and return types.
 | `int` | 16-bit | -32768 – 32767 | Built-in alias for `int16` — **no import needed** |
 | `uint32` | 32-bit | 0 – 4294967295 | Timestamps, large counters |
 | `int32` | 32-bit | — | Signed 32-bit |
-| `bool` | 8-bit | 0 / 1 | Aliases `uint8`; `True`/`False` fold to 1/0 |
+| `bool` | 8-bit | 0 / 1 | Stored as `uint8`; arithmetic sees 1/0, while `print` and f-strings spell `True` / `False` |
 | `float` | 32-bit | IEEE 754 single | AVR, RP2040 and RP2350 — see below |
 
 ```python

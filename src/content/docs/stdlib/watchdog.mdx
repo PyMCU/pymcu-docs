@@ -148,32 +148,32 @@ from pymcu.hal.watchdog import Watchdog
 Watchdog(timeout_ms=500)
 ```
 
-| Parameter | Type | Description |
-|---|---|---|
+| Parameter    | Type            | Description                                                                                                     |
+| ------------ | --------------- | --------------------------------------------------------------------------------------------------------------- |
 | `timeout_ms` | `const[uint16]` | Timeout in milliseconds. Must be a **compile-time constant** — it is resolved to a WDP prescaler at build time. |
 
 #### Timeout table (ATmega328P, ~3 V, 25 °C)
 
-| `timeout_ms` | WDP | Actual timeout |
-|---|---|---|
-| 16 | `0b000` | ~16 ms |
-| 32 | `0b001` | ~32 ms |
-| 64 | `0b010` | ~64 ms |
-| 125 | `0b011` | ~125 ms |
-| 250 | `0b100` | ~250 ms |
-| 500 | `0b101` | ~500 ms |
-| 1000 | `0b110` | ~1 s |
-| 2000 | `0b111` | ~2 s |
-| 4000 | `0b1000` | ~4 s |
-| 8000 | `0b1001` | ~8 s |
+| `timeout_ms` | WDP      | Actual timeout |
+| ------------ | -------- | -------------- |
+| 16           | `0b000`  | ~16 ms         |
+| 32           | `0b001`  | ~32 ms         |
+| 64           | `0b010`  | ~64 ms         |
+| 125          | `0b011`  | ~125 ms        |
+| 250          | `0b100`  | ~250 ms        |
+| 500          | `0b101`  | ~500 ms        |
+| 1000         | `0b110`  | ~1 s           |
+| 2000         | `0b111`  | ~2 s           |
+| 4000         | `0b1000` | ~4 s           |
+| 8000         | `0b1001` | ~8 s           |
 
 #### Watchdog methods
 
-| Method | Description |
-|---|---|
-| `enable()` | Enable the watchdog with the configured timeout |
-| `disable()` | Disable the watchdog (timed-disable sequence: WDCE + WDE) |
-| `feed()` | Reset the watchdog counter (`WDR` instruction) |
+| Method       | Description                                                    |
+| ------------ | -------------------------------------------------------------- |
+| `enable()`   | Enable the watchdog with the configured timeout                |
+| `disable()`  | Disable the watchdog (timed-disable sequence: WDCE + WDE)      |
+| `feed()`     | Reset the watchdog counter (`WDR` instruction)                 |
 | `arm_ms(ms)` | Enable the watchdog with a **runtime** timeout in milliseconds |
 
 `arm_ms()` is the escape hatch from the compile-time-constant rule, and it is what
@@ -230,10 +230,10 @@ def main():
 
 ### ATmega328P watchdog register map
 
-| Register | Address | Description |
-|---|---|---|
-| `WDTCSR` | `0x60` | WD Control/Status (WDP, WDEN, WDIE, WDIF, WDCE, WDE) |
-| `MCUSR` | `0x54` | MCU Status Register (WDRF, BORF, EXTRF, PORF) |
+| Register | Address | Description                                          |
+| -------- | ------- | ---------------------------------------------------- |
+| `WDTCSR` | `0x60`  | WD Control/Status (WDP, WDEN, WDIE, WDIF, WDCE, WDE) |
+| `MCUSR`  | `0x54`  | MCU Status Register (WDRF, BORF, EXTRF, PORF)        |
 
 :::caution[Advanced — native HAL only]
 `disable()`, `arm_ms()` and the interrupt-mode watchdog have no MicroPython equivalent —

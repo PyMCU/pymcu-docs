@@ -67,13 +67,13 @@ right after the call and branches to the matching handler.
 
 The consequences are what make this usable in 2 KB of SRAM:
 
-| Property | What it means |
-|---|---|
-| Zero SRAM cost | No `jmp_buf` is allocated. A `try` block occupies no data memory at all |
-| Zero flash cost for tables | No unwind tables, no personality routine, no landing-pad metadata |
-| Zero happy-path cost | One branch after each guarded call, and it is not taken when nothing was raised |
-| Propagates across calls | A `raise` deep in a callee is caught at the call site in the caller's `try`, to any depth |
-| Types are integer codes | Handlers discriminate on a small integer. There are no message strings at runtime |
+| Property                   | What it means                                                                             |
+| -------------------------- | ----------------------------------------------------------------------------------------- |
+| Zero SRAM cost             | No `jmp_buf` is allocated. A `try` block occupies no data memory at all                   |
+| Zero flash cost for tables | No unwind tables, no personality routine, no landing-pad metadata                         |
+| Zero happy-path cost       | One branch after each guarded call, and it is not taken when nothing was raised           |
+| Propagates across calls    | A `raise` deep in a callee is caught at the call site in the caller's `try`, to any depth |
+| Types are integer codes    | Handlers discriminate on a small integer. There are no message strings at runtime         |
 
 ## Raise directly inside the `try` body
 
@@ -194,7 +194,7 @@ as in CPython. `ZeroDivisionError` is raised automatically by a runtime `//` or 
 
 The integration fixtures write `from pymcu.exceptions import ValueError` at the top for
 readability and the compiler accepts it, but the import is never required. The one name you
-*do* import from `pymcu.exceptions` is `CompileError`.
+_do_ import from `pymcu.exceptions` is `CompileError`.
 
 ## When nothing catches it
 
@@ -233,11 +233,11 @@ build time, not on the bench.
 
 ## Target support
 
-| Target | Exceptions |
-|---|---|
-| AVR (ATmega, ATtiny) | Full `try` / `except` / `else` / `finally` / `raise` |
-| ARM (RP2040, RP2350) | Full `try` / `except` / `else` / `finally` / `raise` |
-| PIC | **Not supported** — use return codes or sentinel values. The automatic `ZeroDivisionError` guards on `//` and `%` are still emitted |
+| Target               | Exceptions                                                                                                                          |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| AVR (ATmega, ATtiny) | Full `try` / `except` / `else` / `finally` / `raise`                                                                                |
+| ARM (RP2040, RP2350) | Full `try` / `except` / `else` / `finally` / `raise`                                                                                |
+| PIC                  | **Not supported** — use return codes or sentinel values. The automatic `ZeroDivisionError` guards on `//` and `%` are still emitted |
 
 Even where exceptions work, an explicit status return is often the clearest bare-metal
 style: it reads the same on every backend including PIC, and it makes the error path

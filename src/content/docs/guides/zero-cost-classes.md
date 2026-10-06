@@ -1,6 +1,6 @@
 ---
 title: Zero-cost classes
-description: "How PyMCU flattens a class at compile time, what that design actually costs you, and how outlining shares one method body across many instances."
+description: 'How PyMCU flattens a class at compile time, what that design actually costs you, and how outlining shares one method body across many instances.'
 ---
 
 A class on a microcontroller normally means three things you cannot afford: a heap to
@@ -71,7 +71,7 @@ spell this out in their signatures. The AVR `Pin` is
 parameter is a compile-time constant by definition, and the pin `name` drives a `match` over
 port letters, so it has to fold too. (The RP `Pin` is friendlier: its `pin` number may be a
 runtime value, though a constant one still folds the address arithmetic away entirely.) Your
-*own* classes are less restricted — see outlining below — but any class whose methods are
+_own_ classes are less restricted — see outlining below — but any class whose methods are
 `@inline` bakes its fields in as constants, and a field that cannot be folded to a constant
 cannot be baked.
 
@@ -94,7 +94,7 @@ three sensors, it is a disaster.
 ## Share one body across instances
 
 That last cost is what RFC 0001 (`docs/rfcs/0001-zca-runtime-state.md` in the compiler
-repository) set out to fix, and the fix is **outlining**: compile the method *once* as a
+repository) set out to fix, and the fix is **outlining**: compile the method _once_ as a
 real subroutine whose parameters are the instance's fields, then call it with each
 instance's values.
 
@@ -150,10 +150,10 @@ The `zca-outline-dht` fixture is a DHT-style driver with the whole bit-bang prot
 written directly in `read(self)` over `self.pin`, driving three sensors on pins 2, 3
 and 4:
 
-| Method decorated | Firmware size |
-|---|---|
-| `@inline` — protocol duplicated per sensor | **3596 B** |
-| outlined — one shared `DHT_read` plus three `CALL`s | **1268 B** |
+| Method decorated                                    | Firmware size |
+| --------------------------------------------------- | ------------- |
+| `@inline` — protocol duplicated per sensor          | **3596 B**    |
+| outlined — one shared `DHT_read` plus three `CALL`s | **1268 B**    |
 
 2328 bytes saved, a 2.8x reduction, and the gap widens linearly with every sensor you add.
 
@@ -171,7 +171,7 @@ a body you know is shareable. Think of it as the analogue of `#[inline(never)]`.
 
 ## Keep several instances around
 
-A class with **one** scalar field needs no memory at all: the field *is* the instance, and
+A class with **one** scalar field needs no memory at all: the field _is_ the instance, and
 a non-`@inline` factory can return it packed into the return register.
 
 ```python
@@ -199,12 +199,12 @@ From the `zca-factory-b` fixture. Before this existed, a non-`@inline` factory r
 ZCA failed at link time with `undefined reference to <var>_read`, because there was no
 value to return.
 
-With **two or more** fields the instance no longer fits in a register, so it is *boxed*:
+With **two or more** fields the instance no longer fits in a register, so it is _boxed_:
 the compiler reserves a fixed SRAM slot (no heap — one static reservation per declared
 instance), the constructor stores the fields into it, and the shared method takes a `self`
 pointer and reads each field at its byte offset. `zca-slot` proves two `Sensor(pin, gain)`
 instances get two distinct 2-byte slots and one shared `Sensor_read`. `zca-factory-slot`
-extends that across a function boundary: the *caller* allocates the slot and passes its
+extends that across a function boundary: the _caller_ allocates the slot and passes its
 address as a hidden argument, so two factory calls produce two independent instances with
 no aliasing.
 
@@ -257,7 +257,7 @@ see the nested dispatch produce real MMIO. A class-typed field also resolves thr
 facade re-export — `facade-singleton-rp2350` covers the module-level singleton case, where
 `radio.light()` must find the concrete class rather than a name invented from the alias.
 
-Note the interaction with outlining: a field holding another ZCA instance is *not* a scalar,
+Note the interaction with outlining: a field holding another ZCA instance is _not_ a scalar,
 so a method that uses one stays force-inlined. There is nothing to pass as a parameter — a
 `Pin` is only its constant pin name.
 
@@ -321,25 +321,25 @@ class Vec:
 
 ## Choosing between the two
 
-| You want | Do this | You get |
-|---|---|---|
-| One hot singleton — an LED, a UART, a register wrapper | `@inline` methods | Fields baked as constants, no call at all |
-| The same driver logic over N devices | Leave `@inline` off | One shared body, fields passed as arguments |
-| A factory that returns a configured object | Leave `@inline` off the factory | Single field: register handle. Multiple: caller-allocated slot |
-| A runtime-indexed collection | `Class[N]` on a two-or-more-field class | Contiguous slots, one shared method |
-| To force sharing when the analysis is too cautious | `@outline` on the method | Explicit Model A |
+| You want                                               | Do this                                 | You get                                                        |
+| ------------------------------------------------------ | --------------------------------------- | -------------------------------------------------------------- |
+| One hot singleton — an LED, a UART, a register wrapper | `@inline` methods                       | Fields baked as constants, no call at all                      |
+| The same driver logic over N devices                   | Leave `@inline` off                     | One shared body, fields passed as arguments                    |
+| A factory that returns a configured object             | Leave `@inline` off the factory         | Single field: register handle. Multiple: caller-allocated slot |
+| A runtime-indexed collection                           | `Class[N]` on a two-or-more-field class | Contiguous slots, one shared method                            |
+| To force sharing when the analysis is too cautious     | `@outline` on the method                | Explicit Model A                                               |
 
 ## Limits
 
-| Not supported | Why | Do this instead |
-|---|---|---|
-| Multiple inheritance | C3 linearization is a runtime concept | Single-level inheritance |
-| Runtime polymorphism / vtable dispatch | Needs a vtable and heap class objects | `match` / `case` dispatch, or let the compiler devirtualize |
-| `isinstance()` / `type()` | No runtime type tags | Not available |
-| `__repr__` / `__str__` | No runtime string formatting of an object | `print()` the fields explicitly |
-| `dataclass` / `namedtuple` | Metaclass plus heap | A hand-written ZCA class |
-| An outlined method whose sibling call is overridden in a subclass | The shared body is compiled once with `self` bound to the defining class, so the sibling call binds statically | Mark the method `@inline` so it expands per call site |
-| A method holding a class-typed field, shared across instances | A nested ZCA has no runtime value to pass as a parameter | It stays inlined; that is expected |
+| Not supported                                                     | Why                                                                                                            | Do this instead                                             |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Multiple inheritance                                              | C3 linearization is a runtime concept                                                                          | Single-level inheritance                                    |
+| Runtime polymorphism / vtable dispatch                            | Needs a vtable and heap class objects                                                                          | `match` / `case` dispatch, or let the compiler devirtualize |
+| `isinstance()` / `type()`                                         | No runtime type tags                                                                                           | Not available                                               |
+| `__repr__` / `__str__`                                            | No runtime string formatting of an object                                                                      | `print()` the fields explicitly                             |
+| `dataclass` / `namedtuple`                                        | Metaclass plus heap                                                                                            | A hand-written ZCA class                                    |
+| An outlined method whose sibling call is overridden in a subclass | The shared body is compiled once with `self` bound to the defining class, so the sibling call binds statically | Mark the method `@inline` so it expands per call site       |
+| A method holding a class-typed field, shared across instances     | A nested ZCA has no runtime value to pass as a parameter                                                       | It stays inlined; that is expected                          |
 
 See [Limitations](/limitations/) for the full picture and
 [Language reference](/language-reference/) for the exact accepted syntax.

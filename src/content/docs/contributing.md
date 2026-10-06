@@ -10,12 +10,12 @@ Contributions to PyMCU are welcome. Please read this guide before opening a PR.
 PyMCU is split across a monorepo and one repository per backend, all under the
 [PyMCU organisation](https://github.com/PyMCU).
 
-| Repository | Contents |
-|---|---|
-| [`PyMCU/PyMCU`](https://github.com/PyMCU/PyMCU) | Compiler, CLI driver, standard library, SDKs |
-| [`PyMCU/pymcu-avr`](https://github.com/PyMCU/pymcu-avr) | AVR backend + its integration suite |
+| Repository                                              | Contents                                              |
+| ------------------------------------------------------- | ----------------------------------------------------- |
+| [`PyMCU/PyMCU`](https://github.com/PyMCU/PyMCU)         | Compiler, CLI driver, standard library, SDKs          |
+| [`PyMCU/pymcu-avr`](https://github.com/PyMCU/pymcu-avr) | AVR backend + its integration suite                   |
 | [`PyMCU/pymcu-arm`](https://github.com/PyMCU/pymcu-arm) | ARM (RP2040 / RP2350) backend + its integration suite |
-| [`PyMCU/pymcu-pic`](https://github.com/PyMCU/pymcu-pic) | PIC backend + its integration suite |
+| [`PyMCU/pymcu-pic`](https://github.com/PyMCU/pymcu-pic) | PIC backend + its integration suite                   |
 
 Inside the monorepo:
 

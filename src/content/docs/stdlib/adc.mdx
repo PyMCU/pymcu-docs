@@ -90,11 +90,11 @@ from pymcu.hal.adc import AnalogPin
 `pymcu.hal.adc` is available on **AVR**, **ARM** (RP2040 / RP2350) and **PIC**. The class name
 is shared; the channel argument and the result width differ per family.
 
-| Target | Channel argument | Resolution |
-|---|---|---|
-| AVR (ATmega328P) | Port/pin name string, `"PC0"`–`"PC5"` (ADC channels 0–5), plus `"TEMP"` and `"VBG"` | 10-bit, 0–1023 |
-| ARM (RP2040 / RP2350) | Channel number: `0`–`3` = GP26–GP29, `4` = on-chip temperature sensor | 12-bit, 0–4095 |
-| PIC (PIC16F877A) | Channel name string per the chip definition | Partial — `AnalogPin(...)` and `start()` are wired up; `read()` is still a stub |
+| Target                | Channel argument                                                                    | Resolution                                                                      |
+| --------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| AVR (ATmega328P)      | Port/pin name string, `"PC0"`–`"PC5"` (ADC channels 0–5), plus `"TEMP"` and `"VBG"` | 10-bit, 0–1023                                                                  |
+| ARM (RP2040 / RP2350) | Channel number: `0`–`3` = GP26–GP29, `4` = on-chip temperature sensor               | 12-bit, 0–4095                                                                  |
+| PIC (PIC16F877A)      | Channel name string per the chip definition                                         | Partial — `AnalogPin(...)` and `start()` are wired up; `read()` is still a stub |
 
 ### `AnalogPin(channel)` — AVR
 
@@ -116,14 +116,14 @@ reads the wrong pin whenever your sensor is not on A0. Write the port/pin name.
 
 #### AnalogPin methods - AVR
 
-| Method | Return type | Description |
-|---|---|---|
-| `start()` | — | Begin a conversion (sets ADSC in `ADCSRA`) |
-| `read()` | `uint16` | 10-bit result, 0–1023 |
-| `read_u16()` | `uint16` | Result scaled to the full 16-bit range, 0–65535 |
-| `start_conversion()` | — | Start a conversion with the ADC interrupt enabled (ADIE + ADSC) |
-| `read_result()` | `uint16` | Read `ADCL`/`ADCH` directly — for use from the ADC ISR |
-| `irq(handler)` | — | Register an ADC-complete handler |
+| Method               | Return type | Description                                                     |
+| -------------------- | ----------- | --------------------------------------------------------------- |
+| `start()`            | —           | Begin a conversion (sets ADSC in `ADCSRA`)                      |
+| `read()`             | `uint16`    | 10-bit result, 0–1023                                           |
+| `read_u16()`         | `uint16`    | Result scaled to the full 16-bit range, 0–65535                 |
+| `start_conversion()` | —           | Start a conversion with the ADC interrupt enabled (ADIE + ADSC) |
+| `read_result()`      | `uint16`    | Read `ADCL`/`ADCH` directly — for use from the ADC ISR          |
+| `irq(handler)`       | —           | Register an ADC-complete handler                                |
 
 #### Example — polling
 
@@ -164,13 +164,13 @@ def main():
 
 #### ATmega328P ADC register map
 
-| Register | Address | Description |
-|---|---|---|
-| `ADMUX` | `0x7C` | MUX select + reference voltage |
-| `ADCSRA` | `0x7A` | Control: ADEN, ADSC, ADIE, prescaler |
-| `ADCSRB` | `0x7B` | Free-running mode |
-| `ADCL` | `0x78` | Result low byte |
-| `ADCH` | `0x79` | Result high byte |
+| Register | Address | Description                          |
+| -------- | ------- | ------------------------------------ |
+| `ADMUX`  | `0x7C`  | MUX select + reference voltage       |
+| `ADCSRA` | `0x7A`  | Control: ADEN, ADSC, ADIE, prescaler |
+| `ADCSRB` | `0x7B`  | Free-running mode                    |
+| `ADCL`   | `0x78`  | Result low byte                      |
+| `ADCH`   | `0x79`  | Result high byte                     |
 
 ### `AnalogPin(channel=0)` — RP2040 / RP2350
 
@@ -178,8 +178,8 @@ def main():
 adc = AnalogPin(0)     # GP26
 ```
 
-| Parameter | Type | Description |
-|---|---|---|
+| Parameter | Type           | Description                                                                 |
+| --------- | -------------- | --------------------------------------------------------------------------- |
 | `channel` | `const[uint8]` | `0`–`3` for GP26–GP29, `4` for the on-chip temperature sensor. Default `0`. |
 
 The constructor brings the ADC out of reset, powers it on (and enables the temperature sensor
@@ -187,9 +187,9 @@ when `channel == 4`), then waits for `READY`.
 
 #### AnalogPin methods - RP2040 / RP2350
 
-| Method | Return type | Description |
-|---|---|---|
-| `read()` | `uint16` | Select the channel, run one conversion, return the 12-bit result (0–4095) |
+| Method   | Return type | Description                                                               |
+| -------- | ----------- | ------------------------------------------------------------------------- |
+| `read()` | `uint16`    | Select the channel, run one conversion, return the 12-bit result (0–4095) |
 
 `read()` is blocking and self-contained — there is no separate `start()` step.
 

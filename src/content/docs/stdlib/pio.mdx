@@ -61,17 +61,17 @@ compiles without importing anything.
 The PIO backend is deliberately small right now. Read this table before porting a
 MicroPython program that does more than drive pins.
 
-| Capability | Status |
-|---|---|
-| PIO block | **PIO0 only.** PIO1 (and PIO2 on RP2350) are not addressed |
-| State machine | **SM0 only.** `StateMachine(1, ...)` raises `CompileError: PIO StateMachine MVP supports state machine 0 only (sm_id=0)` |
-| Program size | Up to 32 instructions, the PIO hardware limit |
-| Instruction set | Complete - all nine PIO opcodes, plus `nop()` and a raw `word()` escape hatch |
-| Labels, `wrap_target()`, `wrap()` | Supported |
-| `.side()` and `[delay]` | Supported, in either order |
-| Starting the machine | Automatic - `StateMachine(...)` enables SM0 as its last store |
-| `sm.active()`, `sm.put()`, `sm.get()`, `sm.irq()` | **Not implemented.** There are no methods on the returned object |
-| `fifo_join` | Parsed and validated, but not written to `SHIFTCTRL` - it currently has no effect |
+| Capability                                        | Status                                                                                                                   |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| PIO block                                         | **PIO0 only.** PIO1 (and PIO2 on RP2350) are not addressed                                                               |
+| State machine                                     | **SM0 only.** `StateMachine(1, ...)` raises `CompileError: PIO StateMachine MVP supports state machine 0 only (sm_id=0)` |
+| Program size                                      | Up to 32 instructions, the PIO hardware limit                                                                            |
+| Instruction set                                   | Complete - all nine PIO opcodes, plus `nop()` and a raw `word()` escape hatch                                            |
+| Labels, `wrap_target()`, `wrap()`                 | Supported                                                                                                                |
+| `.side()` and `[delay]`                           | Supported, in either order                                                                                               |
+| Starting the machine                              | Automatic - `StateMachine(...)` enables SM0 as its last store                                                            |
+| `sm.active()`, `sm.put()`, `sm.get()`, `sm.irq()` | **Not implemented.** There are no methods on the returned object                                                         |
+| `fifo_join`                                       | Parsed and validated, but not written to `SHIFTCTRL` - it currently has no effect                                        |
 
 Because there is no `put()`/`get()`, a PIO program today is a fire-and-forget pin driver:
 anything that needs to hand data between the CPU and the FIFOs is out of scope until the
@@ -80,20 +80,20 @@ FIFO methods land.
 ## Configuring the program: `@asm_pio(...)` arguments
 
 All arguments are keywords, and all must be compile-time constants. A sequence argument
-(`set_init=[PIO.OUT_LOW]`) is counted, not evaluated - the compiler needs the *number* of
+(`set_init=[PIO.OUT_LOW]`) is counted, not evaluated - the compiler needs the _number_ of
 pins, and takes the direction from the `StateMachine` pin bases.
 
-| Argument | Effect |
-|---|---|
-| `set_init` | Number of `SET` pins. A bare value counts as 1 |
-| `out_init` | Number of `OUT` pins |
-| `sideset_init` | Number of side-set bits; enables `.side()` |
-| `sideset_opt` | Side-set is optional - costs one extra bit, sets `EXECCTRL.SIDE_EN` |
-| `side_pindir` | Side-set drives pin *directions* instead of pin values |
-| `autopush` / `autopull` | Enable automatic ISR push / OSR pull |
-| `push_thresh` / `pull_thresh` | Shift thresholds, 1 to 32 (32 is encoded as 0) |
-| `in_shiftdir` / `out_shiftdir` | `PIO.SHIFT_LEFT` (default) or `PIO.SHIFT_RIGHT` |
-| `fifo_join` | Accepted, currently not applied - see the table above |
+| Argument                       | Effect                                                              |
+| ------------------------------ | ------------------------------------------------------------------- |
+| `set_init`                     | Number of `SET` pins. A bare value counts as 1                      |
+| `out_init`                     | Number of `OUT` pins                                                |
+| `sideset_init`                 | Number of side-set bits; enables `.side()`                          |
+| `sideset_opt`                  | Side-set is optional - costs one extra bit, sets `EXECCTRL.SIDE_EN` |
+| `side_pindir`                  | Side-set drives pin _directions_ instead of pin values              |
+| `autopush` / `autopull`        | Enable automatic ISR push / OSR pull                                |
+| `push_thresh` / `pull_thresh`  | Shift thresholds, 1 to 32 (32 is encoded as 0)                      |
+| `in_shiftdir` / `out_shiftdir` | `PIO.SHIFT_LEFT` (default) or `PIO.SHIFT_RIGHT`                     |
+| `fifo_join`                    | Accepted, currently not applied - see the table above               |
 
 Anything else raises `CompileError: unknown @asm_pio argument '<key>'`.
 
@@ -109,13 +109,13 @@ sm = StateMachine(0, blink, freq=1000000, set_base=25)
 The first two arguments are positional: the state-machine id (must be `0`) and the name of
 an `@asm_pio` program. Everything else is a keyword.
 
-| Keyword | Effect |
-|---|---|
-| `freq` | Target state-machine clock in Hz. Lowered to an **integer** `CLKDIV` divider computed from `[tool.pymcu] frequency`, clamped to 1 to 65535. The fractional divider is not used, so the achieved rate is `sysclk // freq` |
-| `set_base` | First GPIO consumed by `set(pins, ...)` / `set(pindirs, ...)` |
-| `out_base` | First GPIO consumed by `out(pins, ...)` |
-| `sideset_base` | First GPIO driven by `.side()` |
-| `in_base` | First GPIO read by `in_(pins, ...)` |
+| Keyword        | Effect                                                                                                                                                                                                                   |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `freq`         | Target state-machine clock in Hz. Lowered to an **integer** `CLKDIV` divider computed from `[tool.pymcu] frequency`, clamped to 1 to 65535. The fractional divider is not used, so the achieved rate is `sysclk // freq` |
+| `set_base`     | First GPIO consumed by `set(pins, ...)` / `set(pindirs, ...)`                                                                                                                                                            |
+| `out_base`     | First GPIO consumed by `out(pins, ...)`                                                                                                                                                                                  |
+| `sideset_base` | First GPIO driven by `.side()`                                                                                                                                                                                           |
+| `in_base`      | First GPIO read by `in_(pins, ...)`                                                                                                                                                                                      |
 
 Omitting `freq` leaves the divider at `/1`, so the machine runs at the full system clock.
 
@@ -131,26 +131,26 @@ configured by hand.
 Nine PIO opcodes, spelled exactly as MicroPython spells them. `in_` carries the trailing
 underscore because `in` is a Python keyword.
 
-| Instruction | Operands |
-|---|---|
-| `jmp(label)` / `jmp(cond, label)` | Conditions: `not_x`, `x_dec`, `not_y`, `y_dec`, `x_not_y`, `pin`, `not_osre` |
-| `wait(polarity, source, index)` | Sources: `gpio`, `pin`, `irq` |
-| `in_(source, bit_count)` | Sources: `pins`, `x`, `y`, `null`, `isr`, `osr`. Count 1 to 32 |
-| `out(dest, bit_count)` | Destinations: `pins`, `x`, `y`, `null`, `pindirs`, `pc`, `isr`, `exec`. Count 1 to 32 |
-| `push()` | Modifiers: `block` (default), `noblock`, `iffull` |
-| `pull()` | Modifiers: `block` (default), `noblock`, `ifempty` |
-| `mov(dest, src)` | Destinations: `pins`, `x`, `y`, `exec`, `pc`, `isr`, `osr`. Sources: `pins`, `x`, `y`, `null`, `status`, `isr`, `osr`. Wrap the source in `invert(...)` or `reverse(...)` to apply the bitwise operators |
-| `irq(index)` | Also `irq(block, n)`, `irq(clear, n)` and `irq(rel(n))` |
-| `set(dest, value)` | Destinations: `pins`, `x`, `y`, `pindirs`. Value 0 to 31 |
-| `nop()` | Assembles to `mov(y, y)` |
-| `word(value)` | PyMCU extension: emit a raw 16-bit instruction word verbatim |
+| Instruction                       | Operands                                                                                                                                                                                                 |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `jmp(label)` / `jmp(cond, label)` | Conditions: `not_x`, `x_dec`, `not_y`, `y_dec`, `x_not_y`, `pin`, `not_osre`                                                                                                                             |
+| `wait(polarity, source, index)`   | Sources: `gpio`, `pin`, `irq`                                                                                                                                                                            |
+| `in_(source, bit_count)`          | Sources: `pins`, `x`, `y`, `null`, `isr`, `osr`. Count 1 to 32                                                                                                                                           |
+| `out(dest, bit_count)`            | Destinations: `pins`, `x`, `y`, `null`, `pindirs`, `pc`, `isr`, `exec`. Count 1 to 32                                                                                                                    |
+| `push()`                          | Modifiers: `block` (default), `noblock`, `iffull`                                                                                                                                                        |
+| `pull()`                          | Modifiers: `block` (default), `noblock`, `ifempty`                                                                                                                                                       |
+| `mov(dest, src)`                  | Destinations: `pins`, `x`, `y`, `exec`, `pc`, `isr`, `osr`. Sources: `pins`, `x`, `y`, `null`, `status`, `isr`, `osr`. Wrap the source in `invert(...)` or `reverse(...)` to apply the bitwise operators |
+| `irq(index)`                      | Also `irq(block, n)`, `irq(clear, n)` and `irq(rel(n))`                                                                                                                                                  |
+| `set(dest, value)`                | Destinations: `pins`, `x`, `y`, `pindirs`. Value 0 to 31                                                                                                                                                 |
+| `nop()`                           | Assembles to `mov(y, y)`                                                                                                                                                                                 |
+| `word(value)`                     | PyMCU extension: emit a raw 16-bit instruction word verbatim                                                                                                                                             |
 
 Three directives shape the program rather than emitting an instruction:
 
 - `label("name")` - marks a `jmp` target. `jmp` accepts the name as a string or a bare
   identifier.
 - `wrap_target()` - where the machine jumps back to. Defaults to instruction 0.
-- `wrap()` - marks the end of the loop. It attaches to the *preceding* instruction, and
+- `wrap()` - marks the end of the loop. It attaches to the _preceding_ instruction, and
   defaults to the last instruction in the program.
 
 ### Delay and side-set
@@ -172,18 +172,18 @@ a compile error, as is using `.side()` in a program that declared no `sideset_in
 The PIO assembler reports problems as located `CompileError` diagnostics with your file and
 line, just like the rest of the compiler.
 
-| Message | Cause |
-|---|---|
-| `@asm_pio program '<name>' is empty` | The body has no instructions (only directives, `pass`, or a docstring) |
-| `@asm_pio program '<name>' has N instructions (max 32)` | The program does not fit in PIO instruction memory |
-| `undefined label '<name>'` | A `jmp` target with no matching `label()` |
-| `duplicate label '<name>'` | Two `label()` calls with the same name |
-| `unknown PIO instruction '<name>'` | A call in the body that is not a PIO opcode |
-| `invalid 'set' destination '<name>'` | `set` only reaches `pins`, `x`, `y`, `pindirs` |
-| `.side() used but @asm_pio has no sideset_init` | Declare `sideset_init` on the decorator |
-| `delay N too large for M delay bits` | Side-set has eaten the delay field |
-| `<operand> must be a compile-time integer constant` | PIO operands cannot be runtime values |
-| `PIO StateMachine MVP supports state machine 0 only (sm_id=0)` | Only SM0 is wired |
+| Message                                                        | Cause                                                                  |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `@asm_pio program '<name>' is empty`                           | The body has no instructions (only directives, `pass`, or a docstring) |
+| `@asm_pio program '<name>' has N instructions (max 32)`        | The program does not fit in PIO instruction memory                     |
+| `undefined label '<name>'`                                     | A `jmp` target with no matching `label()`                              |
+| `duplicate label '<name>'`                                     | Two `label()` calls with the same name                                 |
+| `unknown PIO instruction '<name>'`                             | A call in the body that is not a PIO opcode                            |
+| `invalid 'set' destination '<name>'`                           | `set` only reaches `pins`, `x`, `y`, `pindirs`                         |
+| `.side() used but @asm_pio has no sideset_init`                | Declare `sideset_init` on the decorator                                |
+| `delay N too large for M delay bits`                           | Side-set has eaten the delay field                                     |
+| `<operand> must be a compile-time integer constant`            | PIO operands cannot be runtime values                                  |
+| `PIO StateMachine MVP supports state machine 0 only (sm_id=0)` | Only SM0 is wired                                                      |
 
 ## The layer underneath: `pymcu.pio`
 

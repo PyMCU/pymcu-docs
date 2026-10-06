@@ -24,9 +24,9 @@ means dropping a `pymcu/drivers/_dht11/<arch>.py` alongside the AVR one and addi
 
 ## `DHT11(pin)`
 
-| Parameter | Type | Description |
-|---|---|---|
-| `pin` | `str` | Port/pin name, `"PD2"`–`"PD7"`. Bound at compile time — no SRAM is allocated. |
+| Parameter | Type  | Description                                                                   |
+| --------- | ----- | ----------------------------------------------------------------------------- |
+| `pin`     | `str` | Port/pin name, `"PD2"`–`"PD7"`. Bound at compile time — no SRAM is allocated. |
 
 On the ATmega328P the pin must be `"PD2"` through `"PD7"` — D2 to D7 on an Arduino Uno. `PD0`
 and `PD1` are the hardware UART's RX and TX and have no dispatch case, so `DHT11("PD0")`
@@ -34,9 +34,9 @@ compiles and then returns the error sentinel `0xFFFF` forever.
 
 ### DHT11 methods
 
-| Method | Return type | Description |
-|---|---|---|
-| `read()` | `uint16` | Read temperature and humidity in one transaction |
+| Method   | Return type | Description                                      |
+| -------- | ----------- | ------------------------------------------------ |
+| `read()` | `uint16`    | Read temperature and humidity in one transaction |
 
 The return value packs both readings into a 16-bit integer:
 

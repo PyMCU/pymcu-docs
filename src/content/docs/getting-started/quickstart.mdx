@@ -60,20 +60,20 @@ with `ImportError: Module not found: machine`. If you already said no, install t
 inside the project with `uv sync`, `poetry install` or `pip install -e .`.
 :::
 
-It does *not* ask which package manager to use: it detects `uv`, then `poetry`, and tells
+It does _not_ ask which package manager to use: it detects `uv`, then `poetry`, and tells
 you which it picked. Only if neither is on your PATH does it ask anything, and the question
 is whether to install `uv` — declining falls back to `pip`. Pass `--pkg-manager uv|poetry|pip`
 to choose explicitly.
 
 It then scaffolds:
 
-| File | Contents |
-|---|---|
-| `src/main.py` | Starter firmware, written in the compat API you picked |
-| `pyproject.toml` | Project config with a `[tool.pymcu]` section |
-| `Makefile` | Always written — a target that runs your package manager, then `pymcu sync` |
-| `requirements.txt` | Only when the package manager is **pip** |
-| `.gitignore` | Git ignore rules |
+| File               | Contents                                                                    |
+| ------------------ | --------------------------------------------------------------------------- |
+| `src/main.py`      | Starter firmware, written in the compat API you picked                      |
+| `pyproject.toml`   | Project config with a `[tool.pymcu]` section                                |
+| `Makefile`         | Always written — a target that runs your package manager, then `pymcu sync` |
+| `requirements.txt` | Only when the package manager is **pip**                                    |
+| `.gitignore`       | Git ignore rules                                                            |
 
 ## 2. Look at `pyproject.toml`
 
@@ -188,7 +188,7 @@ community-specified, and they compile to exactly the same firmware as the native
 ## 3. Write the program
 
 Edit `src/main.py`. All three programs do the same thing: configure the LED pin as an
-output, then loop *on → wait 500 ms → off → wait 500 ms* forever.
+output, then loop _on → wait 500 ms → off → wait 500 ms_ forever.
 
 <Tabs syncKey="api">
 <TabItem label="MicroPython">
@@ -284,13 +284,13 @@ on `dist/firmware.hex` and you will see those 104 bytes. The ARM path reports th
 Those 46 bytes are not a typo. Written to the chip, vector table included, this blink is
 150 bytes:
 
-| Source | Total flash | SRAM |
-|---|---|---|
-| C (`avr-gcc -Os`) | 176 B | 0 B |
-| **PyMCU** (native HAL) | **150 B** | 0 B |
-| **PyMCU** (MicroPython API) | **150 B** | 0 B |
-| **PyMCU** (CircuitPython API) | **152 B** | 0 B |
-| Arduino (IDE defaults) | ~1 024 B | 9 B |
+| Source                        | Total flash | SRAM |
+| ----------------------------- | ----------- | ---- |
+| C (`avr-gcc -Os`)             | 176 B       | 0 B  |
+| **PyMCU** (native HAL)        | **150 B**   | 0 B  |
+| **PyMCU** (MicroPython API)   | **150 B**   | 0 B  |
+| **PyMCU** (CircuitPython API) | **152 B**   | 0 B  |
+| Arduino (IDE defaults)        | ~1 024 B    | 9 B  |
 
 :::note[Why other pages quote 38 bytes]
 The landing page and the [playground](https://playground.pymcu.org) show a slightly
@@ -340,7 +340,7 @@ The LED on pin 13 blinks at 1 Hz. If it does not:
 
 ## 6. See the output
 
-Blink tells you the board is alive; the moment you want a *number* out of it you need a
+Blink tells you the board is alive; the moment you want a _number_ out of it you need a
 serial terminal. Add a `print()` to the loop:
 
 ```python
@@ -377,7 +377,7 @@ the bottom-right corner, to 115200.
 
 :::note[There is no `pymcu monitor`]
 PyMCU does not ship a terminal of its own; use whichever one you already have. Opening the
-port resets the board on most Arduino-style designs, so start the terminal *first* and you
+port resets the board on most Arduino-style designs, so start the terminal _first_ and you
 will catch the output from the beginning.
 :::
 
@@ -391,7 +391,7 @@ stdout_baud = 9600        # default is 115200
 ```
 
 If your program constructs its own `UART(9600)`, that takes ownership of the hardware and
-`print()` follows *its* baud rate; `stdout_baud` is then ignored.
+`print()` follows _its_ baud rate; `stdout_baud` is then ignored.
 
 :::caution[`print()` is silent on some targets]
 On AVR and on the RP2040 / RP2350 everything prints — strings, integers and floats. On
@@ -405,7 +405,7 @@ nothing at all**, with no error and no warning. See
 Unlike MicroPython or CircuitPython, PyMCU did **not** upload an interpreter to your board.
 The compiler on your machine translated the Python source straight to machine code; the MCU
 runs that code at full clock speed, and no Python runtime exists on the device. That is why
-the firmware is measured in *bytes* rather than *hundreds of kilobytes*.
+the firmware is measured in _bytes_ rather than _hundreds of kilobytes_.
 
 ## Next steps
 

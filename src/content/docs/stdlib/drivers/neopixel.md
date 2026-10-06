@@ -14,12 +14,12 @@ by the AVR back end.
 There are **two different NeoPixel APIs** in the PyMCU ecosystem and they are not the same thing.
 This page documents both, separately:
 
-| API | Import | Shape |
-|---|---|---|
-| PyMCU stdlib driver | `from pymcu.drivers.neopixel import NeoPixel` | Immediate streaming, no buffer, you manage interrupts |
-| CircuitPython compat | `import neopixel` | `fill()`, `pixels[i] = (r, g, b)`, `show()`, per-strip SRAM framebuffer |
+| API                  | Import                                        | Shape                                                                   |
+| -------------------- | --------------------------------------------- | ----------------------------------------------------------------------- |
+| PyMCU stdlib driver  | `from pymcu.drivers.neopixel import NeoPixel` | Immediate streaming, no buffer, you manage interrupts                   |
+| CircuitPython compat | `import neopixel`                             | `fill()`, `pixels[i] = (r, g, b)`, `show()`, per-strip SRAM framebuffer |
 
-The compat class is built *on top of* the stdlib driver — it owns the framebuffer and the
+The compat class is built _on top of_ the stdlib driver — it owns the framebuffer and the
 interrupt masking that the stdlib driver deliberately leaves to you. If you want the familiar
 CircuitPython surface, use it and skip the rest of this page's first half.
 
@@ -34,10 +34,10 @@ away.
 
 ### `NeoPixel(pin, n)`
 
-| Parameter | Type | Description |
-|---|---|---|
-| `pin` | `str` | Data pin name, e.g. `"PD6"`. Bound at compile time — no SRAM is allocated |
-| `n` | `uint8` | Number of pixels on the strip |
+| Parameter | Type    | Description                                                               |
+| --------- | ------- | ------------------------------------------------------------------------- |
+| `pin`     | `str`   | Data pin name, e.g. `"PD6"`. Bound at compile time — no SRAM is allocated |
+| `n`       | `uint8` | Number of pixels on the strip                                             |
 
 The constructor also configures the pin as an output and drives it low.
 
@@ -54,13 +54,13 @@ nothing at all** — no error, no output. Double-check the spelling.
 
 ### NeoPixel methods
 
-| Method | Signature | Description |
-|---|---|---|
-| `set_pixel(r, g, b)` | all `uint8` | Stream one pixel's colour immediately, in WS2812 wire order (green, red, blue) |
-| `write_byte(val)` | `val: uint8` | Stream one raw byte — for hand-sequencing GRB yourself |
-| `show()` | — | Hold the line low for `>50 µs` to latch everything sent since the last latch |
+| Method               | Signature    | Description                                                                    |
+| -------------------- | ------------ | ------------------------------------------------------------------------------ |
+| `set_pixel(r, g, b)` | all `uint8`  | Stream one pixel's colour immediately, in WS2812 wire order (green, red, blue) |
+| `write_byte(val)`    | `val: uint8` | Stream one raw byte — for hand-sequencing GRB yourself                         |
+| `show()`             | —            | Hold the line low for `>50 µs` to latch everything sent since the last latch   |
 
-That is the entire API. Note what is *not* there:
+That is the entire API. Note what is _not_ there:
 
 :::danger[No framebuffer, and interrupts are your problem]
 **There is no pixel buffer.** `set_pixel()` does not store a colour — it clocks three bytes out of
@@ -69,8 +69,8 @@ strip "the frame is over". To light pixel 5 you must send pixels 0 through 4 fir
 
 **The driver does not touch the interrupt flag.** WS2812 bit timing is counted in CPU cycles, so a
 single ISR firing mid-transmission stretches a bit period and the strip latches garbage — usually
-seen as a random flash of the wrong colour. The driver's own header states it plainly: *the user is
-responsible* for masking interrupts around the transmission.
+seen as a random flash of the wrong colour. The driver's own header states it plainly: _the user is
+responsible_ for masking interrupts around the transmission.
 
 Wrap every `set_pixel()`/`show()` sequence in `disable_interrupts()` / `enable_interrupts()`, and
 keep the critical section as short as you can — at 30 µs per pixel, a 60-LED strip means nearly
@@ -206,17 +206,17 @@ def main():
             i = i + 1
 ```
 
-| Member | Description |
-|---|---|
-| `NeoPixel(pin, n, bpp=3, brightness=1.0, auto_write=True, pixel_order=None)` | `pin` is a `board` constant or a raw pin string |
-| `fill(color)` | Set every pixel from an `(r, g, b)` tuple. The packed `0xRRGGBB` integer form CircuitPython also accepts is **not** supported — an integer literal and a tuple literal are indistinguishable to the `@inline` overload resolver |
-| `pixels[i] = (r, g, b)` | Write one pixel into the framebuffer |
-| `show()` | Stream the framebuffer and latch. Masks interrupts for the whole transmission |
-| `len(pixels)`, `pixels.n` | Pixel count |
-| `auto_write` | Whether writes latch immediately (default `True`) |
-| `brightness` | Always reports `1.0`. Accepted for API compatibility; **per-pixel brightness scaling is not applied** |
-| `deinit()` | No-op on bare metal |
-| `RGB`, `GRB`, `RGBW`, `GRBW` | Colour-order constants, matching the CircuitPython names |
+| Member                                                                       | Description                                                                                                                                                                                                                     |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NeoPixel(pin, n, bpp=3, brightness=1.0, auto_write=True, pixel_order=None)` | `pin` is a `board` constant or a raw pin string                                                                                                                                                                                 |
+| `fill(color)`                                                                | Set every pixel from an `(r, g, b)` tuple. The packed `0xRRGGBB` integer form CircuitPython also accepts is **not** supported — an integer literal and a tuple literal are indistinguishable to the `@inline` overload resolver |
+| `pixels[i] = (r, g, b)`                                                      | Write one pixel into the framebuffer                                                                                                                                                                                            |
+| `show()`                                                                     | Stream the framebuffer and latch. Masks interrupts for the whole transmission                                                                                                                                                   |
+| `len(pixels)`, `pixels.n`                                                    | Pixel count                                                                                                                                                                                                                     |
+| `auto_write`                                                                 | Whether writes latch immediately (default `True`)                                                                                                                                                                               |
+| `brightness`                                                                 | Always reports `1.0`. Accepted for API compatibility; **per-pixel brightness scaling is not applied**                                                                                                                           |
+| `deinit()`                                                                   | No-op on bare metal                                                                                                                                                                                                             |
+| `RGB`, `GRB`, `RGBW`, `GRBW`                                                 | Colour-order constants, matching the CircuitPython names                                                                                                                                                                        |
 
 The differences from the stdlib driver worth holding onto: the compat class **has** a framebuffer
 (costing `n * 3` bytes of SRAM), **does** its own interrupt masking, and **does** let you address

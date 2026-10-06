@@ -65,7 +65,7 @@ If you are writing CircuitPython-flavoured code and need an interrupt, use eithe
 MicroPython `machine.Pin.irq` API or the native HAL in the next tab. Both can be imported
 from the same file - the compat flavours are import namespaces, not sandboxes.
 
-For the narrow case of *waking from sleep* on a pin edge, CircuitPython's `alarm` module
+For the narrow case of _waking from sleep_ on a pin edge, CircuitPython's `alarm` module
 is supported; see [Power management](/stdlib/power/).
 
 </TabItem>
@@ -131,14 +131,14 @@ So you do **not** need an `@interrupt` decorator on the handler, and you do not 
 
 ### Which peripherals expose `.irq()`
 
-| Peripheral | AVR | PIC14 | PIC12 | PIC18 | ARM (RP2040 / RP2350) |
-|---|---|---|---|---|---|
-| `pymcu.hal.gpio.Pin` | yes | yes | - | - | - |
-| `pymcu.hal.timer.Timer` | yes | yes | yes | yes | - |
-| `pymcu.hal.uart.UART` | yes | yes | - | yes | - |
-| `pymcu.hal.adc.AnalogPin` | yes | yes | - | yes | - |
-| `pymcu.hal.spi.SPI` | yes | - | - | - | - |
-| `pymcu.hal.i2c.I2C` | yes | - | - | - | - |
+| Peripheral                | AVR | PIC14 | PIC12 | PIC18 | ARM (RP2040 / RP2350) |
+| ------------------------- | --- | ----- | ----- | ----- | --------------------- |
+| `pymcu.hal.gpio.Pin`      | yes | yes   | -     | -     | -                     |
+| `pymcu.hal.timer.Timer`   | yes | yes   | yes   | yes   | -                     |
+| `pymcu.hal.uart.UART`     | yes | yes   | -     | yes   | -                     |
+| `pymcu.hal.adc.AnalogPin` | yes | yes   | -     | yes   | -                     |
+| `pymcu.hal.spi.SPI`       | yes | -     | -     | -     | -                     |
+| `pymcu.hal.i2c.I2C`       | yes | -     | -     | -     | -                     |
 
 On the ATtiny parts `Pin.irq()` raises
 `CompileError: IRQ not yet supported on ATtiny`. On the RP2040 and RP2350 no peripheral
@@ -146,12 +146,12 @@ exposes `.irq()` yet - see [Interrupts on the RP boards](#interrupts-on-the-rp20
 
 ### Pin trigger constants
 
-| Constant | Value | Meaning |
-|---|---|---|
-| `Pin.IRQ_FALLING` | 1 | Falling edge |
-| `Pin.IRQ_RISING` | 2 | Rising edge |
-| `Pin.IRQ_LOW_LEVEL` | 4 | Low level |
-| `Pin.IRQ_HIGH_LEVEL` | 8 | High level |
+| Constant             | Value | Meaning      |
+| -------------------- | ----- | ------------ |
+| `Pin.IRQ_FALLING`    | 1     | Falling edge |
+| `Pin.IRQ_RISING`     | 2     | Rising edge  |
+| `Pin.IRQ_LOW_LEVEL`  | 4     | Low level    |
+| `Pin.IRQ_HIGH_LEVEL` | 8     | High level   |
 
 There is no `Pin.IRQ_CHANGE` constant, but the underlying setup accepts **`3`** for
 any-edge - which is what a pin-change interrupt needs. The `pcint-counter` example passes
@@ -239,13 +239,13 @@ back. Contrast with the polling `uart-echo` example, which blocks in `read()`.
 The same shape applies, but each peripheral has a contract your handler must honour or the
 interrupt misbehaves.
 
-| Peripheral | Registration | What the handler **must** do |
-|---|---|---|
-| `AnalogPin.irq(handler)` | ADC Conversion Complete vector, enables `ADIE` | Read `ADCL` **before** `ADCH` - reading the low byte latches the high byte. Example: `adc-interrupt` |
-| `SPI.irq(handler)` | SPI STC vector, enables `SPIE` | Read `SPDR`, which both captures the byte and clears `SPIF`. Skip it and the interrupt re-fires immediately. Example: `spi-irq` |
-| `I2C.irq(handler)` | TWI vector, enables `TWIE` | Re-arm by writing `TWCR` with `TWINT` set - `TWCR.value = 0xC4` sets `TWINT`, `TWEA` and `TWEN` together. Skip it and the peripheral stalls. Example: `i2c-irq` |
+| Peripheral               | Registration                                   | What the handler **must** do                                                                                                                                    |
+| ------------------------ | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AnalogPin.irq(handler)` | ADC Conversion Complete vector, enables `ADIE` | Read `ADCL` **before** `ADCH` - reading the low byte latches the high byte. Example: `adc-interrupt`                                                            |
+| `SPI.irq(handler)`       | SPI STC vector, enables `SPIE`                 | Read `SPDR`, which both captures the byte and clears `SPIF`. Skip it and the interrupt re-fires immediately. Example: `spi-irq`                                 |
+| `I2C.irq(handler)`       | TWI vector, enables `TWIE`                     | Re-arm by writing `TWCR` with `TWINT` set - `TWCR.value = 0xC4` sets `TWINT`, `TWEA` and `TWEN` together. Skip it and the peripheral stalls. Example: `i2c-irq` |
 
-The `spi-irq` and `i2c-irq` examples both configure the ATmega as a *peripheral* (`SPI(SPI.PERIPHERAL)`,
+The `spi-irq` and `i2c-irq` examples both configure the ATmega as a _peripheral_ (`SPI(SPI.PERIPHERAL)`,
 `I2C(0x42)`) and report each received byte as two hex digits over UART.
 
 ## Raw vectors with `@interrupt`
@@ -326,14 +326,14 @@ the boilerplate - and the global stops occupying SRAM entirely.
 
 The promotion rules, so you can predict it:
 
-| Rule | Detail |
-|---|---|
-| Type | `uint8` only. Wider or signed globals stay in SRAM |
-| Count | Up to three, the number of GPIOR registers |
-| Priority | Bit-manipulated flags get first claim on the bit-addressable register, then the most-used globals |
-| Chips | The megaAVR family (ATmega48/88/168/328, 640/1280/2560, 16U4/32U4, 164/324/644/1284) and the ATtiny 25/45/85 and 24/44/84 |
-| Skipped | Globals named in inline `asm()` operands, in a naked asm string, or in a virtual call or GC root - those paths resolve by SRAM address |
-| Never reassigned | A GPIOR your program already imports from `pymcu.chips.*` is left alone |
+| Rule             | Detail                                                                                                                                 |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Type             | `uint8` only. Wider or signed globals stay in SRAM                                                                                     |
+| Count            | Up to three, the number of GPIOR registers                                                                                             |
+| Priority         | Bit-manipulated flags get first claim on the bit-addressable register, then the most-used globals                                      |
+| Chips            | The megaAVR family (ATmega48/88/168/328, 640/1280/2560, 16U4/32U4, 164/324/644/1284) and the ATtiny 25/45/85 and 24/44/84              |
+| Skipped          | Globals named in inline `asm()` operands, in a naked asm string, or in a virtual call or GC root - those paths resolve by SRAM address |
+| Never reassigned | A GPIOR your program already imports from `pymcu.chips.*` is left alone                                                                |
 
 Chips without a known GPIOR layout simply get no promotion; the globals stay in SRAM, which
 is always correct. Anything wider than a byte - a `uint16` counter, an array - also stays in
@@ -353,14 +353,14 @@ enable_interrupts()
 Both functions are `@inline` and fold to a single instruction on every architecture that
 has one:
 
-| Architecture | Emitted |
-|---|---|
-| AVR | `SEI` / `CLI` - the I flag in `SREG` |
-| ARM (Cortex-M0+ and M33) | `cpsie i` / `cpsid i` - `PRIMASK` |
-| PIC14 / PIC14E | `INTCON` bit 7 (`GIE`) at `0x0B` |
-| PIC18 | `INTCON` bit 7 (`GIE`) at `0xFF2` |
-| RISC-V | `csrsi mstatus, 8` / `csrci mstatus, 8` - the `MIE` bit |
-| PIC12 | No-op - the core has no interrupt controller |
+| Architecture             | Emitted                                                 |
+| ------------------------ | ------------------------------------------------------- |
+| AVR                      | `SEI` / `CLI` - the I flag in `SREG`                    |
+| ARM (Cortex-M0+ and M33) | `cpsie i` / `cpsid i` - `PRIMASK`                       |
+| PIC14 / PIC14E           | `INTCON` bit 7 (`GIE`) at `0x0B`                        |
+| PIC18                    | `INTCON` bit 7 (`GIE`) at `0xFF2`                       |
+| RISC-V                   | `csrsi mstatus, 8` / `csrci mstatus, 8` - the `MIE` bit |
+| PIC12                    | No-op - the core has no interrupt controller            |
 
 On ARM this is real: `cpsid i` masks every configurable exception, leaving NMI and HardFault
 alive by design. The `irq-critical-rp2040` example exists specifically to prove it, and

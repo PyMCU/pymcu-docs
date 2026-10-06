@@ -124,16 +124,16 @@ emits a warning to that effect.
 
 ## The three time APIs side by side
 
-| MicroPython (`utime` / `time`) | CircuitPython (`time`) | Native (`pymcu.time`, `pymcu.hal.timer`) | Notes |
-|---|---|---|---|
-| `sleep_ms(ms)` | — | `delay_ms(ms)` | Millisecond busy-wait |
-| `sleep_us(us)` | — | `delay_us(us)` | Microsecond busy-wait |
-| `sleep(seconds)` — integer seconds | `sleep(seconds)` — float seconds | — | MicroPython's is `delay_ms(s * 1000)` |
-| `ticks_ms() -> uint32` | `monotonic() -> float` | `millis() -> uint32` | Milliseconds since boot; the float form needs soft-float |
-| `ticks_us() -> uint32` | `monotonic_ns() -> uint32` | `micros() -> uint32` | `monotonic_ns()` is `millis() * 1_000_000`, so it wraps at ~4.29 s |
-| `ticks_cpu() -> uint32` | — | `micros() -> uint32` | Alias for `ticks_us()`; PyMCU has no separate CPU counter |
-| `ticks_diff(new, old)` | plain subtraction | plain subtraction | 32-bit difference |
-| `ticks_add(ticks, delta)` | plain addition | plain addition | Wraps at the 32-bit boundary |
+| MicroPython (`utime` / `time`)     | CircuitPython (`time`)           | Native (`pymcu.time`, `pymcu.hal.timer`) | Notes                                                              |
+| ---------------------------------- | -------------------------------- | ---------------------------------------- | ------------------------------------------------------------------ |
+| `sleep_ms(ms)`                     | —                                | `delay_ms(ms)`                           | Millisecond busy-wait                                              |
+| `sleep_us(us)`                     | —                                | `delay_us(us)`                           | Microsecond busy-wait                                              |
+| `sleep(seconds)` — integer seconds | `sleep(seconds)` — float seconds | —                                        | MicroPython's is `delay_ms(s * 1000)`                              |
+| `ticks_ms() -> uint32`             | `monotonic() -> float`           | `millis() -> uint32`                     | Milliseconds since boot; the float form needs soft-float           |
+| `ticks_us() -> uint32`             | `monotonic_ns() -> uint32`       | `micros() -> uint32`                     | `monotonic_ns()` is `millis() * 1_000_000`, so it wraps at ~4.29 s |
+| `ticks_cpu() -> uint32`            | —                                | `micros() -> uint32`                     | Alias for `ticks_us()`; PyMCU has no separate CPU counter          |
+| `ticks_diff(new, old)`             | plain subtraction                | plain subtraction                        | 32-bit difference                                                  |
+| `ticks_add(ticks, delta)`          | plain addition                   | plain addition                           | Wraps at the 32-bit boundary                                       |
 
 At 16 MHz with prescaler 64 a Timer0 overflow takes **1024 µs**, not 1000 µs. `millis()` does
 not return the raw overflow count: the ISR applies the Arduino-style fractional correction —
@@ -202,12 +202,12 @@ def main():
 
 ### Accuracy
 
-| Target | Mechanism | Accuracy |
-|---|---|---|
-| AVR | Cycle-counted loop, calibrated per `__FREQ__` | `<0.1 %` at 1, 8, 12, 16 and 20 MHz |
-| ARM (RP2040 / RP2350) | Poll of the 1 MHz hardware `TIMER` | Timer-accurate |
-| PIC | Cycle-counted loop, calibrated per `__FREQ__` | `<0.1 %` at 4, 8, 16 and 20 MHz |
-| RISC-V | Cycle-counted loop | Approximate |
+| Target                | Mechanism                                     | Accuracy                            |
+| --------------------- | --------------------------------------------- | ----------------------------------- |
+| AVR                   | Cycle-counted loop, calibrated per `__FREQ__` | `<0.1 %` at 1, 8, 12, 16 and 20 MHz |
+| ARM (RP2040 / RP2350) | Poll of the 1 MHz hardware `TIMER`            | Timer-accurate                      |
+| PIC                   | Cycle-counted loop, calibrated per `__FREQ__` | `<0.1 %` at 4, 8, 16 and 20 MHz     |
+| RISC-V                | Cycle-counted loop                            | Approximate                         |
 
 ### Notes
 

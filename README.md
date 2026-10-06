@@ -61,9 +61,8 @@ moved. The package has no Astro 6 successor: the fix is migrating to Tailwind 4 
 `@tailwindcss/vite`, which touches the styles and has not been done yet. Until then a
 plain `npm ci` fails.
 
-**`npm run check` fails on formatting.** Prettier reports roughly 54 files that predate
-the check being enforced. It is reported by CI but does not block anything. Run
-`npm run fix` on files you touch rather than reformatting the tree in one go.
+**`npm run check` must stay green.** The whole tree was formatted with Prettier on
+2026-10-06, so CI checks every file; run `npm run fix` before committing.
 
 ## History
 

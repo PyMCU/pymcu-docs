@@ -1,6 +1,6 @@
 ---
 title: Inline assembly
-description: "Drop to assembly from Python with asm(): AVR %N register constraints, the ARM operand rules and memory clobber, multi-line blocks, and @naked functions."
+description: 'Drop to assembly from Python with asm(): AVR %N register constraints, the ARM operand rules and memory clobber, multi-line blocks, and @naked functions.'
 ---
 
 Occasionally the generated code is not the code you need. A context switch has to own the
@@ -58,11 +58,11 @@ On AVR the mapping is fixed and documented, which is the whole reason to use thi
 rather than hand-written register names:
 
 | Placeholder | Register |
-|---|---|
-| `%0` | R16 |
-| `%1` | R17 |
-| `%2` | R18 |
-| `%3` | R19 |
+| ----------- | -------- |
+| `%0`        | R16      |
+| `%1`        | R17      |
+| `%2`        | R18      |
+| `%3`        | R19      |
 
 The compiler loads each operand into its scratch register, substitutes the register name
 into your template, emits the instruction, and then **stores every non-constant operand
@@ -326,16 +326,16 @@ preemptive scheduler's systick must.
 
 ## Limits
 
-| Limit | Detail |
-|---|---|
-| String must be compile-time | Literal, triple-quoted literal, or a fully-folding f-string. Not a variable |
-| Four operands maximum | `%0`-`%3` on both AVR and ARM |
-| AVR operands are `uint8` | Wider variables are not handled as register pairs by the `%N` form |
-| ARM operands are `i32` | And LLVM, not you, chooses the register |
-| Every variable operand is written back | Even if your instruction only reads it. Pass a constant to avoid the store |
-| Labels forbid `@inline` | Delegate to a non-inline helper |
-| `@naked` gives you no return | You must write it |
-| The assembly is not portable | Nothing checks that an AVR mnemonic makes sense on a Cortex-M0+. Guard target-specific blocks with `match __CHIP__.arch:` |
+| Limit                                  | Detail                                                                                                                    |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| String must be compile-time            | Literal, triple-quoted literal, or a fully-folding f-string. Not a variable                                               |
+| Four operands maximum                  | `%0`-`%3` on both AVR and ARM                                                                                             |
+| AVR operands are `uint8`               | Wider variables are not handled as register pairs by the `%N` form                                                        |
+| ARM operands are `i32`                 | And LLVM, not you, chooses the register                                                                                   |
+| Every variable operand is written back | Even if your instruction only reads it. Pass a constant to avoid the store                                                |
+| Labels forbid `@inline`                | Delegate to a non-inline helper                                                                                           |
+| `@naked` gives you no return           | You must write it                                                                                                         |
+| The assembly is not portable           | Nothing checks that an AVR mnemonic makes sense on a Cortex-M0+. Guard target-specific blocks with `match __CHIP__.arch:` |
 
 ## Where this is tested
 

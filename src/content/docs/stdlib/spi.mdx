@@ -164,34 +164,34 @@ which takes `Pin` objects rather than pin names.
 Initializes the hardware SPI peripheral. In controller mode the defaults are Mode 0, MSB-first,
 at f_osc/4 (4 MHz with a 16 MHz clock).
 
-| Parameter | Type | Description |
-|---|---|---|
-| `mode` | `uint8` | `SPI.CONTROLLER` (0, default) or `SPI.PERIPHERAL` (1) |
-| `cs` | `const[str]` | Optional chip-select pin, e.g. `"PB0"`. When omitted, `select()`/`deselect()` drive the hardware SS pin. |
+| Parameter | Type         | Description                                                                                              |
+| --------- | ------------ | -------------------------------------------------------------------------------------------------------- |
+| `mode`    | `uint8`      | `SPI.CONTROLLER` (0, default) or `SPI.PERIPHERAL` (1)                                                    |
+| `cs`      | `const[str]` | Optional chip-select pin, e.g. `"PB0"`. When omitted, `select()`/`deselect()` drive the hardware SS pin. |
 
 **Pinout (ATmega328P / Arduino Uno):**
 
-| Pin | Arduino | Function |
-|---|---|---|
-| `PB5` | D13 | SCK |
-| `PB4` | D12 | MISO |
-| `PB3` | D11 | MOSI |
-| `PB2` | D10 | SS |
+| Pin   | Arduino | Function |
+| ----- | ------- | -------- |
+| `PB5` | D13     | SCK      |
+| `PB4` | D12     | MISO     |
+| `PB3` | D11     | MOSI     |
+| `PB2` | D10     | SS       |
 
 #### SPI methods - AVR
 
-| Method | Description |
-|---|---|
-| `transfer(data: uint8) -> uint8` | Full-duplex byte exchange |
-| `write(data: uint8)` | Send a byte, discard the received one |
-| `write_bytes(buf, n: uint8)` | Send `n` bytes from a buffer |
-| `readinto_n(buf, n, write_byte)` | Clock out `write_byte` `n` times, store the received bytes |
-| `write_readinto_n(write_buf, read_buf, n)` | Full-duplex block transfer |
-| `select()` / `deselect()` | Drive CS low / high |
-| `ready() -> uint8` | 1 when a transfer has completed (SPIF) |
-| `send` / `receive` | Peripheral-mode byte exchange |
-| `irq(handler)` | Register an SPI-complete handler |
-| `__enter__()` / `__exit__()` | `select()` / `deselect()` — used by `with spi:` |
+| Method                                     | Description                                                |
+| ------------------------------------------ | ---------------------------------------------------------- |
+| `transfer(data: uint8) -> uint8`           | Full-duplex byte exchange                                  |
+| `write(data: uint8)`                       | Send a byte, discard the received one                      |
+| `write_bytes(buf, n: uint8)`               | Send `n` bytes from a buffer                               |
+| `readinto_n(buf, n, write_byte)`           | Clock out `write_byte` `n` times, store the received bytes |
+| `write_readinto_n(write_buf, read_buf, n)` | Full-duplex block transfer                                 |
+| `select()` / `deselect()`                  | Drive CS low / high                                        |
+| `ready() -> uint8`                         | 1 when a transfer has completed (SPIF)                     |
+| `send` / `receive`                         | Peripheral-mode byte exchange                              |
+| `irq(handler)`                             | Register an SPI-complete handler                           |
+| `__enter__()` / `__exit__()`               | `select()` / `deselect()` — used by `with spi:`            |
 
 ### `SPI(...)` — RP2040 / RP2350
 
@@ -201,15 +201,15 @@ Wraps SPI0 (the PL022 PrimeCell) in controller mode.
 spi = SPI(baud=1_000_000, sck=2, mosi=3, miso=4, cs=5)
 ```
 
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `baud` | `const` | `1000000` | Bit clock; the CPSDVSR/SCR divisor is folded at compile time |
-| `polarity` | `const` | `0` | Clock polarity (SPO) |
-| `phase` | `const` | `0` | Clock phase (SPH) |
-| `sck` | `const` | `2` | GPIO for SCK |
-| `mosi` | `const` | `3` | GPIO for MOSI |
-| `miso` | `const` | `4` | GPIO for MISO |
-| `cs` | `const` | `-1` | Optional software chip-select GPIO (idle high); `-1` disables it |
+| Parameter  | Type    | Default   | Description                                                      |
+| ---------- | ------- | --------- | ---------------------------------------------------------------- |
+| `baud`     | `const` | `1000000` | Bit clock; the CPSDVSR/SCR divisor is folded at compile time     |
+| `polarity` | `const` | `0`       | Clock polarity (SPO)                                             |
+| `phase`    | `const` | `0`       | Clock phase (SPH)                                                |
+| `sck`      | `const` | `2`       | GPIO for SCK                                                     |
+| `mosi`     | `const` | `3`       | GPIO for MOSI                                                    |
+| `miso`     | `const` | `4`       | GPIO for MISO                                                    |
+| `cs`       | `const` | `-1`      | Optional software chip-select GPIO (idle high); `-1` disables it |
 
 Because the divisor is folded at build time it assumes the pico-sdk default peripheral clock:
 **125 MHz on the RP2040** and **150 MHz on the RP2350**. Re-clocking the chip at run time
@@ -217,11 +217,11 @@ invalidates the computed baud rate.
 
 #### SPI methods - RP2040 / RP2350
 
-| Method | Description |
-|---|---|
-| `transfer(data: uint8) -> uint8` | Full-duplex byte exchange |
-| `write(data: uint8)` | Send a byte, discard the received one |
-| `select()` / `deselect()` | Drive the software CS low / high |
+| Method                           | Description                           |
+| -------------------------------- | ------------------------------------- |
+| `transfer(data: uint8) -> uint8` | Full-duplex byte exchange             |
+| `write(data: uint8)`             | Send a byte, discard the received one |
+| `select()` / `deselect()`        | Drive the software CS low / high      |
 
 The ARM table is three rows to the AVR's ten because the RP2040 / RP2350 wrapper is younger: the
 PL022 is driven one byte at a time through `transfer()`, and the block helpers

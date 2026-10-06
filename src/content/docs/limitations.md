@@ -24,19 +24,19 @@ See [MicroPython compat](/compat/micropython/) and
 [CircuitPython compat](/compat/circuitpython/).
 :::
 
-This page lists every known unsupported feature, explains *why* it cannot be compiled, and
+This page lists every known unsupported feature, explains _why_ it cannot be compiled, and
 suggests the idiomatic PyMCU alternative where one exists.
 
 ---
 
 ## Dynamic memory and containers
 
-| Feature | Why it fails | Alternative |
-|---|---|---|
-| `list.append(x)` on a **fixed-size** array | Fixed arrays have no `append` | `list[uint8]` heap-bounded list, or `uint8[N]` fixed-size array |
-| **Growing** `dict` (unbounded) | Hash table requires heap | [`pymcu.collections.FixedDict(capacity)`](/stdlib/#module-index) (mutable, fixed footprint), a closed dict literal (below), or `match / case` key dispatch |
-| **Mutable** `set` (`.add()`) | Hash set requires heap | Closed set literal (below), or a `uint8` bitmask |
-| Dict / set **comprehensions** | Would build a container at runtime | Build a closed literal, or fill a `FixedDict` in a loop |
+| Feature                                    | Why it fails                       | Alternative                                                                                                                                                |
+| ------------------------------------------ | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `list.append(x)` on a **fixed-size** array | Fixed arrays have no `append`      | `list[uint8]` heap-bounded list, or `uint8[N]` fixed-size array                                                                                            |
+| **Growing** `dict` (unbounded)             | Hash table requires heap           | [`pymcu.collections.FixedDict(capacity)`](/stdlib/#module-index) (mutable, fixed footprint), a closed dict literal (below), or `match / case` key dispatch |
+| **Mutable** `set` (`.add()`)               | Hash set requires heap             | Closed set literal (below), or a `uint8` bitmask                                                                                                           |
+| Dict / set **comprehensions**              | Would build a container at runtime | Build a closed literal, or fill a `FixedDict` in a loop                                                                                                    |
 
 **Supported:** `list[T]` (`x: list[uint8] = list()`) is the one **opt-in** heap in PyMCU — it
 compiles to a bounded bump allocator with a shadow-stack GC, linked only into firmware that
@@ -91,16 +91,16 @@ compiler proves one startup allocation and reserves a static arena for it.
 
 ## String operations
 
-| Feature | Why it fails | Alternative |
-|---|---|---|
-| `f"..."` inline in arbitrary expressions | No general runtime string objects | Assign it to a name first (`s = f"..."` builds a fixed buffer), or stream it: `print(f"...")` |
-| `str.split()` as a value | There is no list of runtime strings to return | Iterate it directly with `for` or `enumerate`; the receiver and separator must be compile-time strings |
-| `str.format()` with named fields or `**kwargs` | Only compile-time positional formatting is lowered | Use `{}`, `{0}`, numeric format specs, `*seq`, or an f-string |
-| `str.join()` over a runtime-length sequence | The result must have a compile-time bound | Join compile-time strings, or a formatted generator over a fixed sequence |
-| `len(string_variable)` with several possible texts | There is no single compile-time string | Use one compile-time text or a fixed runtime buffer |
-| `str + str` concatenation | Heap allocation | Separate `uart.write_str()` calls, or one f-string |
-| `str[i]` on a runtime string | No runtime string object | Use `const[str]` parameters |
-| `s == "literal"` on an f-string value | No runtime string comparison | Compare the underlying integers instead |
+| Feature                                            | Why it fails                                       | Alternative                                                                                            |
+| -------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `f"..."` inline in arbitrary expressions           | No general runtime string objects                  | Assign it to a name first (`s = f"..."` builds a fixed buffer), or stream it: `print(f"...")`          |
+| `str.split()` as a value                           | There is no list of runtime strings to return      | Iterate it directly with `for` or `enumerate`; the receiver and separator must be compile-time strings |
+| `str.format()` with named fields or `**kwargs`     | Only compile-time positional formatting is lowered | Use `{}`, `{0}`, numeric format specs, `*seq`, or an f-string                                          |
+| `str.join()` over a runtime-length sequence        | The result must have a compile-time bound          | Join compile-time strings, or a formatted generator over a fixed sequence                              |
+| `len(string_variable)` with several possible texts | There is no single compile-time string             | Use one compile-time text or a fixed runtime buffer                                                    |
+| `str + str` concatenation                          | Heap allocation                                    | Separate `uart.write_str()` calls, or one f-string                                                     |
+| `str[i]` on a runtime string                       | No runtime string object                           | Use `const[str]` parameters                                                                            |
+| `s == "literal"` on an f-string value              | No runtime string comparison                       | Compare the underlying integers instead                                                                |
 
 **Supported:** string literals in flash, raw strings `r"\n"`, `uart.println("literal")`,
 `const[str]` runtime subscript, compile-time `str.format`, and runtime f-strings in streamed
@@ -192,7 +192,7 @@ The length has to be a compile-time constant — the repr is unrolled into direc
 ## Exception handling
 
 `try / except / raise / finally` are **supported** on AVR and ARM (RP2040 / RP2350) via a
-zero-cost **flag error-propagation** model — *not* `setjmp` / `longjmp`. A function that
+zero-cost **flag error-propagation** model — _not_ `setjmp` / `longjmp`. A function that
 raises marks the error (AVR: the SREG T flag via `SET` / `CLT` / `BRTS`; ARM: an internal
 flag + code global pair) and returns normally; every call site inside a `try` tests the flag
 and branches to the matching `except`. There is no `jmp_buf` and no stack unwinding, so the
@@ -240,18 +240,18 @@ finally:
 
 **How it works, and its limits:**
 
-| Property | Notes |
-|---|---|
-| Zero SRAM, zero happy-path cost | No `jmp_buf`; each guarded call is followed by one branch, skipped when no error was raised |
-| Propagates across calls | A `raise` inside a called function is caught at the call site in the caller's `try` — cross-function propagation **is** the model; there is no same-function restriction |
-| Propagates to any depth | An unmatched exception re-propagates to the **enclosing** `try`, then the caller, and so on — there is no single-nesting-level limit |
-| Caught at call sites | An exception is detected after a **function call** inside the `try`. Raise from a helper and catch it where you call it, rather than `raise`-ing directly in the `try` body |
-| AVR + ARM only | On PIC, use return codes or sentinel values instead (`ZeroDivisionError` guards on `//` and `%` are still emitted there) |
-| Exception types are integer codes | Handlers match by code. A string literal costs one flash word; an f-string, concatenation or call is replayed as a deferred print when the exception is read |
-| Handler spellings | Bare, module-qualified and tuple forms all work, for example `except mod.Error:` and `except (A, B):` |
-| `raise X(...) from Y` | Accepted as `raise X(...)`; there is no traceback, `__cause__` or `__context__` |
-| `except E as e` | Binds a bounded object. `print(e)`, `str(e)`, `e.args[0]`, `e.args`, `len(e.args)` and `isinstance(e, X)` are supported. Integer `OSError` arguments may also expose `e.errno` |
-| Unmatched at top level | Initializes UART0 if necessary, prints `E:<TypeName>` or `E:<TypeName>: <message>`, then halts |
+| Property                          | Notes                                                                                                                                                                          |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Zero SRAM, zero happy-path cost   | No `jmp_buf`; each guarded call is followed by one branch, skipped when no error was raised                                                                                    |
+| Propagates across calls           | A `raise` inside a called function is caught at the call site in the caller's `try` — cross-function propagation **is** the model; there is no same-function restriction       |
+| Propagates to any depth           | An unmatched exception re-propagates to the **enclosing** `try`, then the caller, and so on — there is no single-nesting-level limit                                           |
+| Caught at call sites              | An exception is detected after a **function call** inside the `try`. Raise from a helper and catch it where you call it, rather than `raise`-ing directly in the `try` body    |
+| AVR + ARM only                    | On PIC, use return codes or sentinel values instead (`ZeroDivisionError` guards on `//` and `%` are still emitted there)                                                       |
+| Exception types are integer codes | Handlers match by code. A string literal costs one flash word; an f-string, concatenation or call is replayed as a deferred print when the exception is read                   |
+| Handler spellings                 | Bare, module-qualified and tuple forms all work, for example `except mod.Error:` and `except (A, B):`                                                                          |
+| `raise X(...) from Y`             | Accepted as `raise X(...)`; there is no traceback, `__cause__` or `__context__`                                                                                                |
+| `except E as e`                   | Binds a bounded object. `print(e)`, `str(e)`, `e.args[0]`, `e.args`, `len(e.args)` and `isinstance(e, X)` are supported. Integer `OSError` arguments may also expose `e.errno` |
+| Unmatched at top level            | Initializes UART0 if necessary, prints `E:<TypeName>` or `E:<TypeName>: <message>`, then halts                                                                                 |
 
 :::note[Return codes are still often clearer for firmware]
 `try / except` is now zero-cost on the happy path (no `jmp_buf`, one skipped branch per
@@ -272,6 +272,7 @@ match read_sensor():
     case STATUS_OK:    ...
     case STATUS_RANGE: ...
 ```
+
 :::
 
 ### `CompileError` — compile-time intrinsic
@@ -336,13 +337,13 @@ skip the output and go directly to the halt loop.
 
 ## Functions and closures
 
-| Feature | Why it fails | Alternative |
-|---|---|---|
-| Closures capturing mutable vars | Closure cell requires heap | Pass captured values as explicit parameters |
-| `*args` / `**kwargs` from a runtime sequence or mapping | Only compile-time expansion has a fixed call shape | Pass a literal or compile-time sequence/mapping, which is spliced at the call site |
-| `functools.partial` | Runtime partial object | Wrapper `@inline` function |
-| Function target selected by runtime control flow | The address must be known while compiling | Use `match`, or index a `Callable[N]` table of known functions |
-| Direct or mutual recursion | Static stack slots cannot represent recursive frames | Iterative equivalent; the diagnostic reports the full cycle |
+| Feature                                                 | Why it fails                                         | Alternative                                                                        |
+| ------------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Closures capturing mutable vars                         | Closure cell requires heap                           | Pass captured values as explicit parameters                                        |
+| `*args` / `**kwargs` from a runtime sequence or mapping | Only compile-time expansion has a fixed call shape   | Pass a literal or compile-time sequence/mapping, which is spliced at the call site |
+| `functools.partial`                                     | Runtime partial object                               | Wrapper `@inline` function                                                         |
+| Function target selected by runtime control flow        | The address must be known while compiling            | Use `match`, or index a `Callable[N]` table of known functions                     |
+| Direct or mutual recursion                              | Static stack slots cannot represent recursive frames | Iterative equivalent; the diagnostic reports the full cycle                        |
 
 **Supported:** `@inline` functions expand at call sites — zero call overhead, zero stack.
 Non-`@inline` functions use a conventional call/ret ABI but cannot recurse. A free function
@@ -376,19 +377,19 @@ time: no closures, bound methods or branch-selected targets.
 
 ## Classes and inheritance
 
-| Feature | Why it fails | Alternative |
-|---|---|---|
-| Multiple inheritance / MRO | C3 linearization is a runtime concept | Single-level inheritance only |
-| Runtime polymorphism (vtable dispatch) | Requires vtable + heap class objects | Compile-time `match / case` dispatch |
-| Runtime `type()` | No runtime class object | Use compile-time dispatch |
-| `__repr__`, `__str__` | No runtime string formatting | `uart.println()` with explicit fields |
-| `__new__` / `__init_subclass__` | There is no runtime allocation or class-creation event | Do the work in `__init__` |
-| `__del__` | Static storage has no collection event | Explicit `deinit()` / `close()`, or `with` |
-| Descriptor `__set_name__` | No user code runs at class creation | Pass the owner/name explicitly |
-| Class-level descriptor read (`Box.value`) | Descriptor lowering requires an instance | Read through an instance |
-| Assignment to a non-data descriptor | PyMCU has no per-instance `__dict__` for the shadowing value | Add `__set__`, or use another instance field |
-| `dataclass` | Metaclass + runtime heap | Manual `@inline` class |
-| `namedtuple` factory options and tuple indexing | The factory is a compile-time ZCA, not a tuple subclass | Two-argument `namedtuple` plus field access |
+| Feature                                         | Why it fails                                                 | Alternative                                  |
+| ----------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------- |
+| Multiple inheritance / MRO                      | C3 linearization is a runtime concept                        | Single-level inheritance only                |
+| Runtime polymorphism (vtable dispatch)          | Requires vtable + heap class objects                         | Compile-time `match / case` dispatch         |
+| Runtime `type()`                                | No runtime class object                                      | Use compile-time dispatch                    |
+| `__repr__`, `__str__`                           | No runtime string formatting                                 | `uart.println()` with explicit fields        |
+| `__new__` / `__init_subclass__`                 | There is no runtime allocation or class-creation event       | Do the work in `__init__`                    |
+| `__del__`                                       | Static storage has no collection event                       | Explicit `deinit()` / `close()`, or `with`   |
+| Descriptor `__set_name__`                       | No user code runs at class creation                          | Pass the owner/name explicitly               |
+| Class-level descriptor read (`Box.value`)       | Descriptor lowering requires an instance                     | Read through an instance                     |
+| Assignment to a non-data descriptor             | PyMCU has no per-instance `__dict__` for the shadowing value | Add `__set__`, or use another instance field |
+| `dataclass`                                     | Metaclass + runtime heap                                     | Manual `@inline` class                       |
+| `namedtuple` factory options and tuple indexing | The factory is a compile-time ZCA, not a tuple subclass      | Two-argument `namedtuple` plus field access  |
 
 **Supported:** zero-cost abstraction (ZCA) `@inline` classes (zero SRAM), `@property` / `@name.setter`,
 single-level class inheritance with `super()`, `with obj:` context managers
@@ -421,14 +422,14 @@ static slot where an interpreter would raise `AttributeError`.
 
 ## Type system limitations
 
-| Feature | Why it fails | Alternative |
-|---|---|---|
-| `complex` numbers | Not implemented | Not available |
-| `Decimal` | Requires heap | Not available |
-| `None` assigned where no Optional member exists | `None` has no scalar payload width | Add `None` to the annotation or use a sentinel |
-| Union with more than four members | The tag encodes at most four states | Split the API |
+| Feature                                               | Why it fails                            | Alternative                                    |
+| ----------------------------------------------------- | --------------------------------------- | ---------------------------------------------- |
+| `complex` numbers                                     | Not implemented                         | Not available                                  |
+| `Decimal`                                             | Requires heap                           | Not available                                  |
+| `None` assigned where no Optional member exists       | `None` has no scalar payload width      | Add `None` to the annotation or use a sentinel |
+| Union with more than four members                     | The tag encodes at most four states     | Split the API                                  |
 | Union containing a buffer, sequence or class instance | These members have no scalar tagged ABI | Specialize an inline function at the call site |
-| `TypeVar` / `Generic` | Runtime generics | Separate `@inline` functions per type |
+| `TypeVar` / `Generic`                                 | Runtime generics                        | Separate `@inline` functions per type          |
 
 **Unannotated widths.** A local, parameter, return, field or module global starts from the
 first evidence the compiler can type. Later stores are checked, and the compiler repeats
@@ -507,12 +508,12 @@ Reads and writes go through `.value`, and augmented assignment on `.value` works
 
 **What does not work** is treating a `ptr` as an iterator you can walk:
 
-| Operation | Example | Why it fails |
-|---|---|---|
-| Pointer advance | `p = p + 1` | There is no pointer arithmetic in the IR — recompute the address instead |
-| Pointer difference | `p - q` | Not in the IR |
-| Array address | `ptr(buf)` where `buf` is a fixed array | The assembler assigns the array label; the compiler has no scalar address value to pass |
-| Register base + runtime offset | a base address already held in a register, plus a variable | Only `ptr(<expression>)` is lowered; there is no base-register addressing form |
+| Operation                      | Example                                                    | Why it fails                                                                            |
+| ------------------------------ | ---------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Pointer advance                | `p = p + 1`                                                | There is no pointer arithmetic in the IR — recompute the address instead                |
+| Pointer difference             | `p - q`                                                    | Not in the IR                                                                           |
+| Array address                  | `ptr(buf)` where `buf` is a fixed array                    | The assembler assigns the array label; the compiler has no scalar address value to pass |
+| Register base + runtime offset | a base address already held in a register, plus a variable | Only `ptr(<expression>)` is lowered; there is no base-register addressing form          |
 
 `p[i]` is bit indexing, not element indexing, but it does support both constant and runtime
 bit numbers when `p` holds a runtime address. Reads, writes and augmented writes load the
@@ -558,17 +559,17 @@ _loop:
 
 ## Iterators and comprehensions
 
-| Feature | Why it fails | Alternative |
-|---|---|---|
-| List comprehension over a **runtime** iterable | Length not known at compile time | `for` loop with a fixed-size array |
-| `if`-filtered comprehension with a **runtime** condition | The result length would vary at runtime | Keep the filter compile-time constant, or a `for` loop with an explicit index |
-| Tuple literal passed as a runtime value or stored in a field | A tuple is a compile-time sequence here | Separate variables, or a fixed-size array |
-| Dict comprehension | Would build a container at runtime | Closed dict literal, or fill a `FixedDict` in a loop |
-| Set comprehension | Would build a container at runtime | Closed set literal, or a `uint8` bitmask |
-| Generator expression used as a lazy value | No runtime iterator object | Pass it directly to `all`, `any`, `sum`, `min` or `max`, or write a generator function |
-| `yield` inside an `@inline` function | There is no independent state-machine frame | Use a regular function or method |
-| `yield` used as an **expression** (`x = yield v`) | No two-way generator protocol | One-way `yield` only |
-| `map()` / `filter()` with runtime iterables | Lazy iterator requires heap | Explicit `for` loop |
+| Feature                                                      | Why it fails                                | Alternative                                                                            |
+| ------------------------------------------------------------ | ------------------------------------------- | -------------------------------------------------------------------------------------- |
+| List comprehension over a **runtime** iterable               | Length not known at compile time            | `for` loop with a fixed-size array                                                     |
+| `if`-filtered comprehension with a **runtime** condition     | The result length would vary at runtime     | Keep the filter compile-time constant, or a `for` loop with an explicit index          |
+| Tuple literal passed as a runtime value or stored in a field | A tuple is a compile-time sequence here     | Separate variables, or a fixed-size array                                              |
+| Dict comprehension                                           | Would build a container at runtime          | Closed dict literal, or fill a `FixedDict` in a loop                                   |
+| Set comprehension                                            | Would build a container at runtime          | Closed set literal, or a `uint8` bitmask                                               |
+| Generator expression used as a lazy value                    | No runtime iterator object                  | Pass it directly to `all`, `any`, `sum`, `min` or `max`, or write a generator function |
+| `yield` inside an `@inline` function                         | There is no independent state-machine frame | Use a regular function or method                                                       |
+| `yield` used as an **expression** (`x = yield v`)            | No two-way generator protocol               | One-way `yield` only                                                                   |
+| `map()` / `filter()` with runtime iterables                  | Lazy iterator requires heap                 | Explicit `for` loop                                                                    |
 
 **Supported:** `for i in range(N)` with runtime or constant bounds, fixed arrays, list and
 tuple literals or names, `enumerate`, `zip`, `reversed`, string split iteration, and
@@ -620,15 +621,15 @@ assignment to that API remains valid.
 
 ### Slices
 
-| Form | Status |
-|---|---|
-| `b = arr[1:3]` / `arr[::2]` (slice **read**) | Compile-time constant bounds only — the result is a fixed-size array sized at compile time |
-| `arr[a:b] = src` (slice **assignment**) | Supported, equal length, from a list / `bytes` literal / array / slice, including overlapping copies of the same array (snapshot semantics) |
-| `obj[a:b] = src` through `__setitem__` | Supported — lowers to one `__setitem__` call per byte |
-| `for x in buf[lo:hi]` (slice **iteration**) | Supported with **runtime** bounds; rewritten to a `range` loop over the backing array |
-| `for x in buf[lo:hi:step]` with a runtime `step` | Rejected with a diagnostic — the step has to be a compile-time constant |
+| Form                                             | Status                                                                                                                                      |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `b = arr[1:3]` / `arr[::2]` (slice **read**)     | Compile-time constant bounds only — the result is a fixed-size array sized at compile time                                                  |
+| `arr[a:b] = src` (slice **assignment**)          | Supported, equal length, from a list / `bytes` literal / array / slice, including overlapping copies of the same array (snapshot semantics) |
+| `obj[a:b] = src` through `__setitem__`           | Supported — lowers to one `__setitem__` call per byte                                                                                       |
+| `for x in buf[lo:hi]` (slice **iteration**)      | Supported with **runtime** bounds; rewritten to a `range` loop over the backing array                                                       |
+| `for x in buf[lo:hi:step]` with a runtime `step` | Rejected with a diagnostic — the step has to be a compile-time constant                                                                     |
 
-A slice *read* with runtime bounds (`b = buf[0:n]`) has no lowering: the result would need a
+A slice _read_ with runtime bounds (`b = buf[0:n]`) has no lowering: the result would need a
 runtime-sized array. Iterate it instead, or index the backing array directly.
 
 The `__setitem__` form is what makes the canonical CircuitPython persistence pattern compile:
@@ -666,11 +667,11 @@ two-way `yield` expression. `yield from` delegates to another supported generato
 
 ## Async and concurrency
 
-| Feature | Why it fails | Alternative |
-|---|---|---|
-| Awaiting another coroutine or future | Sub-future fields need ZCA construction outside `__init__` (not supported yet) | Call the coroutine and poll it, or restructure with `asyncio.gather` |
-| `await` as an **expression** (`x = await f()`) | The state machine only splits at statement boundaries | `await` the sleep, then read the result from `._value` |
-| `threading` / `multiprocessing` | An OS is required | `@interrupt` ISRs |
+| Feature                                        | Why it fails                                                                   | Alternative                                                          |
+| ---------------------------------------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| Awaiting another coroutine or future           | Sub-future fields need ZCA construction outside `__init__` (not supported yet) | Call the coroutine and poll it, or restructure with `asyncio.gather` |
+| `await` as an **expression** (`x = await f()`) | The state machine only splits at statement boundaries                          | `await` the sleep, then read the result from `._value`               |
+| `threading` / `multiprocessing`                | An OS is required                                                              | `@interrupt` ISRs                                                    |
 
 **Supported:** `async def` / `await` (compiled to a zero-cost state machine; requires
 `import asyncio`). `await asyncio.sleep()` / `sleep_ms()` works anywhere in the body —
@@ -707,12 +708,12 @@ hardware timer dependency.
 
 ## Imports and modules
 
-| Feature | Why it fails | Alternative |
-|---|---|---|
-| Third-party PyPI packages | Only the `pymcu` stdlib is compiled | Implement it in the `pymcu` stdlib, or use `@extern` (AVR) |
-| `importlib` / dynamic imports | Runtime module loading | Not available |
-| Circular imports | Not supported | Restructure the module dependencies |
-| A function defined twice in one module | PyMCU compiles the first while Python binds the last | Rename one, or use typed inline overloads |
+| Feature                                | Why it fails                                         | Alternative                                                |
+| -------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------- |
+| Third-party PyPI packages              | Only the `pymcu` stdlib is compiled                  | Implement it in the `pymcu` stdlib, or use `@extern` (AVR) |
+| `importlib` / dynamic imports          | Runtime module loading                               | Not available                                              |
+| Circular imports                       | Not supported                                        | Restructure the module dependencies                        |
+| A function defined twice in one module | PyMCU compiles the first while Python binds the last | Rename one, or use typed inline overloads                  |
 
 **Supported:** `import foo`, aliases, `from foo import Bar`, `from foo import *`,
 `from package import submodule`, relative imports in both forms, package re-exports,
@@ -742,36 +743,36 @@ statements after the call run afterward. A second call is refused.
 
 ## Built-ins summary
 
-| Built-in | Status | Notes |
-|---|---|---|
-| `print(str)` / `print(int)` | ✅ Supported | Routes to UART; `sep=` and `end=` take a compile-time string literal, `file=` is not supported |
-| `print(float)` / `str` / `repr` / unformatted f-string | ✅ Supported | MicroPython-style float32 output, 6 to 9 significant digits; AVR and ARM |
-| `print(bytearray)` / `print(arr[a:b])` | ✅ Supported | CPython repr — `bytearray(b'\xcc\x10')`; the length must be compile-time |
-| `range(n)` | ✅ Supported | Runtime or constant loop bounds, membership, `reversed` and `enumerate`; not a standalone value |
-| `len(arr)` / `len(b"...")` | ✅ Supported | Compile-time constant fold |
-| `abs(x)` | ✅ Supported | Intrinsic |
-| `min(a, b)` / `max(a, b)` | ✅ Supported | Also fixed arrays and `key=f`; the key is evaluated once per operand |
-| `sum(iterable)` | ✅ Supported | Compile-time fold or unrolled additions |
-| `enumerate(iterable)` | ✅ Supported | Constant sequences, range, fixed arrays, buffers and strings |
-| `zip(a, b)` | ✅ Supported | Compile-time unroll over constant lists |
-| `reversed(iterable)` | ✅ Supported | Compile-time reverse unroll |
-| `any` / `all` / `sum` / `min` / `max` on a generator expression | ✅ Supported | Direct argument only, over a known-length iterable; no lazy generator object |
-| `divmod(a, b)` | ✅ Supported | Unpacked, bound to one name or printed; runtime zero raises |
-| `pow(x, n)` / `x ** n` / `math.pow` | ✅ Supported | Constant integer, runtime integer and runtime software-float forms |
-| `math.sqrt` / `exp` / `log` / `radians` | ✅ Supported | Runtime software float, linked only when called |
-| `hex(n)` / `bin(n)` / `oct(n)` | ✅ Supported | Flash string for constants, fixed runtime buffer otherwise |
-| `round(x[, n])` | ✅ Supported | Half-to-even; `n` is compile-time |
-| `str(n)` | ✅ Supported | Compile-time only |
-| `ord('A')` / `chr(n)` | ✅ Supported | `ord` compile-time; runtime `chr` survives a character-returning function |
-| `int.from_bytes(b, e)` | ✅ Supported | Compile-time fold or runtime |
-| `memoryview(buf)` | ✅ Supported | Fixed-buffer alias or sliced writable window; no runtime buffer protocol |
-| `input(prompt?, maxlen?)` | ✅ Supported | `line: bytearray = input("prompt")` — reads a newline-terminated line from UART; the prompt is an optional compile-time string, the max length an optional integer (default 64); the UART preamble is auto-injected |
-| `getattr(module, "name", default)` | ✅ Supported | Compile-time module lookup with a literal attribute name |
-| `open()` / file I/O | ✅ Read-only ROMFS | Compile-time path and mode; `read`, `readinto`, `readline`, `seek`, `tell`, `close`, `with` |
-| `sorted()` | ❌ Not supported | No dynamic allocation |
-| `map()` / `filter()` | ❌ Not supported | Use explicit `for` loops |
-| `exec()` / `eval()` | ❌ Not supported | An interpreter would be required |
-| Runtime `getattr()` / `hasattr()` | ❌ Not supported | No runtime type information |
+| Built-in                                                        | Status             | Notes                                                                                                                                                                                                               |
+| --------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `print(str)` / `print(int)`                                     | ✅ Supported       | Routes to UART; `sep=` and `end=` take a compile-time string literal, `file=` is not supported                                                                                                                      |
+| `print(float)` / `str` / `repr` / unformatted f-string          | ✅ Supported       | MicroPython-style float32 output, 6 to 9 significant digits; AVR and ARM                                                                                                                                            |
+| `print(bytearray)` / `print(arr[a:b])`                          | ✅ Supported       | CPython repr — `bytearray(b'\xcc\x10')`; the length must be compile-time                                                                                                                                            |
+| `range(n)`                                                      | ✅ Supported       | Runtime or constant loop bounds, membership, `reversed` and `enumerate`; not a standalone value                                                                                                                     |
+| `len(arr)` / `len(b"...")`                                      | ✅ Supported       | Compile-time constant fold                                                                                                                                                                                          |
+| `abs(x)`                                                        | ✅ Supported       | Intrinsic                                                                                                                                                                                                           |
+| `min(a, b)` / `max(a, b)`                                       | ✅ Supported       | Also fixed arrays and `key=f`; the key is evaluated once per operand                                                                                                                                                |
+| `sum(iterable)`                                                 | ✅ Supported       | Compile-time fold or unrolled additions                                                                                                                                                                             |
+| `enumerate(iterable)`                                           | ✅ Supported       | Constant sequences, range, fixed arrays, buffers and strings                                                                                                                                                        |
+| `zip(a, b)`                                                     | ✅ Supported       | Compile-time unroll over constant lists                                                                                                                                                                             |
+| `reversed(iterable)`                                            | ✅ Supported       | Compile-time reverse unroll                                                                                                                                                                                         |
+| `any` / `all` / `sum` / `min` / `max` on a generator expression | ✅ Supported       | Direct argument only, over a known-length iterable; no lazy generator object                                                                                                                                        |
+| `divmod(a, b)`                                                  | ✅ Supported       | Unpacked, bound to one name or printed; runtime zero raises                                                                                                                                                         |
+| `pow(x, n)` / `x ** n` / `math.pow`                             | ✅ Supported       | Constant integer, runtime integer and runtime software-float forms                                                                                                                                                  |
+| `math.sqrt` / `exp` / `log` / `radians`                         | ✅ Supported       | Runtime software float, linked only when called                                                                                                                                                                     |
+| `hex(n)` / `bin(n)` / `oct(n)`                                  | ✅ Supported       | Flash string for constants, fixed runtime buffer otherwise                                                                                                                                                          |
+| `round(x[, n])`                                                 | ✅ Supported       | Half-to-even; `n` is compile-time                                                                                                                                                                                   |
+| `str(n)`                                                        | ✅ Supported       | Compile-time only                                                                                                                                                                                                   |
+| `ord('A')` / `chr(n)`                                           | ✅ Supported       | `ord` compile-time; runtime `chr` survives a character-returning function                                                                                                                                           |
+| `int.from_bytes(b, e)`                                          | ✅ Supported       | Compile-time fold or runtime                                                                                                                                                                                        |
+| `memoryview(buf)`                                               | ✅ Supported       | Fixed-buffer alias or sliced writable window; no runtime buffer protocol                                                                                                                                            |
+| `input(prompt?, maxlen?)`                                       | ✅ Supported       | `line: bytearray = input("prompt")` — reads a newline-terminated line from UART; the prompt is an optional compile-time string, the max length an optional integer (default 64); the UART preamble is auto-injected |
+| `getattr(module, "name", default)`                              | ✅ Supported       | Compile-time module lookup with a literal attribute name                                                                                                                                                            |
+| `open()` / file I/O                                             | ✅ Read-only ROMFS | Compile-time path and mode; `read`, `readinto`, `readline`, `seek`, `tell`, `close`, `with`                                                                                                                         |
+| `sorted()`                                                      | ❌ Not supported   | No dynamic allocation                                                                                                                                                                                               |
+| `map()` / `filter()`                                            | ❌ Not supported   | Use explicit `for` loops                                                                                                                                                                                            |
+| `exec()` / `eval()`                                             | ❌ Not supported   | An interpreter would be required                                                                                                                                                                                    |
+| Runtime `getattr()` / `hasattr()`                               | ❌ Not supported   | No runtime type information                                                                                                                                                                                         |
 
 ---
 
@@ -788,9 +789,9 @@ statements after the call run afterward. A second call is refused.
   static arena with no `free()`.
 - **Capacity is checked at build time, not at flash time:** an image larger than the chip's
   flash fails the build with the exact overage (`firmware is 32864 bytes but atmega328p has
-  32768 bytes of flash (96 bytes over)`), and static data that does not fit in SRAM fails in
+32768 bytes of flash (96 bytes over)`), and static data that does not fit in SRAM fails in
   the backend with the same shape (`static data needs 2700 bytes but atmega328p has 2048
-  bytes of SRAM`). The SRAM check reserves 64 bytes for the hardware call stack, which grows
+bytes of SRAM`). The SRAM check reserves 64 bytes for the hardware call stack, which grows
   down into the same space.
 - **String literals live in flash:** read-only, sent to UART through the flash string pool.
   Compile-time text can be compared and indexed; a name selected from several flash strings
@@ -892,45 +893,45 @@ Twenty of the original 37-library set built unmodified at the recorded checkpoin
 additional entries moved forward as later Beta 1 fixes landed. The table keeps the last
 measured blocker rather than turning a refusal into a vague compatibility percentage.
 
-| Library | Result or current blocker |
-|---|---|
-| `adafruit_ahtx0` | Builds unmodified, 7,108 bytes |
-| `adafruit_ads1x15` | `next(key for key, value in ...)`: generator expression used as a lazy value |
-| `adafruit_aw9523` | Builds unmodified, 2,294 bytes |
-| `adafruit_bme280` | Undefined `_bus_implementation.read_register` call |
-| `adafruit_bmp280` | Builds unmodified, 25,006 bytes |
-| `adafruit_bus_device` | Builds unmodified, 800 bytes; its simpletest builds at 1,444 bytes |
-| `adafruit_character_lcd` | Runtime bit index in the wrapped `Pin.high()` path |
-| `adafruit_debouncer` | Passed object matches neither member of `Union[ROValueIO, Callable[[], bool]]` |
-| `adafruit_dht` | Builds unmodified, 12,252 bytes, after tagged multi-member returns and fields |
-| `adafruit_dps310` | Builds unmodified, 13,162 bytes |
-| `adafruit_ds18x20` | Missing `onewireio` module |
-| `adafruit_ds3231` | `time.struct_time` exists in the core stub but is not exported by the CircuitPython overlay |
-| `adafruit_74hc595` | Builds unmodified, 402 bytes |
-| `adafruit_hcsr04` | Builds unmodified, 3,430 bytes; also ran on a real Uno for Beta 1 |
-| `adafruit_ht16k33` matrix | Builds unmodified; matrix simpletest 4,234 bytes |
-| `adafruit_ht16k33` segments | Builds unmodified, 5,710 bytes |
-| `adafruit_ina219` | Builds unmodified, 7,294 bytes |
-| `adafruit_irremote` | Tagged union payload has no valid member slot in this generator path |
-| `adafruit_lis3dh` | Builds unmodified, 2,522 bytes |
-| `adafruit_mcp230xx` | Runtime bit index in the wrapped `Pin.high()` path |
-| `adafruit_mcp3xxx` | Builds unmodified, 3,094 bytes |
-| `adafruit_mcp9808` | Builds unmodified, 4,646 bytes |
-| `adafruit_mlx90614` | Builds unmodified, 3,846 bytes |
-| `neopixel` with `adafruit_pixelbuf` | Builds unmodified; GRB byte order verified in the AVR emulator |
-| `adafruit_pca9685` | Builds unmodified, 1,852 bytes |
-| `adafruit_pcf8523` | Same CircuitPython `time.struct_time` export gap as `adafruit_ds3231` |
-| `adafruit_pcf8574` | Builds unmodified, 1,442 bytes |
-| `adafruit_seesaw` | Builds unmodified, 3,706 bytes; emulator I2C stream matches CPython byte for byte |
-| `adafruit_sht31d` | Moved past indexed `struct.unpack`; next construct was still being measured |
-| `adafruit_sht4x` | Moved past field-buffer slicing; stops on iterating a buffer in static `_crc8` |
-| `adafruit_si7021` | Moved past a quoted dotted class annotation; next construct was still being measured |
-| `adafruit_ssd1306` | 128x32 simpletest builds unmodified at 4,348 bytes and matches CPython I2C traffic; also ran on a real Uno |
-| `adafruit_tcs34725` | Builds unmodified, 28,414 bytes |
-| `adafruit_tmp117` | Imported descriptor context manager cannot resolve `__enter__` |
-| `adafruit_tsl2591` | Builds unmodified, 5,814 bytes |
-| `adafruit_veml7700` | Builds unmodified, 10,614 bytes |
-| `adafruit_motor` servo | Builds unmodified, 2,332 bytes |
+| Library                             | Result or current blocker                                                                                  |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `adafruit_ahtx0`                    | Builds unmodified, 7,108 bytes                                                                             |
+| `adafruit_ads1x15`                  | `next(key for key, value in ...)`: generator expression used as a lazy value                               |
+| `adafruit_aw9523`                   | Builds unmodified, 2,294 bytes                                                                             |
+| `adafruit_bme280`                   | Undefined `_bus_implementation.read_register` call                                                         |
+| `adafruit_bmp280`                   | Builds unmodified, 25,006 bytes                                                                            |
+| `adafruit_bus_device`               | Builds unmodified, 800 bytes; its simpletest builds at 1,444 bytes                                         |
+| `adafruit_character_lcd`            | Runtime bit index in the wrapped `Pin.high()` path                                                         |
+| `adafruit_debouncer`                | Passed object matches neither member of `Union[ROValueIO, Callable[[], bool]]`                             |
+| `adafruit_dht`                      | Builds unmodified, 12,252 bytes, after tagged multi-member returns and fields                              |
+| `adafruit_dps310`                   | Builds unmodified, 13,162 bytes                                                                            |
+| `adafruit_ds18x20`                  | Missing `onewireio` module                                                                                 |
+| `adafruit_ds3231`                   | `time.struct_time` exists in the core stub but is not exported by the CircuitPython overlay                |
+| `adafruit_74hc595`                  | Builds unmodified, 402 bytes                                                                               |
+| `adafruit_hcsr04`                   | Builds unmodified, 3,430 bytes; also ran on a real Uno for Beta 1                                          |
+| `adafruit_ht16k33` matrix           | Builds unmodified; matrix simpletest 4,234 bytes                                                           |
+| `adafruit_ht16k33` segments         | Builds unmodified, 5,710 bytes                                                                             |
+| `adafruit_ina219`                   | Builds unmodified, 7,294 bytes                                                                             |
+| `adafruit_irremote`                 | Tagged union payload has no valid member slot in this generator path                                       |
+| `adafruit_lis3dh`                   | Builds unmodified, 2,522 bytes                                                                             |
+| `adafruit_mcp230xx`                 | Runtime bit index in the wrapped `Pin.high()` path                                                         |
+| `adafruit_mcp3xxx`                  | Builds unmodified, 3,094 bytes                                                                             |
+| `adafruit_mcp9808`                  | Builds unmodified, 4,646 bytes                                                                             |
+| `adafruit_mlx90614`                 | Builds unmodified, 3,846 bytes                                                                             |
+| `neopixel` with `adafruit_pixelbuf` | Builds unmodified; GRB byte order verified in the AVR emulator                                             |
+| `adafruit_pca9685`                  | Builds unmodified, 1,852 bytes                                                                             |
+| `adafruit_pcf8523`                  | Same CircuitPython `time.struct_time` export gap as `adafruit_ds3231`                                      |
+| `adafruit_pcf8574`                  | Builds unmodified, 1,442 bytes                                                                             |
+| `adafruit_seesaw`                   | Builds unmodified, 3,706 bytes; emulator I2C stream matches CPython byte for byte                          |
+| `adafruit_sht31d`                   | Moved past indexed `struct.unpack`; next construct was still being measured                                |
+| `adafruit_sht4x`                    | Moved past field-buffer slicing; stops on iterating a buffer in static `_crc8`                             |
+| `adafruit_si7021`                   | Moved past a quoted dotted class annotation; next construct was still being measured                       |
+| `adafruit_ssd1306`                  | 128x32 simpletest builds unmodified at 4,348 bytes and matches CPython I2C traffic; also ran on a real Uno |
+| `adafruit_tcs34725`                 | Builds unmodified, 28,414 bytes                                                                            |
+| `adafruit_tmp117`                   | Imported descriptor context manager cannot resolve `__enter__`                                             |
+| `adafruit_tsl2591`                  | Builds unmodified, 5,814 bytes                                                                             |
+| `adafruit_veml7700`                 | Builds unmodified, 10,614 bytes                                                                            |
+| `adafruit_motor` servo              | Builds unmodified, 2,332 bytes                                                                             |
 
 Several compiler features on this page came directly from reducing those failures:
 compile-time `**kwargs`, bounded exception objects, structural Protocol members in inline

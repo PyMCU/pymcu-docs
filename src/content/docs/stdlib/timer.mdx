@@ -108,43 +108,43 @@ guard.
 Timer(id=255, prescaler=64, period=0, mode=1, callback=0, freq=0)
 ```
 
-| Parameter | Type | Description |
-|---|---|---|
-| `id` | `const[uint8]` | Timer number (0, 1 or 2 on AVR). `255` is the sentinel for MicroPython's `Timer(-1)` "auto-pick" and maps to Timer1. |
-| `prescaler` | `uint16` | Low-level override; ignored when `period` or `freq` is set |
-| `period` | `const[uint16]` | Interval in milliseconds |
-| `mode` | `const[uint8]` | `Timer.ONE_SHOT` (0) or `Timer.PERIODIC` (1, default) |
-| `callback` | `Callable` | Called on each tick |
-| `freq` | `const[uint32]` | Frequency in Hz; takes precedence over `period` |
+| Parameter   | Type            | Description                                                                                                          |
+| ----------- | --------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `id`        | `const[uint8]`  | Timer number (0, 1 or 2 on AVR). `255` is the sentinel for MicroPython's `Timer(-1)` "auto-pick" and maps to Timer1. |
+| `prescaler` | `uint16`        | Low-level override; ignored when `period` or `freq` is set                                                           |
+| `period`    | `const[uint16]` | Interval in milliseconds                                                                                             |
+| `mode`      | `const[uint8]`  | `Timer.ONE_SHOT` (0) or `Timer.PERIODIC` (1, default)                                                                |
+| `callback`  | `Callable`      | Called on each tick                                                                                                  |
+| `freq`      | `const[uint32]` | Frequency in Hz; takes precedence over `period`                                                                      |
 
 Passing `period` or `freq` to the constructor calls `init()` for you, so
 `Timer(1, period=100, callback=on_tick)` is a complete setup.
 
 ### machine.Timer methods
 
-| Method | Description |
-|---|---|
-| `init(period=0, mode=1, callback=0, prescaler=0, freq=0)` | (Re)configure; enables interrupts |
-| `deinit()` | Stop the timer and disconnect its clock source |
-| `start()` | Re-enable the timer's interrupt |
-| `irq(handler, trigger=Timer.IRQ_OVF)` | Register a handler; `trigger` is `Timer.IRQ_OVF` (1) or `Timer.IRQ_COMPA` (2) |
+| Method                                                    | Description                                                                   |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `init(period=0, mode=1, callback=0, prescaler=0, freq=0)` | (Re)configure; enables interrupts                                             |
+| `deinit()`                                                | Stop the timer and disconnect its clock source                                |
+| `start()`                                                 | Re-enable the timer's interrupt                                               |
+| `irq(handler, trigger=Timer.IRQ_OVF)`                     | Register a handler; `trigger` is `Timer.IRQ_OVF` (1) or `Timer.IRQ_COMPA` (2) |
 
 ### Prescaler selection
 
 `init()` picks the prescaler and compare value from `freq` or `period` on AVR Timer1 at 16 MHz,
 so that `OCR` always fits a `uint16`:
 
-| Requested `freq` | Prescaler | `OCR` |
-|---|---|---|
-| >= 245 Hz | 1 | `16 000 000 / freq - 1` |
-| >= 31 Hz | 8 | `2 000 000 / freq - 1` |
-| >= 4 Hz | 64 | `250 000 / freq - 1` |
-| >= 1 Hz | 1024 | `15 625 / freq - 1` |
+| Requested `freq` | Prescaler | `OCR`                   |
+| ---------------- | --------- | ----------------------- |
+| >= 245 Hz        | 1         | `16 000 000 / freq - 1` |
+| >= 31 Hz         | 8         | `2 000 000 / freq - 1`  |
+| >= 4 Hz          | 64        | `250 000 / freq - 1`    |
+| >= 1 Hz          | 1024      | `15 625 / freq - 1`     |
 
-| Requested `period` | Prescaler | `OCR` | Accuracy |
-|---|---|---|---|
-| `<= 262 ms` | 64 | `250 * period - 1` | exact |
-| `<= 4194 ms` | 1024 | `15 * period` | ~0.6 ms error per step |
+| Requested `period` | Prescaler | `OCR`              | Accuracy               |
+| ------------------ | --------- | ------------------ | ---------------------- |
+| `<= 262 ms`        | 64        | `250 * period - 1` | exact                  |
+| `<= 4194 ms`       | 1024      | `15 * period`      | ~0.6 ms error per step |
 
 ---
 
@@ -164,42 +164,42 @@ away and only the register writes for the selected timer survive.
 Timer(n, prescaler)
 ```
 
-| Parameter | Type | Description |
-|---|---|---|
-| `n` | `const[uint8]` | Timer number. AVR: 0, 1 or 2 (0 or 1 on ATtiny). PIC: 0 only. |
-| `prescaler` | `uint16` | Clock divider — 1, 8, 64, 256 or 1024 |
+| Parameter   | Type           | Description                                                   |
+| ----------- | -------------- | ------------------------------------------------------------- |
+| `n`         | `const[uint8]` | Timer number. AVR: 0, 1 or 2 (0 or 1 on ATtiny). PIC: 0 only. |
+| `prescaler` | `uint16`       | Clock divider — 1, 8, 64, 256 or 1024                         |
 
 The constructor is what starts the clock: it writes the waveform-generation mode to `TCCRnA` and
 the clock-select bits derived from `prescaler` to `TCCRnB`. From that moment the counter is
 running.
 
 | Prescaler | Divisor | Period per tick (16 MHz) |
-|---|---|---|
-| 1 | /1 | 62.5 ns |
-| 8 | /8 | 500 ns |
-| 64 | /64 | 4 µs |
-| 256 | /256 | 16 µs |
-| 1024 | /1024 | 64 µs |
+| --------- | ------- | ------------------------ |
+| 1         | /1      | 62.5 ns                  |
+| 8         | /8      | 500 ns                   |
+| 64        | /64     | 4 µs                     |
+| 256       | /256    | 16 µs                    |
+| 1024      | /1024   | 64 µs                    |
 
 #### Timer constants
 
-| Constant | Value | Description |
-|---|---|---|
-| `Timer.IRQ_OVF` | 1 | Overflow interrupt |
-| `Timer.IRQ_COMPA` | 2 | Output-compare A interrupt |
+| Constant          | Value | Description                |
+| ----------------- | ----- | -------------------------- |
+| `Timer.IRQ_OVF`   | 1     | Overflow interrupt         |
+| `Timer.IRQ_COMPA` | 2     | Output-compare A interrupt |
 
 #### Timer methods
 
-| Method | Description |
-|---|---|
-| `start()` | Enable the **overflow interrupt** — it sets `TIMSKn[0]` (TOIEn) and nothing else. It does *not* write the clock-select bits; the constructor already did that |
-| `stop()` | Clear `TIMSKn[0]` and write `0` to `TCCRnB`, which disconnects the clock source |
-| `clear()` | Reset `TCNT` to 0 |
-| `counter() -> uint16` | Read the current counter value |
-| `overflow() -> uint8` | Read (and consume) the overflow flag |
-| `set_compare(value: uint16)` | Set the `OCR` register, switch to CTC mode and enable `OCIEnA` |
-| `irq(handler, mode=Timer.IRQ_OVF)` | Register an overflow or compare-A handler |
-| `reinit(prescaler: uint16)` | Change the prescaler on a running timer |
+| Method                             | Description                                                                                                                                                   |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `start()`                          | Enable the **overflow interrupt** — it sets `TIMSKn[0]` (TOIEn) and nothing else. It does _not_ write the clock-select bits; the constructor already did that |
+| `stop()`                           | Clear `TIMSKn[0]` and write `0` to `TCCRnB`, which disconnects the clock source                                                                               |
+| `clear()`                          | Reset `TCNT` to 0                                                                                                                                             |
+| `counter() -> uint16`              | Read the current counter value                                                                                                                                |
+| `overflow() -> uint8`              | Read (and consume) the overflow flag                                                                                                                          |
+| `set_compare(value: uint16)`       | Set the `OCR` register, switch to CTC mode and enable `OCIEnA`                                                                                                |
+| `irq(handler, mode=Timer.IRQ_OVF)` | Register an overflow or compare-A handler                                                                                                                     |
+| `reinit(prescaler: uint16)`        | Change the prescaler on a running timer                                                                                                                       |
 
 :::note[`start()` is an interrupt enable, not a run/stop switch]
 The name is inherited from `machine.Timer`, but on AVR the prescaler — and therefore the clock —
@@ -268,15 +268,15 @@ def main():
 
 ### ATmega328P Timer0 register map
 
-| Register | Address | Description |
-|---|---|---|
-| `TCCR0A` | `0x44` | Waveform generation mode |
-| `TCCR0B` | `0x45` | Clock select (prescaler) |
-| `TCNT0` | `0x46` | Counter value |
-| `OCR0A` | `0x47` | Output Compare A |
-| `OCR0B` | `0x48` | Output Compare B |
-| `TIMSK0` | `0x6E` | Interrupt mask (TOIE0, OCIE0A, OCIE0B) |
-| `TIFR0` | `0x35` | Interrupt flag register |
+| Register | Address | Description                            |
+| -------- | ------- | -------------------------------------- |
+| `TCCR0A` | `0x44`  | Waveform generation mode               |
+| `TCCR0B` | `0x45`  | Clock select (prescaler)               |
+| `TCNT0`  | `0x46`  | Counter value                          |
+| `OCR0A`  | `0x47`  | Output Compare A                       |
+| `OCR0B`  | `0x48`  | Output Compare B                       |
+| `TIMSK0` | `0x6E`  | Interrupt mask (TOIE0, OCIE0A, OCIE0B) |
+| `TIFR0`  | `0x35`  | Interrupt flag register                |
 
 :::caution[Advanced — native HAL only]
 CircuitPython has no timer API at all — its model is a `time.monotonic()` polling loop, not a

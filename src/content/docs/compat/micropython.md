@@ -45,15 +45,15 @@ stdlib = ["micropython"]
 to pin the chip and its clock in one key, or set `target = …` when you would rather name the
 chip directly. **`board` and `target` are mutually exclusive** — setting both is a hard error.
 
-| `board = …` | Chip |
-|---|---|
-| `arduino_uno`, `arduino_nano` | ATmega328P |
-| `arduino_mega` | ATmega2560 |
-| `arduino_micro` | ATmega32U4 |
-| `digispark`, `adafruit_trinket` | ATtiny85 |
+| `board = …`                                                                                                                       | Chip                       |
+| --------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| `arduino_uno`, `arduino_nano`                                                                                                     | ATmega328P                 |
+| `arduino_mega`                                                                                                                    | ATmega2560                 |
+| `arduino_micro`                                                                                                                   | ATmega32U4                 |
+| `digispark`, `adafruit_trinket`                                                                                                   | ATtiny85                   |
 | `attiny85` / `attiny45` / `attiny25`, `attiny84` / `attiny44` / `attiny24`, `attiny2313` / `attiny4313`, `attiny13` / `attiny13a` | ATtiny family (bare chips) |
-| `raspberry_pi_pico`, `pico`, `rp2040` | RP2040 (Cortex-M0+) |
-| `raspberry_pi_pico2`, `pico2`, `rp2350` | RP2350 (Cortex-M33) |
+| `raspberry_pi_pico`, `pico`, `rp2040`                                                                                             | RP2040 (Cortex-M0+)        |
+| `raspberry_pi_pico2`, `pico2`, `rp2350`                                                                                           | RP2350 (Cortex-M33)        |
 
 :::note[Names that will not build]
 For source compatibility the flavour's board map also carries `pyboard`, `pyboard_v11`,
@@ -64,19 +64,19 @@ parses.
 
 ## Supported modules
 
-| Module | Classes / functions | Status | Notes |
-|---|---|---|---|
-| `machine` (portable) | `Pin`, `UART`, `Signal`, `mem8` / `mem16`, `freq()`, `disable_irq` / `enable_irq`, `time_pulse_us` | Complete | Compiles for AVR, RP2040 and RP2350 |
-| `machine` (AVR only) | `ADC`, `PWM`, `SPI`, `I2C`, `SoftI2C`, `Timer`, `WDT`, `reset()`, `idle` / `lightsleep` / `deepsleep` | Complete on AVR | Imported inside an `arch == "avr"` guard; unavailable on the Pico |
-| `machine.unique_id()` | — | Not available | The ATmega328P has no factory ID; the call is a compile error pointing at EEPROM storage |
-| `utime` | `sleep_ms`, `sleep_us`, `sleep`, `ticks_diff`, `ticks_add` | Complete | Portable — the delays are software loops, the tick arithmetic is pure integer maths |
-| `utime` | `ticks_ms`, `ticks_us`, `ticks_cpu` | AVR only | They read `pymcu.hal.timer.millis` / `micros`, which raises a `CompileError` on ARM |
-| `micropython` | `const()` (treated as an integer literal); `@native` / `@viper` accepted and ignored | Complete | Portable |
-| `avr` | AVR port module — `EEPROM`, `SoftSPI`, `SoftI2C` | Complete on AVR | AVR-only by design |
-| `rp2` | RP2040 / RP2350 PIO — `@rp2.asm_pio`, `PIO`, `StateMachine` | Partial | PIO0 / SM0 only; RP-only |
-| `network` | `WLAN(STA_IF)` — `active`, `connect`, `isconnected` | Pico 2 W only | Open networks only — see below |
-| `umqtt.simple` | `MQTTClient` — `connect`, `publish`, `disconnect` | Pico 2 W only | Over the CYW43439 radio |
-| `print()` / `input()` | UART output / input | Complete | The driver auto-injects the UART init |
+| Module                | Classes / functions                                                                                   | Status          | Notes                                                                                    |
+| --------------------- | ----------------------------------------------------------------------------------------------------- | --------------- | ---------------------------------------------------------------------------------------- |
+| `machine` (portable)  | `Pin`, `UART`, `Signal`, `mem8` / `mem16`, `freq()`, `disable_irq` / `enable_irq`, `time_pulse_us`    | Complete        | Compiles for AVR, RP2040 and RP2350                                                      |
+| `machine` (AVR only)  | `ADC`, `PWM`, `SPI`, `I2C`, `SoftI2C`, `Timer`, `WDT`, `reset()`, `idle` / `lightsleep` / `deepsleep` | Complete on AVR | Imported inside an `arch == "avr"` guard; unavailable on the Pico                        |
+| `machine.unique_id()` | —                                                                                                     | Not available   | The ATmega328P has no factory ID; the call is a compile error pointing at EEPROM storage |
+| `utime`               | `sleep_ms`, `sleep_us`, `sleep`, `ticks_diff`, `ticks_add`                                            | Complete        | Portable — the delays are software loops, the tick arithmetic is pure integer maths      |
+| `utime`               | `ticks_ms`, `ticks_us`, `ticks_cpu`                                                                   | AVR only        | They read `pymcu.hal.timer.millis` / `micros`, which raises a `CompileError` on ARM      |
+| `micropython`         | `const()` (treated as an integer literal); `@native` / `@viper` accepted and ignored                  | Complete        | Portable                                                                                 |
+| `avr`                 | AVR port module — `EEPROM`, `SoftSPI`, `SoftI2C`                                                      | Complete on AVR | AVR-only by design                                                                       |
+| `rp2`                 | RP2040 / RP2350 PIO — `@rp2.asm_pio`, `PIO`, `StateMachine`                                           | Partial         | PIO0 / SM0 only; RP-only                                                                 |
+| `network`             | `WLAN(STA_IF)` — `active`, `connect`, `isconnected`                                                   | Pico 2 W only   | Open networks only — see below                                                           |
+| `umqtt.simple`        | `MQTTClient` — `connect`, `publish`, `disconnect`                                                     | Pico 2 W only   | Over the CYW43439 radio                                                                  |
+| `print()` / `input()` | UART output / input                                                                                   | Complete        | The driver auto-injects the UART init                                                    |
 
 ## Usage
 
@@ -132,17 +132,17 @@ RP2040 and RP2350, whose pads have a real pull-down.
 **Pin number mapping (Arduino Uno):**
 
 | Arg | Arduino pin | Port/bit |
-|---|---|---|
-| 0 | D0 / RX | PD0 |
-| 1 | D1 / TX | PD1 |
-| 2 | D2 | PD2 |
-| ... | ... | ... |
-| 13 | D13 / LED | PB5 |
-| 14 | A0 | PC0 |
-| ... | ... | ... |
-| 19 | A5 | PC5 |
+| --- | ----------- | -------- |
+| 0   | D0 / RX     | PD0      |
+| 1   | D1 / TX     | PD1      |
+| 2   | D2          | PD2      |
+| ... | ...         | ...      |
+| 13  | D13 / LED   | PB5      |
+| 14  | A0          | PC0      |
+| ... | ...         | ...      |
+| 19  | A5          | PC5      |
 
-On the RP2040 / RP2350 the integer *is* the GP number — no mapping table is involved.
+On the RP2040 / RP2350 the integer _is_ the GP number — no mapping table is involved.
 
 ### `machine.UART`
 
@@ -371,35 +371,35 @@ onto the compat API. The command exits non-zero if any hard error was found.
 These are the actual gaps and trade-offs — anything not listed behaves like standard
 MicroPython.
 
-| Feature | MicroPython | PyMCU + pymcu-micropython |
-|---|---|---|
-| Execution model | Bytecode interpreter | Native compiled — no VM, no GC, ~0 bytes RAM overhead |
-| `machine` module scope | Whole module on every port | `Pin` / `UART` / `Signal` / `mem8` / `time_pulse_us` everywhere; `ADC`, `PWM`, `SPI`, `I2C`, `Timer`, `WDT` on AVR only |
-| `Pin.PULL_DOWN` | Supported where the pad has one | RP2040 / RP2350 only — a `CompileError` on AVR |
-| `UART.read(n)` | Returns `bytes` | `read()` takes no argument and returns one byte; use `readline(buf)` for a buffer |
-| `Pin.irq()` callbacks | Supported | Supported — `btn.irq(handler=cb, trigger=Pin.IRQ_FALLING)` registers the real ISR |
-| `Timer` callbacks | Supported | Supported on AVR — `Timer(1, freq=10, callback=on_tick)` auto-selects the prescaler |
-| `machine.mem8[addr]` | Supported | Supported; `ptr(addr).value` is the typed, compile-time-checked alternative |
-| `ticks_ms()` / `ticks_us()` | Supported on every port | AVR only — the driver injects `millis_init()` (Timer0) automatically. `pymcu.hal.timer` has no RP implementation, so these raise a `CompileError` on the Pico; `ticks_diff()` / `ticks_add()` are portable. A Timer0 overflow is 1024 µs and the ISR carries the Arduino-style fractional correction, so `ticks_ms()` counts **real** milliseconds; `ticks_us()` is monotonic across an overflow |
-| `ADC(n)` channel number | Supported | Supported — `ADC(0)`-`ADC(5)` are A0-A5, alongside `ADC(Pin(14))` |
-| `PWM.freq()` / `PWM.duty_u16()` getters | Read back from hardware | Supported — they return the **requested** value; the timer runs at the nearest reachable prescaler bucket |
-| `SoftI2C(scl, sda, freq)` | Supported | Supported — `freq` is compile-time; `>= 500 kHz` drops the delays |
-| `I2C(scl=…, sda=…, freq=…)` | Configurable | The AVR TWI pins and 100 kHz are fixed; internal pull-ups are enabled by default. Passing alternate pins or frequency is a compile error |
-| `machine.unique_id()` | Factory unique ID | No such ID on this silicon — a compile error pointing at EEPROM storage |
-| `Pin(n)` with a runtime `n` | Supported | A compile error — a pin identity has to be constant for the access to stay zero-cost |
-| Unformatted float text | MicroPython float32 formatter | The same 6 to 9 significant-digit policy, including scientific notation thresholds |
-| `print(bytearray(b"\xcc\x10"))` | `bytearray(b'\xcc\x10')` | The same repr; the length must be compile-time |
-| `print(…, sep=…, end=…)` | Any value | A compile-time string literal; `file=` is not supported (no filesystem) |
-| `f"..."` strings | Runtime evaluation | Supported streamed and as fixed-buffer values, including integer and float format specs |
-| `float` | Supported | Supported — IEEE-754 f32 (soft-float on AVR, bootrom fast-float on RP2040, M33 FPU on RP2350) |
-| `try / except / raise` | Supported (heap-based) | Supported on AVR and ARM — zero-cost flag-propagation model, no heap |
-| `dict` / `set` | Dynamic hash maps | Closed literals are compile-time lookup tables; `pymcu.collections.FixedDict(capacity)` for mutation; unbounded growth is not supported |
-| `yield` / generators | Supported | Functions and bound methods lower to state machines and support `yield from`; not inside `@inline` functions |
-| `async` / `await` | Supported (`uasyncio`) | `await asyncio.sleep_ms(…)` anywhere in a body, plus `asyncio.run` / `gather`; awaiting another coroutine is not supported yet |
-| `bytearray` | Dynamic heap allocation | Constant sizes lower to fixed arrays. On AVR a runtime size is allowed where allocation is proven to run once, using a static arena with no `free()` |
-| Platform guards | `sys.implementation`, `sys.platform`, `os.uname()` reflect the board | The same guards fold at compile time to the configured MicroPython target |
-| `UART.any()` | Byte count | Returns `1` / `0`, not an exact count |
-| `UART.readline()` | Returns `bytes`, no args | `readline(buf)` — the caller provides the buffer and `len(buf)` is the limit; the no-arg call is a compile error naming this form |
-| `I2C.scan()` | List of addresses | Returns a count; `scan(buf, max_count)` fills a caller-owned buffer |
-| `network.WLAN` | Every WiFi port | Pico 2 W (RP2350) only, open networks only — no WPA |
-| Target hardware | STM32, RP2040, ESP32, … | AVR (ATmega / ATtiny) and ARM (RP2040 / RP2350) |
+| Feature                                 | MicroPython                                                          | PyMCU + pymcu-micropython                                                                                                                                                                                                                                                                                                                                                                        |
+| --------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Execution model                         | Bytecode interpreter                                                 | Native compiled — no VM, no GC, ~0 bytes RAM overhead                                                                                                                                                                                                                                                                                                                                            |
+| `machine` module scope                  | Whole module on every port                                           | `Pin` / `UART` / `Signal` / `mem8` / `time_pulse_us` everywhere; `ADC`, `PWM`, `SPI`, `I2C`, `Timer`, `WDT` on AVR only                                                                                                                                                                                                                                                                          |
+| `Pin.PULL_DOWN`                         | Supported where the pad has one                                      | RP2040 / RP2350 only — a `CompileError` on AVR                                                                                                                                                                                                                                                                                                                                                   |
+| `UART.read(n)`                          | Returns `bytes`                                                      | `read()` takes no argument and returns one byte; use `readline(buf)` for a buffer                                                                                                                                                                                                                                                                                                                |
+| `Pin.irq()` callbacks                   | Supported                                                            | Supported — `btn.irq(handler=cb, trigger=Pin.IRQ_FALLING)` registers the real ISR                                                                                                                                                                                                                                                                                                                |
+| `Timer` callbacks                       | Supported                                                            | Supported on AVR — `Timer(1, freq=10, callback=on_tick)` auto-selects the prescaler                                                                                                                                                                                                                                                                                                              |
+| `machine.mem8[addr]`                    | Supported                                                            | Supported; `ptr(addr).value` is the typed, compile-time-checked alternative                                                                                                                                                                                                                                                                                                                      |
+| `ticks_ms()` / `ticks_us()`             | Supported on every port                                              | AVR only — the driver injects `millis_init()` (Timer0) automatically. `pymcu.hal.timer` has no RP implementation, so these raise a `CompileError` on the Pico; `ticks_diff()` / `ticks_add()` are portable. A Timer0 overflow is 1024 µs and the ISR carries the Arduino-style fractional correction, so `ticks_ms()` counts **real** milliseconds; `ticks_us()` is monotonic across an overflow |
+| `ADC(n)` channel number                 | Supported                                                            | Supported — `ADC(0)`-`ADC(5)` are A0-A5, alongside `ADC(Pin(14))`                                                                                                                                                                                                                                                                                                                                |
+| `PWM.freq()` / `PWM.duty_u16()` getters | Read back from hardware                                              | Supported — they return the **requested** value; the timer runs at the nearest reachable prescaler bucket                                                                                                                                                                                                                                                                                        |
+| `SoftI2C(scl, sda, freq)`               | Supported                                                            | Supported — `freq` is compile-time; `>= 500 kHz` drops the delays                                                                                                                                                                                                                                                                                                                                |
+| `I2C(scl=…, sda=…, freq=…)`             | Configurable                                                         | The AVR TWI pins and 100 kHz are fixed; internal pull-ups are enabled by default. Passing alternate pins or frequency is a compile error                                                                                                                                                                                                                                                         |
+| `machine.unique_id()`                   | Factory unique ID                                                    | No such ID on this silicon — a compile error pointing at EEPROM storage                                                                                                                                                                                                                                                                                                                          |
+| `Pin(n)` with a runtime `n`             | Supported                                                            | A compile error — a pin identity has to be constant for the access to stay zero-cost                                                                                                                                                                                                                                                                                                             |
+| Unformatted float text                  | MicroPython float32 formatter                                        | The same 6 to 9 significant-digit policy, including scientific notation thresholds                                                                                                                                                                                                                                                                                                               |
+| `print(bytearray(b"\xcc\x10"))`         | `bytearray(b'\xcc\x10')`                                             | The same repr; the length must be compile-time                                                                                                                                                                                                                                                                                                                                                   |
+| `print(…, sep=…, end=…)`                | Any value                                                            | A compile-time string literal; `file=` is not supported (no filesystem)                                                                                                                                                                                                                                                                                                                          |
+| `f"..."` strings                        | Runtime evaluation                                                   | Supported streamed and as fixed-buffer values, including integer and float format specs                                                                                                                                                                                                                                                                                                          |
+| `float`                                 | Supported                                                            | Supported — IEEE-754 f32 (soft-float on AVR, bootrom fast-float on RP2040, M33 FPU on RP2350)                                                                                                                                                                                                                                                                                                    |
+| `try / except / raise`                  | Supported (heap-based)                                               | Supported on AVR and ARM — zero-cost flag-propagation model, no heap                                                                                                                                                                                                                                                                                                                             |
+| `dict` / `set`                          | Dynamic hash maps                                                    | Closed literals are compile-time lookup tables; `pymcu.collections.FixedDict(capacity)` for mutation; unbounded growth is not supported                                                                                                                                                                                                                                                          |
+| `yield` / generators                    | Supported                                                            | Functions and bound methods lower to state machines and support `yield from`; not inside `@inline` functions                                                                                                                                                                                                                                                                                     |
+| `async` / `await`                       | Supported (`uasyncio`)                                               | `await asyncio.sleep_ms(…)` anywhere in a body, plus `asyncio.run` / `gather`; awaiting another coroutine is not supported yet                                                                                                                                                                                                                                                                   |
+| `bytearray`                             | Dynamic heap allocation                                              | Constant sizes lower to fixed arrays. On AVR a runtime size is allowed where allocation is proven to run once, using a static arena with no `free()`                                                                                                                                                                                                                                             |
+| Platform guards                         | `sys.implementation`, `sys.platform`, `os.uname()` reflect the board | The same guards fold at compile time to the configured MicroPython target                                                                                                                                                                                                                                                                                                                        |
+| `UART.any()`                            | Byte count                                                           | Returns `1` / `0`, not an exact count                                                                                                                                                                                                                                                                                                                                                            |
+| `UART.readline()`                       | Returns `bytes`, no args                                             | `readline(buf)` — the caller provides the buffer and `len(buf)` is the limit; the no-arg call is a compile error naming this form                                                                                                                                                                                                                                                                |
+| `I2C.scan()`                            | List of addresses                                                    | Returns a count; `scan(buf, max_count)` fills a caller-owned buffer                                                                                                                                                                                                                                                                                                                              |
+| `network.WLAN`                          | Every WiFi port                                                      | Pico 2 W (RP2350) only, open networks only — no WPA                                                                                                                                                                                                                                                                                                                                              |
+| Target hardware                         | STM32, RP2040, ESP32, …                                              | AVR (ATmega / ATtiny) and ARM (RP2040 / RP2350)                                                                                                                                                                                                                                                                                                                                                  |

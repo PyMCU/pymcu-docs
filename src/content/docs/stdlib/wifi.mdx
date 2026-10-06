@@ -135,15 +135,15 @@ method still has a runtime self-binding gap, so the example constructs `CYW43()`
 `mqtt_publish` is not a general MQTT client. It takes **one `uint32`** and runs a fixed,
 fully hardcoded QoS-0 exchange:
 
-| Detail | Value |
-|---|---|
-| Topic | `"dht"` - not configurable |
-| Payload | The value as exactly **three ASCII digits**, so 0 to 999 round-trips and larger values wrap |
-| Client id | `"pm"` |
-| Broker | `192.168.4.1:1883` |
-| Guest address | `192.168.4.2`, MAC `02:00:00:00:00:01` |
-| Flow | TCP `SYN` to `SYN-ACK` to `ACK` + `CONNECT`, then `PUBLISH` |
-| QoS | 0, no retain, no will |
+| Detail        | Value                                                                                       |
+| ------------- | ------------------------------------------------------------------------------------------- |
+| Topic         | `"dht"` - not configurable                                                                  |
+| Payload       | The value as exactly **three ASCII digits**, so 0 to 999 round-trips and larger values wrap |
+| Client id     | `"pm"`                                                                                      |
+| Broker        | `192.168.4.1:1883`                                                                          |
+| Guest address | `192.168.4.2`, MAC `02:00:00:00:00:01`                                                      |
+| Flow          | TCP `SYN` to `SYN-ACK` to `ACK` + `CONNECT`, then `PUBLISH`                                 |
+| QoS           | 0, no retain, no will                                                                       |
 
 There is no DHCP and no DNS: the addressing above is compiled in. `publish(value)` is an
 alias for `mqtt_publish(value)`.
@@ -158,20 +158,20 @@ The class talks to the radio over a **bit-banged gSPI** bus on four GPIOs -
 `WL_REG_ON=23`, `WL_DATA=24`, `WL_CS=25`, `WL_CLK=29`. Everything is `@inline`, so the
 whole driver collapses into your call sites.
 
-| Method | Description |
-|---|---|
-| `CYW43()` | Configure the four gSPI pins and park them at idle levels (CS high, clock low, power off) |
-| `init() -> uint32` | Power the chip, probe the test register, switch the bus to 32-bit, open the F1 backplane, request ALP/HT clock, release the WLAN core from reset. Returns the test-register read-back |
-| `join_open(ssid) -> uint32` | Associate with an **open** AP by sending a `WLC_SET_SSID` ioctl on the SDPCM control channel. `ssid` must be a compile-time string. Returns the frame length sent |
-| `connect(ssid, key="")` | Convenience: `init()` then `join_open()` then `settle()`. A non-empty `key` is a compile error |
-| `settle()` | Drain the async SDPCM events the chip queues after a join, so a later request/response exchange reads its own reply |
-| `f2_available() -> uint32` | Length of the next queued inbound packet, `0` when there is none |
-| `f2_read(buf, maxlen) -> uint32` | Read the next inbound packet into `buf`; returns the packet's real length, which can exceed `maxlen` |
-| `send_arp()` | Broadcast an ARP request for the gateway from the compiled-in guest address |
-| `mqtt_publish(value)` | The fixed publish described above |
-| `publish(value)` | Alias for `mqtt_publish` |
-| `read32(fn, addr) -> uint32` | Raw gSPI register read - bring-up plumbing, not an application API |
-| `write32(fn, addr, val)` | Raw gSPI register write - same caveat |
+| Method                           | Description                                                                                                                                                                           |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CYW43()`                        | Configure the four gSPI pins and park them at idle levels (CS high, clock low, power off)                                                                                             |
+| `init() -> uint32`               | Power the chip, probe the test register, switch the bus to 32-bit, open the F1 backplane, request ALP/HT clock, release the WLAN core from reset. Returns the test-register read-back |
+| `join_open(ssid) -> uint32`      | Associate with an **open** AP by sending a `WLC_SET_SSID` ioctl on the SDPCM control channel. `ssid` must be a compile-time string. Returns the frame length sent                     |
+| `connect(ssid, key="")`          | Convenience: `init()` then `join_open()` then `settle()`. A non-empty `key` is a compile error                                                                                        |
+| `settle()`                       | Drain the async SDPCM events the chip queues after a join, so a later request/response exchange reads its own reply                                                                   |
+| `f2_available() -> uint32`       | Length of the next queued inbound packet, `0` when there is none                                                                                                                      |
+| `f2_read(buf, maxlen) -> uint32` | Read the next inbound packet into `buf`; returns the packet's real length, which can exceed `maxlen`                                                                                  |
+| `send_arp()`                     | Broadcast an ARP request for the gateway from the compiled-in guest address                                                                                                           |
+| `mqtt_publish(value)`            | The fixed publish described above                                                                                                                                                     |
+| `publish(value)`                 | Alias for `mqtt_publish`                                                                                                                                                              |
+| `read32(fn, addr) -> uint32`     | Raw gSPI register read - bring-up plumbing, not an application API                                                                                                                    |
+| `write32(fn, addr, val)`         | Raw gSPI register write - same caveat                                                                                                                                                 |
 
 Methods prefixed with `_` are internal and may change without notice.
 
@@ -184,27 +184,27 @@ import network
 from umqtt.simple import MQTTClient
 ```
 
-| Name | Behaviour |
-|---|---|
-| `network.STA_IF` / `network.AP_IF` | `0` / `1`. Only station mode is implemented |
-| `WLAN(interface=0)` | Constructs the underlying `CYW43` |
-| `WLAN.active(on=1)` | Calls `init()` when `on` is non-zero. There is no deactivate path |
-| `WLAN.connect(ssid, key="")` | Calls `join_open()` then `settle()`. A non-empty key is the same compile error as the HAL |
-| `WLAN.isconnected()` | **Always returns `1`.** It reports no link state at all - do not poll it waiting for an association |
-| `MQTTClient(wlan, client_id="pm", server="")` | Borrows the already-connected radio from `wlan`. `client_id` and `server` are accepted and ignored |
-| `MQTTClient.connect()` | Returns `0`; the real TCP and MQTT handshake happens inside `publish()` |
-| `MQTTClient.publish(value)` | **Signature differs from real umqtt**, which takes `(topic, msg)`. Here it takes one number and the topic is the hardcoded `"dht"` |
-| `MQTTClient.disconnect()` | No-op |
+| Name                                          | Behaviour                                                                                                                          |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `network.STA_IF` / `network.AP_IF`            | `0` / `1`. Only station mode is implemented                                                                                        |
+| `WLAN(interface=0)`                           | Constructs the underlying `CYW43`                                                                                                  |
+| `WLAN.active(on=1)`                           | Calls `init()` when `on` is non-zero. There is no deactivate path                                                                  |
+| `WLAN.connect(ssid, key="")`                  | Calls `join_open()` then `settle()`. A non-empty key is the same compile error as the HAL                                          |
+| `WLAN.isconnected()`                          | **Always returns `1`.** It reports no link state at all - do not poll it waiting for an association                                |
+| `MQTTClient(wlan, client_id="pm", server="")` | Borrows the already-connected radio from `wlan`. `client_id` and `server` are accepted and ignored                                 |
+| `MQTTClient.connect()`                        | Returns `0`; the real TCP and MQTT handshake happens inside `publish()`                                                            |
+| `MQTTClient.publish(value)`                   | **Signature differs from real umqtt**, which takes `(topic, msg)`. Here it takes one number and the topic is the hardcoded `"dht"` |
+| `MQTTClient.disconnect()`                     | No-op                                                                                                                              |
 
 ### CircuitPython - `wifi`, `socketpool` and `adafruit_minimqtt`
 
-| Name | Behaviour |
-|---|---|
-| `wifi.radio` | A module-level `CYW43` instance. See the note above about constructing it locally instead |
-| `socketpool.SocketPool(radio)` | Carries the radio to the MQTT client; it is not a socket factory |
-| `MQTT.MQTT(broker="", socket_pool=None)` | `broker` is accepted and ignored - the address is compiled in |
-| `MQTT.connect()` | Returns `0` |
-| `MQTT.publish(topic, value)` | The `topic` argument is accepted and **ignored**; the value goes to the hardcoded `"dht"` topic |
+| Name                                     | Behaviour                                                                                       |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `wifi.radio`                             | A module-level `CYW43` instance. See the note above about constructing it locally instead       |
+| `socketpool.SocketPool(radio)`           | Carries the radio to the MQTT client; it is not a socket factory                                |
+| `MQTT.MQTT(broker="", socket_pool=None)` | `broker` is accepted and ignored - the address is compiled in                                   |
+| `MQTT.connect()`                         | Returns `0`                                                                                     |
+| `MQTT.publish(topic, value)`             | The `topic` argument is accepted and **ignored**; the value goes to the hardcoded `"dht"` topic |
 
 ## Not available yet
 

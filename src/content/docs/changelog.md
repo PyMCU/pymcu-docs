@@ -1,6 +1,6 @@
 ---
 title: Changelog
-description: "Release notes for PyMCU beta and alpha releases, listed by language feature, backend and driver."
+description: 'Release notes for PyMCU beta and alpha releases, listed by language feature, backend and driver.'
 ---
 
 ## v0.1.0b1, Beta 1 (2026-10-05)
@@ -58,13 +58,13 @@ scope and test-suite counts.
 Five silent wrong values were found after the candidate was cut. Beta 1 contains all five,
 so use the linked workarounds until a release containing each fix is installed.
 
-| Issue in v0.1.0b1 | Status on `main`, 2026-10-05 |
-|---|---|
-| Reassigning a top-level literal string to a runtime-built string keeps printing the old literal | Fixed for Beta 2 |
-| `f"{'literal string'}"` prints the compiler's internal string id | Fixed for Beta 2 |
-| `list.append()` loses fields from appended class instances | Fix in review on `fix/silent-list-tuple` |
-| Unpacking a returned `(bytearray, scalar)` loses the buffer | Fix in review on `fix/silent-list-tuple` |
-| Two indexed calls to the same tuple-returning `@inline` function in one expression read the second result twice | Fixed for Beta 2 |
+| Issue in v0.1.0b1                                                                                               | Status on `main`, 2026-10-05             |
+| --------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| Reassigning a top-level literal string to a runtime-built string keeps printing the old literal                 | Fixed for Beta 2                         |
+| `f"{'literal string'}"` prints the compiler's internal string id                                                | Fixed for Beta 2                         |
+| `list.append()` loses fields from appended class instances                                                      | Fix in review on `fix/silent-list-tuple` |
+| Unpacking a returned `(bytearray, scalar)` loses the buffer                                                     | Fix in review on `fix/silent-list-tuple` |
+| Two indexed calls to the same tuple-returning `@inline` function in one expression read the second result twice | Fixed for Beta 2                         |
 
 Minimal reproducers and working alternatives are in
 [Five silent wrong values found after the candidate was cut](/state-of-the-beta/#five-silent-wrong-values-found-after-the-candidate-was-cut).
@@ -93,6 +93,7 @@ the rest fail on purpose with a clear diagnostic. Suites at release: 517 unit, 5
 1549 AVR integration tests.
 
 ### Fixed — the silent-miscompile class
+
 These are the bugs that produced wrong numbers rather than a build error, so only silicon
 could find them.
 
@@ -116,6 +117,7 @@ could find them.
   before, and `0.05` printed `0.0`
 
 ### Language surface
+
 - [Slice assignment](/limitations/#slices) dispatches through `__setitem__` with a `bytes` or
   list literal source: `microcontroller.nvm[0:4] = b'\xcc\x10\xca\xfe'`
 - `for b in buf[0:n]` accepts runtime bounds, rewritten to a `range` loop
@@ -130,6 +132,7 @@ could find them.
   order
 
 ### Guardrails — was silent, now a located error
+
 - A `const[...]` parameter rejects a runtime-varying argument; a loop variable passed to
   `Pin()` used to drive one fixed pin in silence
 - An image larger than the chip's flash, and static data beyond its SRAM, are build errors
@@ -139,6 +142,7 @@ could find them.
   of misbehaving quietly
 
 ### Compatibility layers
+
 - `machine.ADC(0)`-`ADC(5)` channel form beside `ADC(Pin(14))`; `machine.PWM.freq()` and
   `duty_u16()` getters; `machine.SoftI2C` on any two pins
 - Honest errors where the silicon cannot deliver: `machine.unique_id()`, the no-arg
@@ -188,6 +192,7 @@ That reads as "this library is broken" about something it never promised.
 Full notes: [GitHub release](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a7)
 
 ### Fixed
+
 - **HTTPS works on a stock macOS Python**: every request the driver makes — the library index,
   sdists, tool downloads — failed with `CERTIFICATE_VERIFY_FAILED` on a python.org install
   until the user happened to run `Install Certificates.command`, and the error read like the
@@ -202,6 +207,7 @@ Full notes: [GitHub release](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a
   question mark reads as a figure that got lost rather than one never taken
 
 ### Releases are tested before they are published
+
 - `tools/smoke_release.py` installs the artifacts in a clean environment and puts them to work
   before anything reaches PyPI. Each check maps to a release that shipped broken while the
   build stayed green — including a package left unbumped, whose wheel `skip-existing` then
@@ -212,6 +218,7 @@ Full notes: [GitHub release](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a
 Full notes: [GitHub release](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a6)
 
 ### Third-party libraries
+
 The compiler no longer sees a library's whole package, only its declared source directory
 (`[library] sources`, `mcu/` by default). Before, anything a wheel carried was exposed: a
 library's `examples/` answered `import examples` from any firmware in the world, and two
@@ -230,6 +237,7 @@ Published libraries need the new layout; `pymcu-lib-neopixel` ships 0.2.0 for th
 [Writing a library](/libraries/authoring/).
 
 ### Fixed
+
 - **WS2812 on PB0** sent every bit as a zero (312 ns for a one, where ~800 is needed), so a
   strip on that pin stayed dark while the build reported success. The other eleven pins were
   fixed earlier; a comment threw the patch off this one
@@ -239,6 +247,7 @@ Published libraries need the new layout; `pymcu-lib-neopixel` ships 0.2.0 for th
   package in the repo and the `0.1.0a4` on PyPI were different under one number
 
 ### AVR toolchain moves to WebAssembly
+
 The AVR backend is versioned separately; this landed in **`pymcu-avr` 0.1.0a6**, which the
 `[avr]` extra now resolves to.
 
@@ -270,6 +279,7 @@ A portability-and-honesty release. The reader flow — `pipx install` → `pymcu
 (ARM64) and macOS before the tag, with real-hardware flashes on two of them.
 
 ### Fixed
+
 - **macOS wheels install again on macOS 14 / 15**: the arm64 wheels inherited the build
   runner's `macosx_26_0_arm64` tag, so most Macs found no candidate at all
 - **A `ptr[T]` stored in a zero-cost-class field keeps its element width**, so MMIO through
@@ -285,6 +295,7 @@ A portability-and-honesty release. The reader flow — `pipx install` → `pymcu
 - `pymcu version` exists as a subcommand, not only as the `--version` flag
 
 ### Downloads
+
 - avrdude downloads carry pinned SHA-256 digests for all eight official v8.1 assets, and the
   selection distinguishes Linux ARM64 / ARMv6 / 32-bit and native Windows ARM64
 - Downloads locate a CA bundle (`SSL_CERT_FILE`, system paths, `certifi`) instead of failing
@@ -292,6 +303,7 @@ A portability-and-honesty release. The reader flow — `pipx install` → `pymcu
 - Archive extraction rejects path escapes by path semantics, not string prefixes
 
 ### Toolchain cache
+
 - The cache under `~/.pymcu/tools` is keyed by payload rather than by interpreter, so every
   Python on a machine shares one copy
 - Seeding keeps the two newest versions, and the new
@@ -299,6 +311,7 @@ A portability-and-honesty release. The reader flow — `pipx install` → `pymcu
   the rest on demand
 
 ### Scaffolding
+
 - `pymcu new --stdlib micropython` (and `circuitpython`) generates a **top-level script** —
   the shape real `main.py` / `code.py` files have — instead of a `def main():` wrapper
 - Dependency pins in generated projects tolerate pre-releases, so a project scaffolded from a
@@ -311,6 +324,7 @@ Full notes: [GitHub release](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a
 A quality-and-finish release over alpha 3.
 
 ### Fixed
+
 - **`pymcu flash` works end to end on the Raspberry Pi Pico / Pico 2**: builds pack a
   `firmware.uf2` and the driver dispatches the right artifact per target
 - **async/await on AVR really waits** (Timer0 microsecond timebase); on PIC / RISC-V /
@@ -324,10 +338,12 @@ A quality-and-finish release over alpha 3.
   MAX7219 honours the configured chip-select
 
 ### Smaller firmware
+
 - Region and constant-delay outlining: the 60 AVR examples shrink **23%** overall
   (lcd −51%, FFI examples up to −74%)
 
 ### Language and tooling
+
 - Tuple return annotations (`-> (uint8, uint16)`) with arity and width validation
 - New diagnostics: dict/set comprehensions, reflection, compat modules without their
   flavor, bare register assignment
@@ -339,6 +355,7 @@ A quality-and-finish release over alpha 3.
 Full notes: [GitHub release](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a3)
 
 ### Language
+
 - **Generators**: `yield` compiles to a coroutine state machine; `for x in gen(...)`
   with Python-exact `break` / `continue` — no heap, no asyncio required
 - **async/await v2**: `await` inside `if` / `while` / `for range` with
@@ -352,6 +369,7 @@ Full notes: [GitHub release](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a
 - Recursion diagnostics name the full call cycle; located `file:line` compile errors
 
 ### ARM parity (RP2040 / RP2350)
+
 - **Exceptions** on ARM via a portable T-flag model (previously AVR-only)
 - **float (f32)**: RP2040 through the bootrom fast-float library; RP2350 natively
   on the M33 FPU; `print(float)` on both
@@ -362,11 +380,13 @@ Full notes: [GitHub release](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a
   flash-resident const tables, runtime `Pin(n)`, module-level statements
 
 ### New backend: PIC
+
 - First release of `pymcu-pic`: PIC16F84A and PIC16F877A — software mul/div/mod,
   RAM arrays, catchable `ZeroDivisionError`, EUSART UART, flash strings, `print()`
 - `pymcu-pic-toolchain`: self-contained gputils (gpasm) wheels for all platforms
 
 ### Tooling
+
 - `pymcu lint` — MicroPython/CircuitPython porting assistant
 - `pymcu-test` (AVR) — turnkey pytest fixtures over the avr8sharp emulator
 
@@ -390,6 +410,7 @@ the [Language Reference](/language-reference/) and [Limitations](/limitations/).
 ### v0.2
 
 #### Language
+
 - `for i in range(n)` loop with runtime or compile-time bound
 - `for x in array` iteration over fixed-size arrays
 - `for i, x in enumerate(iterable)` with compile-time index counter
@@ -405,17 +426,20 @@ the [Language Reference](/language-reference/) and [Limitations](/limitations/).
 - `None` literal (folds to `Constant{-1}`)
 
 #### Compiler
+
 - Variable→Constant propagation in optimizer (prevents peephole corruption of inline results)
 - Fixed inline parameter scope shadowing in `resolve_binding`
 - Inline multi-return result variables use 1-dot names (register-allocatable)
 
 #### Standard Library
+
 - `Pin.pulse_in(state, timeout_us)` for pulse measurement
 - `UART.print_byte(value)` for decimal uint8 output
 - `DHT11` driver (`pymcu.drivers.dht11`)
 - `arduino_uno` board pin definitions (`pymcu.boards.arduino_uno`)
 
 #### Documentation
+
 - `docs/LANGUAGE_REFERENCE.md` — complete language and stdlib reference
 - `docs-site/` — MkDocs + Material documentation site
 - Updated `LANGUAGE_ROADMAP.md` with T1/T2/T3 backfill plan

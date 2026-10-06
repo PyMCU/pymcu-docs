@@ -20,11 +20,11 @@ without touching hardware.
 
 ## Prerequisites
 
-| What | Where |
-|---|---|
-| VS Code | [code.visualstudio.com](https://code.visualstudio.com) |
-| PyMCU VS Code extension | Search **PyMCU** in the Marketplace |
-| PyMCU compiler | See [Installation](/getting-started/installation/) — the `[avr]` extra |
+| What                    | Where                                                                  |
+| ----------------------- | ---------------------------------------------------------------------- |
+| VS Code                 | [code.visualstudio.com](https://code.visualstudio.com)                 |
+| PyMCU VS Code extension | Search **PyMCU** in the Marketplace                                    |
+| PyMCU compiler          | See [Installation](/getting-started/installation/) — the `[avr]` extra |
 
 ## Quick start
 
@@ -62,12 +62,12 @@ editor gutter or press `F9`. Conditional breakpoints are not yet supported.
 
 ### Step commands
 
-| Command | Shortcut | Description |
-|---|---|---|
-| Continue | F5 | Run until the next breakpoint |
-| Step Over | F10 | Execute the current statement, skipping into calls |
-| Step Into | F11 | Step into function calls |
-| Step Out | Shift+F11 | Run until the current function returns |
+| Command   | Shortcut  | Description                                        |
+| --------- | --------- | -------------------------------------------------- |
+| Continue  | F5        | Run until the next breakpoint                      |
+| Step Over | F10       | Execute the current statement, skipping into calls |
+| Step Into | F11       | Step into function calls                           |
+| Step Out  | Shift+F11 | Run until the current function returns             |
 
 ### Registers panel
 

@@ -192,44 +192,44 @@ before starting TWI. Pass `pullups=False` when external pull-ups already hold a 
 
 #### Status constants
 
-| Constant | Value | Meaning |
-|---|---|---|
-| `I2C.START` | `0x08` | START condition transmitted |
-| `I2C.SLA_ACK` | `0x18` | SLA+W transmitted, ACK received |
-| `I2C.SLA_NACK` | `0x20` | SLA+W transmitted, NACK received |
-| `I2C.DATA_ACK` | `0x28` | Data transmitted, ACK received |
-| `I2C.SLA_R_ACK` | `0x40` | SLA+R transmitted, ACK received |
+| Constant        | Value  | Meaning                          |
+| --------------- | ------ | -------------------------------- |
+| `I2C.START`     | `0x08` | START condition transmitted      |
+| `I2C.SLA_ACK`   | `0x18` | SLA+W transmitted, ACK received  |
+| `I2C.SLA_NACK`  | `0x20` | SLA+W transmitted, NACK received |
+| `I2C.DATA_ACK`  | `0x28` | Data transmitted, ACK received   |
+| `I2C.SLA_R_ACK` | `0x40` | SLA+R transmitted, ACK received  |
 
 `ADDR_WRITE`, `DATA_RECEIVED`, `LAST_RECEIVED`, `STOP_RECEIVED`, `ADDR_READ`, `DATA_SENT` and
 `LAST_SENT` cover the target-mode states.
 
 #### I2C methods - AVR
 
-| Method | Description |
-|---|---|
-| `ping(addr: uint8) -> uint8` | 1 if the device ACKs, 0 on NACK |
-| `start() -> uint8` | Send START, return the status code |
-| `stop()` / `end()` | Send STOP |
-| `write(data: uint8) -> uint8` | Write a byte, return the status code |
-| `read_ack() -> uint8` | Read a byte and send ACK |
-| `read_nack() -> uint8` | Read a byte and send NACK (last byte) |
-| `write_to(addr, data)` / `writebyte(addr, data)` | Single-byte convenience write |
-| `write_bytes(addr, buf, n)` | Block write |
-| `read_from(addr)` / `read_n(addr, buf, n)` | Convenience reads |
-| `writeto_mem(addr, reg, data)` / `readfrom_mem(addr, reg, buf, n)` | Register-oriented access |
-| `status()` / `ready()` | Raw TWSR status / TWINT poll |
-| `irq(handler)` | Register a TWI interrupt handler |
-| `__enter__()` / `__exit__()` | `start()` / `stop()` — used by `with i2c:` |
+| Method                                                             | Description                                |
+| ------------------------------------------------------------------ | ------------------------------------------ |
+| `ping(addr: uint8) -> uint8`                                       | 1 if the device ACKs, 0 on NACK            |
+| `start() -> uint8`                                                 | Send START, return the status code         |
+| `stop()` / `end()`                                                 | Send STOP                                  |
+| `write(data: uint8) -> uint8`                                      | Write a byte, return the status code       |
+| `read_ack() -> uint8`                                              | Read a byte and send ACK                   |
+| `read_nack() -> uint8`                                             | Read a byte and send NACK (last byte)      |
+| `write_to(addr, data)` / `writebyte(addr, data)`                   | Single-byte convenience write              |
+| `write_bytes(addr, buf, n)`                                        | Block write                                |
+| `read_from(addr)` / `read_n(addr, buf, n)`                         | Convenience reads                          |
+| `writeto_mem(addr, reg, data)` / `readfrom_mem(addr, reg, buf, n)` | Register-oriented access                   |
+| `status()` / `ready()`                                             | Raw TWSR status / TWINT poll               |
+| `irq(handler)`                                                     | Register a TWI interrupt handler           |
+| `__enter__()` / `__exit__()`                                       | `start()` / `stop()` — used by `with i2c:` |
 
 ### `I2C(freq=100000, sda=4, scl=5)` — RP2040 / RP2350
 
 Wraps the I2C0 controller.
 
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `freq` | `const` | `100000` | **Accepted and ignored.** See the warning below |
-| `sda` | `const` | `4` | GPIO for SDA (pad pull-up enabled by the constructor) |
-| `scl` | `const` | `5` | GPIO for SCL |
+| Parameter | Type    | Default  | Description                                           |
+| --------- | ------- | -------- | ----------------------------------------------------- |
+| `freq`    | `const` | `100000` | **Accepted and ignored.** See the warning below       |
+| `sda`     | `const` | `4`      | GPIO for SDA (pad pull-up enabled by the constructor) |
+| `scl`     | `const` | `5`      | GPIO for SCL                                          |
 
 :::caution[`freq` does nothing on the RP2040 / RP2350]
 The parameter is in the signature for MicroPython compatibility, but the constructor hard-codes
@@ -241,10 +241,10 @@ mode will not get it from this argument today.
 
 #### I2C methods - RP2040 / RP2350
 
-| Method | Description |
-|---|---|
-| `write_to(addr: uint8, data: uint8)` | Address the target and write a single byte |
-| `write_bytes(addr: uint8, data: bytearray, n: uint8)` | Address the target and write `n` bytes |
+| Method                                                | Description                                |
+| ----------------------------------------------------- | ------------------------------------------ |
+| `write_to(addr: uint8, data: uint8)`                  | Address the target and write a single byte |
+| `write_bytes(addr: uint8, data: bytearray, n: uint8)` | Address the target and write `n` bytes     |
 
 The RP2040/RP2350 controller exposes a target-address register rather than the AVR's explicit
 START/STOP state machine, so the transaction-level `start()` / `read_ack()` / `read_nack()`

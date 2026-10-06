@@ -1,6 +1,6 @@
 ---
 title: Using libraries
-description: "Find, install and audit third-party PyMCU libraries — pymcu search, install, libraries and uninstall, plus how to read the curated index and what its ok / unsupported / failed labels mean."
+description: 'Find, install and audit third-party PyMCU libraries — pymcu search, install, libraries and uninstall, plus how to read the curated index and what its ok / unsupported / failed labels mean.'
 ---
 
 A PyMCU library is **source code the compiler reads at build time**, not a module imported at
@@ -88,12 +88,12 @@ beside an entry comes from that build.
 Each chip carries one of four labels, and the difference between the middle two is the whole
 point:
 
-| Label | What it means |
-|---|---|
-| `ok` | The example compiled for that chip. The flash figure is measured |
-| `unsupported` | It did not compile on a chip the **author never declared**. This is not a defect — the manifest already said the library does not go there |
-| `failed` | It did not compile on a chip the author **did** declare. This is a defect: a promise the code does not keep |
-| `unmeasured` | The build never ran, because the machine doing the measuring had no backend for that chip. It says something about that machine and nothing about the library |
+| Label         | What it means                                                                                                                                                 |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ok`          | The example compiled for that chip. The flash figure is measured                                                                                              |
+| `unsupported` | It did not compile on a chip the **author never declared**. This is not a defect — the manifest already said the library does not go there                    |
+| `failed`      | It did not compile on a chip the author **did** declare. This is a defect: a promise the code does not keep                                                   |
+| `unmeasured`  | The build never ran, because the machine doing the measuring had no backend for that chip. It says something about that machine and nothing about the library |
 
 `unsupported` exists because the label used to be `failed` either way, and a catalogue that
 prints `failed` next to a library used outside its own declared scope is making an accusation

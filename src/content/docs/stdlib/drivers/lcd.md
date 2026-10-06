@@ -29,14 +29,14 @@ is architecture-neutral: adding a target means dropping a back end alongside the
 
 ## `LCD(rs, en, d4, d5, d6, d7)`
 
-| Parameter | Type | Description |
-|---|---|---|
-| `rs` | `const[str]` | Register Select pin, e.g. `"PD4"` |
-| `en` | `const[str]` | Enable (strobe) pin, e.g. `"PD5"` |
-| `d4` | `const[str]` | Data bit 4 |
-| `d5` | `const[str]` | Data bit 5 |
-| `d6` | `const[str]` | Data bit 6 |
-| `d7` | `const[str]` | Data bit 7 |
+| Parameter | Type         | Description                       |
+| --------- | ------------ | --------------------------------- |
+| `rs`      | `const[str]` | Register Select pin, e.g. `"PD4"` |
+| `en`      | `const[str]` | Enable (strobe) pin, e.g. `"PD5"` |
+| `d4`      | `const[str]` | Data bit 4                        |
+| `d5`      | `const[str]` | Data bit 5                        |
+| `d6`      | `const[str]` | Data bit 6                        |
+| `d7`      | `const[str]` | Data bit 7                        |
 
 All six are `const[str]` — compile-time constants, not runtime values. The driver resolves each
 name to a `SBI`/`CBI` on the right port register at compile time, so **no SRAM is allocated for
@@ -49,15 +49,15 @@ lines across `PORTD` and `PORTB`.
 
 ### LCD methods
 
-| Method | Signature | Description |
-|---|---|---|
-| `init()` | — | Power-on wait, the 4-bit init handshake, function set (2-line, 5x8), display on, clear, entry mode. Call once before anything else. |
-| `clear()` | — | Clear the display and return the cursor home (command `0x01`), then wait 2 ms |
-| `home()` | — | Cursor to position 0,0 without clearing (command `0x02`), then wait 2 ms |
-| `set_cursor(col, row)` | `col: uint8`, `row: uint8` | Move the cursor. Rows 0–3 map to DDRAM `0x00` / `0x40` / `0x14` / `0x54` |
-| `print_str(s)` | `s: const[str]` | Write a string at the cursor |
-| `write_char(c)` | `c: uint8` | Write one character code at the cursor |
-| `print_fmt(value, base, width, flags)` | `value: int32`, rest `uint8` | Format an integer and emit it through `write_char()` |
+| Method                                 | Signature                    | Description                                                                                                                         |
+| -------------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `init()`                               | —                            | Power-on wait, the 4-bit init handshake, function set (2-line, 5x8), display on, clear, entry mode. Call once before anything else. |
+| `clear()`                              | —                            | Clear the display and return the cursor home (command `0x01`), then wait 2 ms                                                       |
+| `home()`                               | —                            | Cursor to position 0,0 without clearing (command `0x02`), then wait 2 ms                                                            |
+| `set_cursor(col, row)`                 | `col: uint8`, `row: uint8`   | Move the cursor. Rows 0–3 map to DDRAM `0x00` / `0x40` / `0x14` / `0x54`                                                            |
+| `print_str(s)`                         | `s: const[str]`              | Write a string at the cursor                                                                                                        |
+| `write_char(c)`                        | `c: uint8`                   | Write one character code at the cursor                                                                                              |
+| `print_fmt(value, base, width, flags)` | `value: int32`, rest `uint8` | Format an integer and emit it through `write_char()`                                                                                |
 
 `print_str` takes a **`const[str]`** — a string literal known at compile time. The `for c in s`
 loop inside is unrolled by the IR generator, so `lcd.print_str("Hello World")` becomes a straight

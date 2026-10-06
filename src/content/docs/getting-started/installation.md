@@ -137,12 +137,12 @@ rather than defining their own, which is what makes them the surface designed to
 while the native `pymcu.hal.*` API may change between releases without a deprecation cycle.
 Both packages are still pre-1.0.
 
-| Package | What it gives you |
-|---|---|
-| `pymcu-micropython` | `machine` (Pin, UART, ADC, PWM, SPI, I2C, Timer, WDT), `utime` |
+| Package               | What it gives you                                                      |
+| --------------------- | ---------------------------------------------------------------------- |
+| `pymcu-micropython`   | `machine` (Pin, UART, ADC, PWM, SPI, I2C, Timer, WDT), `utime`         |
 | `pymcu-circuitpython` | `board`, `digitalio`, `analogio`, `busio`, `pwmio`, `time`, `neopixel` |
 
-**Do not install these globally.** They are not tools you run: they are *project*
+**Do not install these globally.** They are not tools you run: they are _project_
 dependencies that the compiler reads when it builds your firmware, so they belong to the
 project's environment, not to your interpreter. Installed anywhere else they do nothing.
 
@@ -203,7 +203,7 @@ Three things follow for you:
 
 - **Rosetta 2 is no longer needed.** The old bundled `avr-gcc` was an x86_64 PlatformIO
   build, so on Apple Silicon it ran under Rosetta and failed with `bad CPU type in
-  executable` on a Mac that had never installed it. That step is gone.
+executable` on a Mac that had never installed it. That step is gone.
 - **C and C++ interop needs no extra.** `cc1` and `cc1plus` travel in the same wheel, so
   `@extern` and `[tool.pymcu.ffi]` work out of the box.
 - **`PYMCU_AVR_WASI=0`** forces the old native path, for anyone who has a native toolchain
@@ -215,8 +215,8 @@ version; after that a build reuses it. The measured figures are **0.82 s for a f
 0.23 s for later ones**, with 6.2 MB of cache on disk. Nothing is downloaded at build time —
 the wheel already carries everything, and the wait is compilation.
 
-Everything needed to *compile* is bundled. Flashing is the part WASI cannot do — `avrdude`
-talks to a serial port — so to *flash* an Arduino Uno you still need **avrdude** on your host:
+Everything needed to _compile_ is bundled. Flashing is the part WASI cannot do — `avrdude`
+talks to a serial port — so to _flash_ an Arduino Uno you still need **avrdude** on your host:
 
 ```bash
 brew install avrdude          # macOS

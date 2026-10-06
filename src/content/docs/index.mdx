@@ -1,6 +1,6 @@
 ---
 title: PyMCU Documentation
-description: "PyMCU compiles typed, allocation-free Python to native AVR, RP2040 / RP2350 and PIC firmware - no interpreter, no heap. Install, blink and flash in five minutes."
+description: 'PyMCU compiles typed, allocation-free Python to native AVR, RP2040 / RP2350 and PIC firmware - no interpreter, no heap. Install, blink and flash in five minutes.'
 head:
   # La portada es el sitio, no un articulo; Starlight pone og:type article
   # por defecto y este head de frontmatter lo sobreescribe solo aqui.
@@ -95,14 +95,14 @@ the API you chose.
 
 ## Why PyMCU?
 
-| | Arduino (C++) | MicroPython | CircuitPython | **PyMCU** |
-|---|---|---|---|---|
-| Language | C++ | Python | Python | **Python** |
-| Runtime | None | Interpreter | Interpreter | **None** |
-| Heap | None | Yes | Yes | **None by default** (opt-in `list[T]` arena on AVR) |
-| Flash footprint | Small | ~256 KB | ~256 KB | **Minimal** |
-| Familiar syntax | Partial | Full | Full | **Full** |
-| Static types | No | No | No | **Yes (required)** |
+|                 | Arduino (C++) | MicroPython | CircuitPython | **PyMCU**                                           |
+| --------------- | ------------- | ----------- | ------------- | --------------------------------------------------- |
+| Language        | C++           | Python      | Python        | **Python**                                          |
+| Runtime         | None          | Interpreter | Interpreter   | **None**                                            |
+| Heap            | None          | Yes         | Yes           | **None by default** (opt-in `list[T]` arena on AVR) |
+| Flash footprint | Small         | ~256 KB     | ~256 KB       | **Minimal**                                         |
+| Familiar syntax | Partial       | Full        | Full          | **Full**                                            |
+| Static types    | No            | No          | No            | **Yes (required)**                                  |
 
 PyMCU occupies the gap between "write C++" and "run MicroPython": you write Python, but the
 compiler produces tight machine code with zero runtime overhead — AVR and PIC assembly
@@ -158,12 +158,12 @@ The compiler frontend and the **AVR** backend are **beta**. **ARM and PIC remain
 they build and run, but parts of the language surface are missing on them, they do not
 carry AVR's continuous silicon validation, and their APIs may change between releases.
 
-| Architecture | Status | Chips |
-|---|---|---|
-| **AVR** (ATmega) | **beta** | ATmega48/88/168/328P, ATmega2560, ATmega32U4 |
-| **AVR** (ATtiny) | **beta** | ATtiny25/45/85, ATtiny24/44/84, ATtiny13/13A, ATtiny2313/4313 |
-| **ARM** (Cortex-M0+ / M33) | alpha | RP2040 (Pico / Pico W), RP2350 (Pico 2 / Pico 2 W) — PIO on both; CYW43 WiFi on the Pico 2 W (RP2350) only |
-| **PIC** (mid-range) | alpha | PIC16F84A, PIC16F877A |
+| Architecture               | Status   | Chips                                                                                                      |
+| -------------------------- | -------- | ---------------------------------------------------------------------------------------------------------- |
+| **AVR** (ATmega)           | **beta** | ATmega48/88/168/328P, ATmega2560, ATmega32U4                                                               |
+| **AVR** (ATtiny)           | **beta** | ATtiny25/45/85, ATtiny24/44/84, ATtiny13/13A, ATtiny2313/4313                                              |
+| **ARM** (Cortex-M0+ / M33) | alpha    | RP2040 (Pico / Pico W), RP2350 (Pico 2 / Pico 2 W) — PIO on both; CYW43 WiFi on the Pico 2 W (RP2350) only |
+| **PIC** (mid-range)        | alpha    | PIC16F84A, PIC16F877A                                                                                      |
 
 See [Supported Targets](/targets/) for what beta and alpha mean here, and for the
 per-architecture peripheral and language coverage.
@@ -174,11 +174,11 @@ per-architecture peripheral and language coverage.
 
 Pick the API that matches your background — all three compile to the same bare-metal firmware.
 
-| Package | API surface | Status |
-|---|---|---|
-| [`pymcu-micropython`](/compat/micropython/) | `machine` (Pin, UART, ADC, PWM, SPI, I2C, Timer, WDT), `utime`, `rp2`; `network` on the Pico 2 W | **Recommended** |
-| [`pymcu-circuitpython`](/compat/circuitpython/) | `board`, `digitalio`, `analogio`, `busio`, `pwmio`, `time`, `neopixel`; `wifi` on the Pico 2 W | **Recommended** |
-| [`pymcu.hal.*`](/stdlib/) | Direct register-level native HAL, `@interrupt`, `asm()`, `@extern` | Advanced |
+| Package                                         | API surface                                                                                      | Status          |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------ | --------------- |
+| [`pymcu-micropython`](/compat/micropython/)     | `machine` (Pin, UART, ADC, PWM, SPI, I2C, Timer, WDT), `utime`, `rp2`; `network` on the Pico 2 W | **Recommended** |
+| [`pymcu-circuitpython`](/compat/circuitpython/) | `board`, `digitalio`, `analogio`, `busio`, `pwmio`, `time`, `neopixel`; `wifi` on the Pico 2 W   | **Recommended** |
+| [`pymcu.hal.*`](/stdlib/)                       | Direct register-level native HAL, `@interrupt`, `asm()`, `@extern`                               | Advanced        |
 
 Start with MicroPython or CircuitPython. They track APIs specified elsewhere rather than
 defining their own, which is what makes them the surface designed to hold still, and they cost

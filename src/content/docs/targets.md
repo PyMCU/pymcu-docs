@@ -12,12 +12,12 @@ remain alpha.** Read [What beta and alpha mean here](#what-beta-and-alpha-mean-h
 before you pick a target.
 :::
 
-| Architecture | Status | Chips |
-|---|---|---|
-| **AVR** (ATmega) | **beta** | ATmega48/88/168/328P, ATmega2560, ATmega32U4 |
-| **AVR** (ATtiny) | **beta** | ATtiny25/45/85, ATtiny24/44/84, ATtiny13/13A, ATtiny2313/4313 |
-| **ARM** (Cortex-M0+ / M33) | alpha | RP2040 (Pico / Pico W), RP2350 (Pico 2 / Pico 2 W) — PIO on both; CYW43 WiFi on the Pico 2 W (RP2350) only |
-| **PIC** (mid-range) | alpha | PIC16F84A, PIC16F877A |
+| Architecture               | Status   | Chips                                                                                                      |
+| -------------------------- | -------- | ---------------------------------------------------------------------------------------------------------- |
+| **AVR** (ATmega)           | **beta** | ATmega48/88/168/328P, ATmega2560, ATmega32U4                                                               |
+| **AVR** (ATtiny)           | **beta** | ATtiny25/45/85, ATtiny24/44/84, ATtiny13/13A, ATtiny2313/4313                                              |
+| **ARM** (Cortex-M0+ / M33) | alpha    | RP2040 (Pico / Pico W), RP2350 (Pico 2 / Pico 2 W) — PIO on both; CYW43 WiFi on the Pico 2 W (RP2350) only |
+| **PIC** (mid-range)        | alpha    | PIC16F84A, PIC16F877A                                                                                      |
 
 ```bash
 pipx install --pip-args=--pre "pymcu-compiler[avr]"    # beta
@@ -45,15 +45,15 @@ against a compat layer unless you need direct register access.
 
 1. **Parts of the language are missing.** The table below is measured, not estimated.
 
-   | | AVR (beta) | ARM | PIC16 | PIC18 |
-   |---|---|---|---|---|
-   | `float` | yes | yes | **no** | yes |
-   | `try` / `except` / `raise` | yes | yes | **no** | **no** |
-   | f-strings | yes | yes | **no** | **no** |
-   | generators (`yield`) | yes | yes | **no** | yes |
-   | `async` / `await` | yes | yes | **no** | yes |
-   | `list[T]` bounded heap | yes | **no** | **no** | **no** |
-   | `@interrupt` | yes | yes | **no** | yes |
+   |                            | AVR (beta) | ARM    | PIC16  | PIC18  |
+   | -------------------------- | ---------- | ------ | ------ | ------ |
+   | `float`                    | yes        | yes    | **no** | yes    |
+   | `try` / `except` / `raise` | yes        | yes    | **no** | **no** |
+   | f-strings                  | yes        | yes    | **no** | **no** |
+   | generators (`yield`)       | yes        | yes    | **no** | yes    |
+   | `async` / `await`          | yes        | yes    | **no** | yes    |
+   | `list[T]` bounded heap     | yes        | **no** | **no** | **no** |
+   | `@interrupt`               | yes        | yes    | **no** | yes    |
 
    Everything else, from fixed arrays with runtime indexing, `dict`/`set` literals,
    `FixedDict`, `//` and `%`, signed and 32-bit integers, classes, inheritance with
@@ -64,12 +64,12 @@ against a compat layer unless you need direct register access.
    actually been run on hardware differs a great deal, so it is worth stating one by one
    rather than in a single sentence:
 
-   | Backend | Hardware record |
-   |---|---|
-   | **AVR** (beta) | Continuously validated on silicon. A logic-analyzer harness on an Arduino Uno decodes the board's UART and diffs it against CPython running the same source, so a semantic divergence is caught rather than argued about. |
-   | **ARM** | Confirmed running on real Raspberry Pi silicon (Pico, Pico 2): blink, native f-strings, and the Python RTOS doing preemptive multitasking on the Cortex-M33, with clock and timer timing verified on a logic analyzer to better than 0.01%. What it does not yet have is the continuous differential harness AVR runs. |
-   | **PIC** | Partially exercised on silicon (PIC18 GPIO, `delay_ms`, UART TX); most testing is on the PicSharp emulator. For the PIC16 parts this page lists, the build emits no configuration word, so the image does not boot until you program the fuses yourself. |
-   | **RISC-V** | Emulation only, in qemu. It has never been run on a physical CH32V003. |
+   | Backend        | Hardware record                                                                                                                                                                                                                                                                                                        |
+   | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | **AVR** (beta) | Continuously validated on silicon. A logic-analyzer harness on an Arduino Uno decodes the board's UART and diffs it against CPython running the same source, so a semantic divergence is caught rather than argued about.                                                                                              |
+   | **ARM**        | Confirmed running on real Raspberry Pi silicon (Pico, Pico 2): blink, native f-strings, and the Python RTOS doing preemptive multitasking on the Cortex-M33, with clock and timer timing verified on a logic analyzer to better than 0.01%. What it does not yet have is the continuous differential harness AVR runs. |
+   | **PIC**        | Partially exercised on silicon (PIC18 GPIO, `delay_ms`, UART TX); most testing is on the PicSharp emulator. For the PIC16 parts this page lists, the build emits no configuration word, so the image does not boot until you program the fuses yourself.                                                               |
+   | **RISC-V**     | Emulation only, in qemu. It has never been run on a physical CH32V003.                                                                                                                                                                                                                                                 |
 
 3. **The API may change between releases**, including HAL module paths and constructor
    signatures.
@@ -95,20 +95,20 @@ wasmtime — one architecture-independent wheel, no `avr-gcc` on your host. See
 
 ### HAL modules
 
-| Module | Features |
-|---|---|
-| `pymcu.hal.gpio` | `Pin` — high / low / toggle / irq / `pulse_in` |
-| `pymcu.hal.uart` | `UART` — write / read / println / RX interrupt |
-| `pymcu.hal.adc` | `AnalogPin` — polling and interrupt; channels `"PC0"`–`"PC5"`, `"TEMP"`, `"VBG"`, `"ADC8"` |
-| `pymcu.hal.timer` | `Timer(n, prescaler)` in CTC mode; `millis()` / `micros()` |
-| `pymcu.hal.pwm` | `PWM` — multi-channel, `set_duty` / `set_freq` |
-| `pymcu.hal.spi` | `SPI` (hardware peripheral) |
-| `pymcu.hal.softspi` | `SoftSPI` — bit-banged SPI on arbitrary pins |
-| `pymcu.hal.i2c` | `I2C` (hardware TWI) |
-| `pymcu.hal.softi2c` | `SoftI2C` — bit-banged I2C on arbitrary pins |
-| `pymcu.hal.eeprom` | `EEPROM` — `write(addr, val)` / `read(addr)` |
-| `pymcu.hal.watchdog` | `Watchdog` — `enable` / `disable` / `feed` |
-| `pymcu.hal.power` | `sleep_idle` / `sleep_adc_noise` / `sleep_power_down` / `sleep_power_save` / `sleep_standby` / `sleep_extended_standby` |
+| Module               | Features                                                                                                                |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `pymcu.hal.gpio`     | `Pin` — high / low / toggle / irq / `pulse_in`                                                                          |
+| `pymcu.hal.uart`     | `UART` — write / read / println / RX interrupt                                                                          |
+| `pymcu.hal.adc`      | `AnalogPin` — polling and interrupt; channels `"PC0"`–`"PC5"`, `"TEMP"`, `"VBG"`, `"ADC8"`                              |
+| `pymcu.hal.timer`    | `Timer(n, prescaler)` in CTC mode; `millis()` / `micros()`                                                              |
+| `pymcu.hal.pwm`      | `PWM` — multi-channel, `set_duty` / `set_freq`                                                                          |
+| `pymcu.hal.spi`      | `SPI` (hardware peripheral)                                                                                             |
+| `pymcu.hal.softspi`  | `SoftSPI` — bit-banged SPI on arbitrary pins                                                                            |
+| `pymcu.hal.i2c`      | `I2C` (hardware TWI)                                                                                                    |
+| `pymcu.hal.softi2c`  | `SoftI2C` — bit-banged I2C on arbitrary pins                                                                            |
+| `pymcu.hal.eeprom`   | `EEPROM` — `write(addr, val)` / `read(addr)`                                                                            |
+| `pymcu.hal.watchdog` | `Watchdog` — `enable` / `disable` / `feed`                                                                              |
+| `pymcu.hal.power`    | `sleep_idle` / `sleep_adc_noise` / `sleep_power_down` / `sleep_power_save` / `sleep_standby` / `sleep_extended_standby` |
 
 :::note
 Prefer the [MicroPython](/compat/micropython/) or

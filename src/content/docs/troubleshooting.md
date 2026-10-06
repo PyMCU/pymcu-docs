@@ -22,17 +22,17 @@ src/main.py:12:9: error: TypeError: cannot assign float to uint8
 `file:line:column: severity: ErrorType: message`, then the surrounding source with the
 offending token underlined. The **error type** tells you which stage rejected the program:
 
-| Type | Stage | What it usually means |
-|---|---|---|
-| `LexicalError` | Lexer | A character the lexer cannot read. Non-ASCII text outside a comment is the classic cause |
-| `IndentationError` | Lexer | Mixed or inconsistent indentation, same as CPython |
-| `SyntaxError` | Parser | The grammar rejected the construct. Often a Python feature PyMCU does not implement - check [Limitations](/limitations/) |
-| `NameError` | IR generation | Assigning a module-level global inside a function without a `global` declaration (Python would have made a local - the compiler makes you say which you meant), or calling `.append()` and friends on an untyped `[]` |
-| `TypeError` | IR generation | An assignment or call whose types do not line up - assigning `None` to a scalar, passing a float where a `uint8` is expected |
-| `ValueError` | IR generation | A value that is well-typed but impossible, such as a literal outside its type's range |
-| `IndexError` | IR generation | A constant index the compiler can prove is out of bounds |
-| `RecursionError` | IR generation | Recursion, which bare metal has no stack budget for. The diagnostic prints the full cycle |
-| `CompileError` | HAL / backend | The construct is valid Python but not supported on **this target** - see below |
+| Type               | Stage         | What it usually means                                                                                                                                                                                                 |
+| ------------------ | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LexicalError`     | Lexer         | A character the lexer cannot read. Non-ASCII text outside a comment is the classic cause                                                                                                                              |
+| `IndentationError` | Lexer         | Mixed or inconsistent indentation, same as CPython                                                                                                                                                                    |
+| `SyntaxError`      | Parser        | The grammar rejected the construct. Often a Python feature PyMCU does not implement - check [Limitations](/limitations/)                                                                                              |
+| `NameError`        | IR generation | Assigning a module-level global inside a function without a `global` declaration (Python would have made a local - the compiler makes you say which you meant), or calling `.append()` and friends on an untyped `[]` |
+| `TypeError`        | IR generation | An assignment or call whose types do not line up - assigning `None` to a scalar, passing a float where a `uint8` is expected                                                                                          |
+| `ValueError`       | IR generation | A value that is well-typed but impossible, such as a literal outside its type's range                                                                                                                                 |
+| `IndexError`       | IR generation | A constant index the compiler can prove is out of bounds                                                                                                                                                              |
+| `RecursionError`   | IR generation | Recursion, which bare metal has no stack budget for. The diagnostic prints the full cycle                                                                                                                             |
+| `CompileError`     | HAL / backend | The construct is valid Python but not supported on **this target** - see below                                                                                                                                        |
 
 `CompileError` is the interesting one. It is what the HAL raises when your code asks the
 silicon for something it does not have: `Pull-down resistor not supported on AVR`,
@@ -68,7 +68,7 @@ stdout      = "uart0"
 stdout_baud = 9600
 ```
 
-If instead you construct `UART(9600)` yourself, *that* is the baud rate - the build detects
+If instead you construct `UART(9600)` yourself, _that_ is the baud rate - the build detects
 your `UART()` and injects only the console formatting helpers, without re-initialising the
 port. A terminal set to 115200 against a program that opened 9600 shows nothing but noise.
 
@@ -103,12 +103,12 @@ TX, and a shared ground.
 `print()` is dispatched through `pymcu.hal.console`, and the console has a different amount
 of support per architecture:
 
-| Target | `print("text")` | `print(number)` |
-|---|---|---|
-| AVR | yes | yes |
-| RP2040 / RP2350 | yes | yes |
-| PIC14 (mid-range) | yes | **no** |
-| PIC12, PIC18, RISC-V | **no** | **no** |
+| Target               | `print("text")` | `print(number)` |
+| -------------------- | --------------- | --------------- |
+| AVR                  | yes             | yes             |
+| RP2040 / RP2350      | yes             | yes             |
+| PIC14 (mid-range)    | yes             | **no**          |
+| PIC12, PIC18, RISC-V | **no**          | **no**          |
 
 Where a target is unsupported the call is **dropped silently** rather than failing to link -
 so the build succeeds and the board says nothing. That is deliberate, so a portable program
@@ -212,7 +212,7 @@ interrupt vector table (102 bytes: 26 slots, the last one without its padding `n
 2-byte `__bad_interrupt` jump the unused vectors point at. That is everything ahead of your
 program's first instruction. Every PyMCU binary carries it whatever the program does, and
 deducting it keeps size comparisons between two builds (or against an avr-gcc build, whose
-crt0 footprint is the same shape) about *your* code rather than about the fixed runtime.
+crt0 footprint is the same shape) about _your_ code rather than about the fixed runtime.
 
 `avr-size` reports the whole image, preamble included. So expect `avr-size` to be 104
 bytes larger on AVR. If you need the raw flash figure, use `avr-size` - and remember that

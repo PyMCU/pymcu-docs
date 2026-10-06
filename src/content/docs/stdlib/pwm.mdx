@@ -138,34 +138,35 @@ from pymcu.hal.pwm import PWM
 
 `pymcu.hal.pwm` is available on **AVR**, **ARM** (RP2040 / RP2350) and **PIC**. The constructor
 signature differs between the AVR/PIC form (pin name + 8-bit duty) and the RP form (GPIO number
-+ frequency + 16-bit duty), because the underlying hardware is structured differently.
+
+- frequency + 16-bit duty), because the underlying hardware is structured differently.
 
 ### `PWM(pin, duty, freq=0)` — AVR and PIC
 
-| Parameter | Type | Description |
-|---|---|---|
-| `pin` | `str` | Port/pin name; the timer and output-compare channel are derived from it |
-| `duty` | `uint8` | Duty cycle, 0 = 0 %, 255 = 100 % |
-| `freq` | `uint16` | Optional frequency hint; `0` keeps the timer's default prescaler |
+| Parameter | Type     | Description                                                             |
+| --------- | -------- | ----------------------------------------------------------------------- |
+| `pin`     | `str`    | Port/pin name; the timer and output-compare channel are derived from it |
+| `duty`    | `uint8`  | Duty cycle, 0 = 0 %, 255 = 100 %                                        |
+| `freq`    | `uint16` | Optional frequency hint; `0` keeps the timer's default prescaler        |
 
 On the ATmega328P the supported PWM pins and their Timer/Counter channels are:
 
-| Pin | Arduino | Timer channel | Note |
-|---|---|---|---|
-| `"PD6"` | D6 | Timer0 OC0A | Fast PWM, 8-bit |
-| `"PD5"` | D5 | Timer0 OC0B | Fast PWM, 8-bit |
-| `"PB1"` | D9 | Timer1 OC1A | Fast PWM, 8-bit |
-| `"PB2"` | D10 | Timer1 OC1B | Fast PWM, 8-bit |
-| `"PB3"` | D11 | Timer2 OC2A | Fast PWM, 8-bit |
-| `"PD3"` | D3 | Timer2 OC2B | Fast PWM, 8-bit |
+| Pin     | Arduino | Timer channel | Note            |
+| ------- | ------- | ------------- | --------------- |
+| `"PD6"` | D6      | Timer0 OC0A   | Fast PWM, 8-bit |
+| `"PD5"` | D5      | Timer0 OC0B   | Fast PWM, 8-bit |
+| `"PB1"` | D9      | Timer1 OC1A   | Fast PWM, 8-bit |
+| `"PB2"` | D10     | Timer1 OC1B   | Fast PWM, 8-bit |
+| `"PB3"` | D11     | Timer2 OC2A   | Fast PWM, 8-bit |
+| `"PD3"` | D3      | Timer2 OC2B   | Fast PWM, 8-bit |
 
 #### PWM methods - AVR and PIC
 
-| Method | Description |
-|---|---|
-| `start()` | Enable the PWM output |
-| `stop()` | Disable the PWM output |
-| `set_duty(duty: uint8)` | Update the duty cycle while running |
+| Method                   | Description                            |
+| ------------------------ | -------------------------------------- |
+| `start()`                | Enable the PWM output                  |
+| `stop()`                 | Disable the PWM output                 |
+| `set_duty(duty: uint8)`  | Update the duty cycle while running    |
 | `set_freq(freq: uint16)` | Select the prescaler closest to `freq` |
 
 #### Reachable frequencies
@@ -208,18 +209,18 @@ def main():
 
 ### `PWM(pin, freq=1000, duty=0)` — RP2040 / RP2350
 
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `pin` | `const` | — | GPIO number. The PWM slice is `(pin >> 1) & 7` and the channel is `pin & 1`. |
-| `freq` | `const` | `1000` | Output frequency in Hz; the slice `TOP` is folded at compile time |
-| `duty` | `const` | `0` | Initial duty cycle, scaled 0–65535 |
+| Parameter | Type    | Default | Description                                                                  |
+| --------- | ------- | ------- | ---------------------------------------------------------------------------- |
+| `pin`     | `const` | —       | GPIO number. The PWM slice is `(pin >> 1) & 7` and the channel is `pin & 1`. |
+| `freq`    | `const` | `1000`  | Output frequency in Hz; the slice `TOP` is folded at compile time            |
+| `duty`    | `const` | `0`     | Initial duty cycle, scaled 0–65535                                           |
 
 #### PWM methods - RP2040 / RP2350
 
-| Method | Description |
-|---|---|
+| Method                   | Description                                                   |
+| ------------------------ | ------------------------------------------------------------- |
 | `set_duty(duty: uint16)` | Update the duty cycle, scaled 0–65535 against the slice `TOP` |
-| `stop()` | Disable the slice (clears `CSR`) |
+| `stop()`                 | Disable the slice (clears `CSR`)                              |
 
 There is no `start()` — the constructor routes the pin to the PWM function, programs `TOP` and
 the compare value, and enables the slice.

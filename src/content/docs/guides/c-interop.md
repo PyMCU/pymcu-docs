@@ -1,6 +1,6 @@
 ---
 title: C and C++ interop
-description: "Call existing C and C++ from PyMCU firmware with @extern and [tool.pymcu.ffi] — the AVR build integration, the calling convention, and five worked projects."
+description: 'Call existing C and C++ from PyMCU firmware with @extern and [tool.pymcu.ffi] — the AVR build integration, the calling convention, and five worked projects.'
 ---
 
 Some code is not worth rewriting. A CRC routine you have validated against a bus analyser,
@@ -103,12 +103,12 @@ include_dirs = ["c_src"]
 cflags = ["-std=c11", "-Os"]
 ```
 
-| Key | Type | Meaning |
-|---|---|---|
-| `sources` | list of paths | C / C++ files to compile, relative to the project root. **Its presence is what switches the build.** |
-| `include_dirs` | list of paths | Added as `-I` to every compile |
-| `cflags` | list of strings | Passed through verbatim after the built-in `-mmcu=<chip> -Os -c` |
-| `linker_script` | path | Optional custom linker script. Omit it and the toolchain writes a chip-appropriate default (`dist/_pymcu.ld`) |
+| Key             | Type            | Meaning                                                                                                       |
+| --------------- | --------------- | ------------------------------------------------------------------------------------------------------------- |
+| `sources`       | list of paths   | C / C++ files to compile, relative to the project root. **Its presence is what switches the build.**          |
+| `include_dirs`  | list of paths   | Added as `-I` to every compile                                                                                |
+| `cflags`        | list of strings | Passed through verbatim after the built-in `-mmcu=<chip> -Os -c`                                              |
+| `linker_script` | path            | Optional custom linker script. Omit it and the toolchain writes a chip-appropriate default (`dist/_pymcu.ld`) |
 
 Then build as usual:
 
@@ -150,13 +150,13 @@ declaration matches an unmangled symbol, so give anything you intend to call fro
 
 PyMCU emits calls that follow the avr-gcc ABI, so the C side sees exactly what it expects:
 
-| Position | Register |
-|---|---|
-| Argument 0 | R24 |
-| Argument 1 | R22 |
-| Argument 2 | R20 |
-| Argument 3 | R18 |
-| Return value | R24 |
+| Position     | Register |
+| ------------ | -------- |
+| Argument 0   | R24      |
+| Argument 1   | R22      |
+| Argument 2   | R20      |
+| Argument 3   | R18      |
+| Return value | R24      |
 
 Wider types occupy the register pair upward from that slot, so a `uint16` argument 0
 arrives in R25:R24. The `ffi-arduino` example passes three `uint16` values in one call
@@ -177,7 +177,7 @@ uint8_t abi_echo_arg0(uint8_t a, uint8_t b, uint8_t c) { (void)b; (void)c; retur
 
 Calling `abi_echo_arg0(10, 20, 30)` and getting `10` back proves argument 0 travelled in
 R24. `abi_sub8(100, 30)` is non-commutative and returns `70` (`0x46`) rather than `186`
-(`0xBA`), which proves the *order*. A final probe stores `0xAA` in a local, makes a C call,
+(`0xBA`), which proves the _order_. A final probe stores `0xAA` in a local, makes a C call,
 and reads the local back — verifying callee-saved registers survive the boundary. Expected
 UART output at 9600 baud:
 
@@ -198,13 +198,13 @@ All five live in `examples/` in the AVR backend repository and ship a README wit
 expected UART output. Four of them are covered by integration tests that build the example
 and assert that output.
 
-| Example | What it shows | Tested |
-|---|---|---|
-| `extern-call` | The minimal complete setup — two C functions, a `c_src/` directory, a full `pyproject.toml`. Start here. | Yes |
-| `ffi-crc8` | Linking against **avr-libc**: `crc8.c` wraps `_crc_ibutton_update()` from `<util/crc16.h>`, the same CRC-8 the Arduino OneWire library uses to validate a DS18B20 ROM code | No |
-| `ffi-abi` | Calling-convention probes, as above | Yes |
-| `ffi-arduino` | Arduino's `map()` and `constrain()` as portable C, plus an ADC-to-PWM converter — the helpers a ported sketch reaches for. 32-bit intermediate math, `uint16` across the boundary | Yes |
-| `ffi-dsp` | **Multiple C files in one build** (`math_utils.c` + `filter.c`), six `@extern` declarations covering clamp, lerp, scale, IIR smoothing and deadband | Yes |
+| Example       | What it shows                                                                                                                                                                     | Tested |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `extern-call` | The minimal complete setup — two C functions, a `c_src/` directory, a full `pyproject.toml`. Start here.                                                                          | Yes    |
+| `ffi-crc8`    | Linking against **avr-libc**: `crc8.c` wraps `_crc_ibutton_update()` from `<util/crc16.h>`, the same CRC-8 the Arduino OneWire library uses to validate a DS18B20 ROM code        | No     |
+| `ffi-abi`     | Calling-convention probes, as above                                                                                                                                               | Yes    |
+| `ffi-arduino` | Arduino's `map()` and `constrain()` as portable C, plus an ADC-to-PWM converter — the helpers a ported sketch reaches for. 32-bit intermediate math, `uint16` across the boundary | Yes    |
+| `ffi-dsp`     | **Multiple C files in one build** (`math_utils.c` + `filter.c`), six `@extern` declarations covering clamp, lerp, scale, IIR smoothing and deadband                               | Yes    |
 
 `ffi-crc8` is the one to read if your motivation is "I want the library the Arduino
 ecosystem already uses". It calls straight into avr-libc, and its README shows the

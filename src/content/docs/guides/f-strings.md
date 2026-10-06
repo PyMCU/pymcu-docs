@@ -57,12 +57,12 @@ def main():
 
 The name behaves like a string you can use again:
 
-| Operation | Result |
-|---|---|
-| `print(s)`, `uart.write_str(s)`, `uart.println(s)` | Writes the formatted bytes |
-| `len(s)` | The **formatted** length, not the buffer capacity |
-| `s[i]` | The byte at index `i` |
-| passing `s` to a `bytearray` parameter | Works — it is a real byte buffer |
+| Operation                                          | Result                                            |
+| -------------------------------------------------- | ------------------------------------------------- |
+| `print(s)`, `uart.write_str(s)`, `uart.println(s)` | Writes the formatted bytes                        |
+| `len(s)`                                           | The **formatted** length, not the buffer capacity |
+| `s[i]`                                             | The byte at index `i`                             |
+| passing `s` to a `bytearray` parameter             | Works — it is a real byte buffer                  |
 
 `pymcu build` injects the `pymcu.strfmt` import automatically when it sees a value-form
 f-string, so you never write it yourself.
@@ -82,14 +82,14 @@ B:t
 
 Specs go after a colon inside the braces, and cover width, zero padding and base:
 
-| Spec | Meaning | `v = 7` gives |
-|---|---|---|
-| `{v:5d}` | Decimal, width 5, space-padded | `7` right-aligned in 5 columns |
-| `{v:04d}` | Decimal, width 4, zero-padded | `0007` |
-| `{v:02x}` | Lowercase hex, width 2, zero-padded | `07` |
-| `{v:X}` | Uppercase hex | `7` |
-| `{v:08b}` | Binary, width 8, zero-padded | `00000111` |
-| `{v:o}` | Octal | `7` |
+| Spec      | Meaning                             | `v = 7` gives                  |
+| --------- | ----------------------------------- | ------------------------------ |
+| `{v:5d}`  | Decimal, width 5, space-padded      | `7` right-aligned in 5 columns |
+| `{v:04d}` | Decimal, width 4, zero-padded       | `0007`                         |
+| `{v:02x}` | Lowercase hex, width 2, zero-padded | `07`                           |
+| `{v:X}`   | Uppercase hex                       | `7`                            |
+| `{v:08b}` | Binary, width 8, zero-padded        | `00000111`                     |
+| `{v:o}`   | Octal                               | `7`                            |
 
 The supported format **types** are `d`, `x`, `X`, `b` and `o`. Anything else is a compile
 error naming the spec it rejected, so you find out at build time.
@@ -171,11 +171,11 @@ compile error, not a miscompile.
 
 ## What is not supported yet
 
-| Not supported | Do this instead |
-|---|---|
-| Float interpolation in the **value** form | Stream it: `print(f"{x}")` handles floats where the target supports them |
-| `s == "lit"` — comparing a value-form f-string to a literal | Compare the numbers before formatting them |
-| An f-string inline in an arbitrary expression position | Assign it to a name first, then use that name |
+| Not supported                                               | Do this instead                                                          |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Float interpolation in the **value** form                   | Stream it: `print(f"{x}")` handles floats where the target supports them |
+| `s == "lit"` — comparing a value-form f-string to a literal | Compare the numbers before formatting them                               |
+| An f-string inline in an arbitrary expression position      | Assign it to a name first, then use that name                            |
 
 The compiler tells you which one you hit, with a message naming the two supported
 positions (streaming and assignment) rather than failing obscurely.

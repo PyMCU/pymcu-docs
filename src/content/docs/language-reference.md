@@ -1,6 +1,6 @@
 ---
 title: Language Reference
-description: "The complete accepted Python subset: types and annotations, control flow, decorators, ZCA classes, generators, async/await and the MCU-specific extensions."
+description: 'The complete accepted Python subset: types and annotations, control flow, decorators, ZCA classes, generators, async/await and the MCU-specific extensions.'
 ---
 
 PyMCU compiles a **statically-typed subset of Python** to bare-metal machine code for AVR, ARM
@@ -26,83 +26,83 @@ and `@extern` have no compat equivalent by design.
 
 ## 1. Quick Reference
 
-| Category | Feature | Status |
-|---|---|---|
-| **Statements** | `if / elif / else` | Complete |
-| | `while` + `break` / `continue` | Complete |
-| | `for i in range(n)` | Complete |
-| | `for x in array` | Complete |
-| | `match / case` (literal, wildcard, OR patterns) | Complete |
-| | `def` (typed params, defaults, keyword args) | Complete |
-| | `class` (ZCA `@inline`, `@property`) | Complete |
-| | `class Foo(Enum)` (zero-cost integer constants) | Complete |
-| | `with obj:` (context manager, `__enter__`/`__exit__`) | Complete |
-| | `assert condition, "msg"` (compile-time only) | Complete |
-| | `return` | Complete |
-| | `pass` | Complete |
-| | `try / except / else / finally` | Complete (AVR + ARM; not PIC) |
-| | `raise` + builtin exception types | Complete (AVR + ARM; not PIC) |
-| | `raise CompileError("msg")` (aborts compilation) | Complete |
-| | `async def` / `await asyncio.sleep_ms(n)` | Complete (section 6) |
-| | `yield` (generators) | Complete (top-level `def` only) |
-| | `import` / `from ... import` / `import ... as` | Complete |
-| | `global` | Complete |
-| | `nonlocal` (inside nested `@inline` functions) | Complete |
-| **Expressions** | Integer literals (dec, hex, bin, oct, `_` separators) | Complete |
-| | `True` / `False` / `None` | Complete |
-| | String literals (double- and single-quoted) | Complete |
-| | Arithmetic `+ - * / % //` | Complete |
-| | Comparison `== != < <= > >=` | Complete |
-| | Bitwise `& \| ^ ~ << >>` | Complete |
-| | Logical `and` / `or` / `not` | Complete (full short-circuit evaluation) |
-| | Augmented assignment `+= -= *= //= &= \|= ^= <<= >>=` | Complete (variables, subscripts, member targets) |
-| | Ternary `val = x if cond else y` | Complete |
-| | Type cast `uint8(val)`, `uint16(val)` | Complete (constant-fold at compile time) |
-| | `abs(x)`, `min(a, b)`, `max(a, b)` | Complete |
-| | `ord('A')`, `chr(65)` (compile-time) | Complete |
-| | Multiple assignment `a = b = 0` | Complete |
-| | `len(arr)` / `len([...])` (compile-time) | Complete |
-| | Walrus `:=` `(c := uart.read())` | Complete |
-| | Bit-index `reg[n]` | Complete |
-| | Array index `arr[i]` (const and variable) | Complete |
-| | Tuple literal `(a, b)` | Complete |
-| | Tuple unpacking `a, b = func()` | Complete |
-| | Member access `obj.x`, method calls `obj.m()` | Complete |
-| | f-strings `f"t={t}C"` — streamed and as values | Complete |
-| | Closed `dict` / `set` literals (compile-time lookup tables) | Complete |
-| | Runtime-tagged `Optional[T]` / scalar `Union[...]` | Complete, up to four scalar members |
-| | `memoryview(buf)` fixed-buffer windows | Complete |
-| | `open()` read-only embedded files (ROMFS) | Complete |
-| **MCU extensions** | `uint8 / int8 / uint16 / int16 / uint32 / int32` | Complete |
-| | `float` (IEEE-754 single precision) | Complete (AVR, RP2040, RP2350) |
-| | `ptr[T]` pointer type | Complete |
-| | `const[T]` compile-time constant | Complete |
-| | `asm("instr")` inline assembly | Complete |
-| | `delay_ms(n)` / `delay_us(n)` | Complete |
-| | `@inline` decorator | Complete |
-| | `@interrupt(vector)` ISR decorator | Complete |
-| | `@property` / `@name.setter` | Complete |
-| | Conditional compilation `__CHIP__` | Complete |
-| **Arrays** | Fixed-size arrays `arr: uint8[N]` | Complete |
-| | Constant-index access (zero overhead) | Complete |
-| | Variable-index access (SRAM) | Complete |
-| | List comprehension (compile-time constant only) | Complete |
-| | `bytearray(N)` / `bytearray(b"...")` | Complete (lowers to `uint8[N]`) |
-| | `list[T]` bounded list with `append()` | Complete on AVR (bump allocator + GC); not on ARM/PIC |
-| | Runtime-sized `bytearray(n)` allocated at most once | Complete on AVR (static arena) |
-| | `pymcu.collections.FixedDict(capacity)` | Complete (no heap) |
-| **Not supported** | Growing `dict` / `set` (`.add()`, unbounded insert) | No heap hash tables — use a closed literal or `FixedDict` |
-| | `list.append` on a **fixed-size** array | Use `list[T]`, or size the array up front |
-| | Closures capturing mutable variables | No closure cell without a heap |
-| | `*args` / `**kwargs`, `functools.partial` | Fixed parameter lists only |
-| | Reflection: `getattr` / `setattr` / `eval` / `exec` | No runtime type info |
-| | `isinstance()`, multiple inheritance, metaclasses | No runtime type tags |
-| | `complex`, `Decimal` | Not available |
-| | `str.split()` / `.join()` / `.format()`, `str + str` | No heap strings |
-| | `await` as an expression; awaiting another coroutine | Poll it, or use `asyncio.gather` |
-| | `yield` inside `@inline` functions or methods; `yield` as an expression | Top-level `def` only |
-| | f-string inline in an arbitrary expression position | Assign it to a name first |
-| | List comprehension (runtime bounds) | No heap |
+| Category           | Feature                                                                 | Status                                                    |
+| ------------------ | ----------------------------------------------------------------------- | --------------------------------------------------------- |
+| **Statements**     | `if / elif / else`                                                      | Complete                                                  |
+|                    | `while` + `break` / `continue`                                          | Complete                                                  |
+|                    | `for i in range(n)`                                                     | Complete                                                  |
+|                    | `for x in array`                                                        | Complete                                                  |
+|                    | `match / case` (literal, wildcard, OR patterns)                         | Complete                                                  |
+|                    | `def` (typed params, defaults, keyword args)                            | Complete                                                  |
+|                    | `class` (ZCA `@inline`, `@property`)                                    | Complete                                                  |
+|                    | `class Foo(Enum)` (zero-cost integer constants)                         | Complete                                                  |
+|                    | `with obj:` (context manager, `__enter__`/`__exit__`)                   | Complete                                                  |
+|                    | `assert condition, "msg"` (compile-time only)                           | Complete                                                  |
+|                    | `return`                                                                | Complete                                                  |
+|                    | `pass`                                                                  | Complete                                                  |
+|                    | `try / except / else / finally`                                         | Complete (AVR + ARM; not PIC)                             |
+|                    | `raise` + builtin exception types                                       | Complete (AVR + ARM; not PIC)                             |
+|                    | `raise CompileError("msg")` (aborts compilation)                        | Complete                                                  |
+|                    | `async def` / `await asyncio.sleep_ms(n)`                               | Complete (section 6)                                      |
+|                    | `yield` (generators)                                                    | Complete (top-level `def` only)                           |
+|                    | `import` / `from ... import` / `import ... as`                          | Complete                                                  |
+|                    | `global`                                                                | Complete                                                  |
+|                    | `nonlocal` (inside nested `@inline` functions)                          | Complete                                                  |
+| **Expressions**    | Integer literals (dec, hex, bin, oct, `_` separators)                   | Complete                                                  |
+|                    | `True` / `False` / `None`                                               | Complete                                                  |
+|                    | String literals (double- and single-quoted)                             | Complete                                                  |
+|                    | Arithmetic `+ - * / % //`                                               | Complete                                                  |
+|                    | Comparison `== != < <= > >=`                                            | Complete                                                  |
+|                    | Bitwise `& \| ^ ~ << >>`                                                | Complete                                                  |
+|                    | Logical `and` / `or` / `not`                                            | Complete (full short-circuit evaluation)                  |
+|                    | Augmented assignment `+= -= *= //= &= \|= ^= <<= >>=`                   | Complete (variables, subscripts, member targets)          |
+|                    | Ternary `val = x if cond else y`                                        | Complete                                                  |
+|                    | Type cast `uint8(val)`, `uint16(val)`                                   | Complete (constant-fold at compile time)                  |
+|                    | `abs(x)`, `min(a, b)`, `max(a, b)`                                      | Complete                                                  |
+|                    | `ord('A')`, `chr(65)` (compile-time)                                    | Complete                                                  |
+|                    | Multiple assignment `a = b = 0`                                         | Complete                                                  |
+|                    | `len(arr)` / `len([...])` (compile-time)                                | Complete                                                  |
+|                    | Walrus `:=` `(c := uart.read())`                                        | Complete                                                  |
+|                    | Bit-index `reg[n]`                                                      | Complete                                                  |
+|                    | Array index `arr[i]` (const and variable)                               | Complete                                                  |
+|                    | Tuple literal `(a, b)`                                                  | Complete                                                  |
+|                    | Tuple unpacking `a, b = func()`                                         | Complete                                                  |
+|                    | Member access `obj.x`, method calls `obj.m()`                           | Complete                                                  |
+|                    | f-strings `f"t={t}C"` — streamed and as values                          | Complete                                                  |
+|                    | Closed `dict` / `set` literals (compile-time lookup tables)             | Complete                                                  |
+|                    | Runtime-tagged `Optional[T]` / scalar `Union[...]`                      | Complete, up to four scalar members                       |
+|                    | `memoryview(buf)` fixed-buffer windows                                  | Complete                                                  |
+|                    | `open()` read-only embedded files (ROMFS)                               | Complete                                                  |
+| **MCU extensions** | `uint8 / int8 / uint16 / int16 / uint32 / int32`                        | Complete                                                  |
+|                    | `float` (IEEE-754 single precision)                                     | Complete (AVR, RP2040, RP2350)                            |
+|                    | `ptr[T]` pointer type                                                   | Complete                                                  |
+|                    | `const[T]` compile-time constant                                        | Complete                                                  |
+|                    | `asm("instr")` inline assembly                                          | Complete                                                  |
+|                    | `delay_ms(n)` / `delay_us(n)`                                           | Complete                                                  |
+|                    | `@inline` decorator                                                     | Complete                                                  |
+|                    | `@interrupt(vector)` ISR decorator                                      | Complete                                                  |
+|                    | `@property` / `@name.setter`                                            | Complete                                                  |
+|                    | Conditional compilation `__CHIP__`                                      | Complete                                                  |
+| **Arrays**         | Fixed-size arrays `arr: uint8[N]`                                       | Complete                                                  |
+|                    | Constant-index access (zero overhead)                                   | Complete                                                  |
+|                    | Variable-index access (SRAM)                                            | Complete                                                  |
+|                    | List comprehension (compile-time constant only)                         | Complete                                                  |
+|                    | `bytearray(N)` / `bytearray(b"...")`                                    | Complete (lowers to `uint8[N]`)                           |
+|                    | `list[T]` bounded list with `append()`                                  | Complete on AVR (bump allocator + GC); not on ARM/PIC     |
+|                    | Runtime-sized `bytearray(n)` allocated at most once                     | Complete on AVR (static arena)                            |
+|                    | `pymcu.collections.FixedDict(capacity)`                                 | Complete (no heap)                                        |
+| **Not supported**  | Growing `dict` / `set` (`.add()`, unbounded insert)                     | No heap hash tables — use a closed literal or `FixedDict` |
+|                    | `list.append` on a **fixed-size** array                                 | Use `list[T]`, or size the array up front                 |
+|                    | Closures capturing mutable variables                                    | No closure cell without a heap                            |
+|                    | `*args` / `**kwargs`, `functools.partial`                               | Fixed parameter lists only                                |
+|                    | Reflection: `getattr` / `setattr` / `eval` / `exec`                     | No runtime type info                                      |
+|                    | `isinstance()`, multiple inheritance, metaclasses                       | No runtime type tags                                      |
+|                    | `complex`, `Decimal`                                                    | Not available                                             |
+|                    | `str.split()` / `.join()` / `.format()`, `str + str`                    | No heap strings                                           |
+|                    | `await` as an expression; awaiting another coroutine                    | Poll it, or use `asyncio.gather`                          |
+|                    | `yield` inside `@inline` functions or methods; `yield` as an expression | Top-level `def` only                                      |
+|                    | f-string inline in an arbitrary expression position                     | Assign it to a name first                                 |
+|                    | List comprehension (runtime bounds)                                     | No heap                                                   |
 
 ---
 
@@ -116,17 +116,17 @@ and return types.
 
 ### Primitive types
 
-| Type | Width | Range | Notes |
-|---|---|---|---|
-| `uint8` | 8-bit | 0 – 255 | Default for pin values, flags, bytes |
-| `int8` | 8-bit | -128 – 127 | Signed byte |
-| `uint16` | 16-bit | 0 – 65535 | Counters, UART baud divisors |
-| `int16` | 16-bit | -32768 – 32767 | Signed 16-bit |
-| `int` | 16-bit | -32768 – 32767 | Built-in alias for `int16` — **no import needed** |
-| `uint32` | 32-bit | 0 – 4294967295 | Timestamps, large counters |
-| `int32` | 32-bit | — | Signed 32-bit |
-| `bool` | 8-bit | 0 / 1 | Stored as `uint8`; arithmetic sees 1/0, while `print` and f-strings spell `True` / `False` |
-| `float` | 32-bit | IEEE 754 single | AVR, RP2040 and RP2350 — see below |
+| Type     | Width  | Range           | Notes                                                                                      |
+| -------- | ------ | --------------- | ------------------------------------------------------------------------------------------ |
+| `uint8`  | 8-bit  | 0 – 255         | Default for pin values, flags, bytes                                                       |
+| `int8`   | 8-bit  | -128 – 127      | Signed byte                                                                                |
+| `uint16` | 16-bit | 0 – 65535       | Counters, UART baud divisors                                                               |
+| `int16`  | 16-bit | -32768 – 32767  | Signed 16-bit                                                                              |
+| `int`    | 16-bit | -32768 – 32767  | Built-in alias for `int16` — **no import needed**                                          |
+| `uint32` | 32-bit | 0 – 4294967295  | Timestamps, large counters                                                                 |
+| `int32`  | 32-bit | —               | Signed 32-bit                                                                              |
+| `bool`   | 8-bit  | 0 / 1           | Stored as `uint8`; arithmetic sees 1/0, while `print` and f-strings spell `True` / `False` |
+| `float`  | 32-bit | IEEE 754 single | AVR, RP2040 and RP2350 — see below                                                         |
 
 ```python
 x: uint8 = 0
@@ -139,11 +139,11 @@ flag: bool = False
 `float` is IEEE-754 **single precision** (32-bit) and is available on AVR, RP2040 and RP2350.
 The implementation differs per target, the semantics do not:
 
-| Target | Implementation |
-|---|---|
-| AVR | Pure-assembly `__fp_*` soft-float helpers — no FPU, ~200-400 cycles per operation |
+| Target              | Implementation                                                                              |
+| ------------------- | ------------------------------------------------------------------------------------------- |
+| AVR                 | Pure-assembly `__fp_*` soft-float helpers — no FPU, ~200-400 cycles per operation           |
 | RP2040 (Cortex-M0+) | The bootrom **fast-float** library; `crt0` resolves the SF table and the `__aeabi_f*` shims |
-| RP2350 (Cortex-M33) | Hardware FPU (FPv5-SP, softfp calling convention) |
+| RP2350 (Cortex-M33) | Hardware FPU (FPv5-SP, softfp calling convention)                                           |
 
 Unformatted `print(x)`, `str(x)`, `repr(x)` and `f"{x}"` use PyMCU's compact port of
 MicroPython's float32 formatter. It selects 6 to 9 significant digits by a float32
@@ -513,15 +513,15 @@ because splicing that body at the call would skip the later code.
 
 ### Arithmetic
 
-| Operator | Description | Notes |
-|---|---|---|
-| `+` | Addition | Wraps on overflow (no UB) |
-| `-` | Subtraction | |
-| `*` | Multiplication | |
-| `/` | True division | Python 3 semantics — **always yields a `float`** and links the float routines; the compiler warns when both operands are integers |
-| `//` | Floor division | Integer result, floored (Python semantics); raises `ZeroDivisionError` on a runtime divide-by-zero |
-| `%` | Modulo | Floored, matching Python's sign rules; raises `ZeroDivisionError` on a runtime divide-by-zero |
-| `-x` | Unary negate | |
+| Operator | Description    | Notes                                                                                                                             |
+| -------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `+`      | Addition       | Wraps on overflow (no UB)                                                                                                         |
+| `-`      | Subtraction    |                                                                                                                                   |
+| `*`      | Multiplication |                                                                                                                                   |
+| `/`      | True division  | Python 3 semantics — **always yields a `float`** and links the float routines; the compiler warns when both operands are integers |
+| `//`     | Floor division | Integer result, floored (Python semantics); raises `ZeroDivisionError` on a runtime divide-by-zero                                |
+| `%`      | Modulo         | Floored, matching Python's sign rules; raises `ZeroDivisionError` on a runtime divide-by-zero                                     |
+| `-x`     | Unary negate   |                                                                                                                                   |
 
 `+`, `-`, `*` and `<<` **promote** their operands to the next wider type, so same-width
 arithmetic does not silently wrap; narrowing happens only at an explicit store into a narrower
@@ -545,13 +545,13 @@ half: float = count / 2      # float result (soft-float / FPU)
 ### Bitwise
 
 | Operator | Description |
-|---|---|
-| `&` | Bitwise AND |
-| `\|` | Bitwise OR |
-| `^` | Bitwise XOR |
-| `~` | Bitwise NOT |
-| `<<` | Left shift |
-| `>>` | Right shift |
+| -------- | ----------- |
+| `&`      | Bitwise AND |
+| `\|`     | Bitwise OR  |
+| `^`      | Bitwise XOR |
+| `~`      | Bitwise NOT |
+| `<<`     | Left shift  |
+| `>>`     | Right shift |
 
 ### Logical
 
@@ -596,21 +596,21 @@ z: uint16 = uint16(y)   # zero-extend
 
 ### Built-in functions
 
-| Function | Description |
-|---|---|
-| `abs(x)` | Absolute value |
-| `min(a, b)` | Minimum of two values |
-| `max(a, b)` | Maximum of two values |
-| `ord('A')` | ASCII code of a single-character literal (compile-time) |
-| `chr(65)` | Character literal to integer (compile-time identity) |
-| `len(arr)` | Element count of a fixed-size array or list literal (compile-time constant) |
-| `round(x[, n])` | Half-to-even; `n` must be compile-time, runtime floats use `pymcu.round2` |
-| `hex(n)` / `bin(n)` / `oct(n)` | Flash string for constants, fixed runtime buffer otherwise |
-| `divmod(a, b)` | Tuple result; runtime zero raises `ZeroDivisionError` |
-| `pow(x, n)` / `x ** n` | Constant integer fold, runtime integer unroll, or software float |
-| `all` / `any` / `sum` / `min` / `max` | Fixed iterables; direct generator-expression arguments unroll |
-| `memoryview(buf)` | Writable window over a fixed buffer; no runtime buffer protocol |
-| `getattr(module, "name", default)` | Compile-time module lookup only |
+| Function                              | Description                                                                 |
+| ------------------------------------- | --------------------------------------------------------------------------- |
+| `abs(x)`                              | Absolute value                                                              |
+| `min(a, b)`                           | Minimum of two values                                                       |
+| `max(a, b)`                           | Maximum of two values                                                       |
+| `ord('A')`                            | ASCII code of a single-character literal (compile-time)                     |
+| `chr(65)`                             | Character literal to integer (compile-time identity)                        |
+| `len(arr)`                            | Element count of a fixed-size array or list literal (compile-time constant) |
+| `round(x[, n])`                       | Half-to-even; `n` must be compile-time, runtime floats use `pymcu.round2`   |
+| `hex(n)` / `bin(n)` / `oct(n)`        | Flash string for constants, fixed runtime buffer otherwise                  |
+| `divmod(a, b)`                        | Tuple result; runtime zero raises `ZeroDivisionError`                       |
+| `pow(x, n)` / `x ** n`                | Constant integer fold, runtime integer unroll, or software float            |
+| `all` / `any` / `sum` / `min` / `max` | Fixed iterables; direct generator-expression arguments unroll               |
+| `memoryview(buf)`                     | Writable window over a fixed buffer; no runtime buffer protocol             |
+| `getattr(module, "name", default)`    | Compile-time module lookup only                                             |
 
 ### Walrus operator `:=`
 
@@ -761,7 +761,7 @@ internal flag + code pair) and returns normally; every call site inside a `try` 
 and branches to the matching handler. There is no `jmp_buf`, no stack unwinding and no SRAM
 cost — the happy path pays one skipped branch per guarded call.
 
-Because propagation rides on the function return, cross-function propagation *is* the model:
+Because propagation rides on the function return, cross-function propagation _is_ the model:
 raise in a helper, catch it where you call the helper. An unmatched exception re-propagates to
 the enclosing `try`, then to the caller, to any depth.
 
@@ -908,6 +908,7 @@ def nibble_to_hex(n: uint8) -> uint8:
 ```
 
 **Constraints:**
+
 - Inline functions containing `asm()` with labels must delegate asm to a non-inline sub-helper
   (labels would duplicate at multiple call sites).
 - Direct and mutual recursion are refused for every function. PyMCU uses a static stack
@@ -991,7 +992,7 @@ def main():
 ```
 
 **Limits:** `yield` is only allowed in a top-level `def` — not inside an `@inline` function and
-not inside a method. `yield` as an *expression* (`x = yield v`, i.e. `send()`) is not supported.
+not inside a method. `yield` as an _expression_ (`x = yield v`, i.e. `send()`) is not supported.
 
 ### `async` / `await`
 
@@ -1439,31 +1440,31 @@ read an LM35 with `AnalogPin`.
 
 ## 11. Comparison: PyMCU vs Python vs MicroPython vs CircuitPython
 
-| Concept | Python 3 | MicroPython | CircuitPython | PyMCU |
-|---|---|---|---|---|
-| Integer type | `int` (arbitrary precision) | `int` (30-bit on most ports) | `int` (30-bit) | `uint8/16/32`, `int8/16/32` — annotation required |
-| Float | `float` (64-bit IEEE) | `float` (32-bit) | `float` (32-bit) | `float` (32-bit IEEE) — soft-float on AVR, bootrom fast-float on RP2040, FPU on RP2350 |
-| Heap / GC | ✅ `malloc` + GC | ✅ small heap + GC | ✅ small heap + GC | No general heap — fixed arrays, plus a bounded `list[T]` arena on AVR |
-| GPIO | `RPi.GPIO` or similar | `machine.Pin(13, OUT)` | `digitalio.DigitalInOut(board.D13)` | `Pin("PB5", Pin.OUT)` |
-| GPIO via compat | — | `from machine import Pin` | `import digitalio` | `pymcu-micropython` / `pymcu-circuitpython` |
-| UART | `pyserial` | `machine.UART(1, 9600)` | `busio.UART(TX, RX, baudrate=9600)` | `UART(9600)` |
-| ADC | — | `machine.ADC(Pin(26))` | `analogio.AnalogIn(board.A0)` | `AnalogPin("PC0")` |
-| Delay | `time.sleep(s)` | `utime.sleep_ms(n)` | `time.sleep(s)` | `delay_ms(n)` |
-| Constant | — | `micropython.const(0xFF)` | — | `const[T]` annotation |
-| Zero-cost fn | — | `@micropython.native` | — | `@inline` |
-| ISR | `signal` module | `Pin.irq()` callback | — | `@interrupt(vector)`, or `Pin.irq(handler, trigger)` via the compat API |
-| Inline asm | `ctypes` | `@micropython.viper` | — | `asm("instr")` (with operands on ARM) |
-| Type annotations | Optional (hints only) | Optional (hints only) | Optional (hints only) | **Required** — drives codegen |
-| `for` loop | ✅ | ✅ | ✅ | ✅ (`range(n)`, arrays, `enumerate`) |
-| `match / case` | ✅ (3.10+) | ❌ | ❌ | ✅ |
-| Short-circuit `and/or` | ✅ | ✅ | ✅ | ✅ |
-| `try / except` | ✅ | ✅ | ✅ | ✅ on AVR + ARM — zero-cost flag propagation, no `jmp_buf` (not on PIC) |
-| `f"str {x}"` | ✅ | ✅ | ✅ | ✅ streamed (`print(f"...")`) and as a value (fixed buffer); no float interpolation in the value form |
-| `list` / `dict` | ✅ | ✅ | ✅ | Fixed arrays + bounded `list[T]` (AVR); closed `dict`/`set` literals as compile-time tables + `FixedDict` — no growing hash table |
-| Generators (`yield`) | ✅ | ✅ | ✅ | ✅ lowered to a state machine; top-level `def` only |
-| Classes | ✅ full OOP | ✅ | ✅ | ZCA `@inline` only; no vtable |
-| Multiple inheritance | ✅ | ✅ | ✅ | Not supported |
-| `async / await` | ✅ | ✅ | ✅ | ✅ compiled to a state machine — `await asyncio.sleep_ms`, `asyncio.run` / `gather`; cannot await another coroutine |
+| Concept                | Python 3                    | MicroPython                  | CircuitPython                       | PyMCU                                                                                                                             |
+| ---------------------- | --------------------------- | ---------------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Integer type           | `int` (arbitrary precision) | `int` (30-bit on most ports) | `int` (30-bit)                      | `uint8/16/32`, `int8/16/32` — annotation required                                                                                 |
+| Float                  | `float` (64-bit IEEE)       | `float` (32-bit)             | `float` (32-bit)                    | `float` (32-bit IEEE) — soft-float on AVR, bootrom fast-float on RP2040, FPU on RP2350                                            |
+| Heap / GC              | ✅ `malloc` + GC            | ✅ small heap + GC           | ✅ small heap + GC                  | No general heap — fixed arrays, plus a bounded `list[T]` arena on AVR                                                             |
+| GPIO                   | `RPi.GPIO` or similar       | `machine.Pin(13, OUT)`       | `digitalio.DigitalInOut(board.D13)` | `Pin("PB5", Pin.OUT)`                                                                                                             |
+| GPIO via compat        | —                           | `from machine import Pin`    | `import digitalio`                  | `pymcu-micropython` / `pymcu-circuitpython`                                                                                       |
+| UART                   | `pyserial`                  | `machine.UART(1, 9600)`      | `busio.UART(TX, RX, baudrate=9600)` | `UART(9600)`                                                                                                                      |
+| ADC                    | —                           | `machine.ADC(Pin(26))`       | `analogio.AnalogIn(board.A0)`       | `AnalogPin("PC0")`                                                                                                                |
+| Delay                  | `time.sleep(s)`             | `utime.sleep_ms(n)`          | `time.sleep(s)`                     | `delay_ms(n)`                                                                                                                     |
+| Constant               | —                           | `micropython.const(0xFF)`    | —                                   | `const[T]` annotation                                                                                                             |
+| Zero-cost fn           | —                           | `@micropython.native`        | —                                   | `@inline`                                                                                                                         |
+| ISR                    | `signal` module             | `Pin.irq()` callback         | —                                   | `@interrupt(vector)`, or `Pin.irq(handler, trigger)` via the compat API                                                           |
+| Inline asm             | `ctypes`                    | `@micropython.viper`         | —                                   | `asm("instr")` (with operands on ARM)                                                                                             |
+| Type annotations       | Optional (hints only)       | Optional (hints only)        | Optional (hints only)               | **Required** — drives codegen                                                                                                     |
+| `for` loop             | ✅                          | ✅                           | ✅                                  | ✅ (`range(n)`, arrays, `enumerate`)                                                                                              |
+| `match / case`         | ✅ (3.10+)                  | ❌                           | ❌                                  | ✅                                                                                                                                |
+| Short-circuit `and/or` | ✅                          | ✅                           | ✅                                  | ✅                                                                                                                                |
+| `try / except`         | ✅                          | ✅                           | ✅                                  | ✅ on AVR + ARM — zero-cost flag propagation, no `jmp_buf` (not on PIC)                                                           |
+| `f"str {x}"`           | ✅                          | ✅                           | ✅                                  | ✅ streamed (`print(f"...")`) and as a value (fixed buffer); no float interpolation in the value form                             |
+| `list` / `dict`        | ✅                          | ✅                           | ✅                                  | Fixed arrays + bounded `list[T]` (AVR); closed `dict`/`set` literals as compile-time tables + `FixedDict` — no growing hash table |
+| Generators (`yield`)   | ✅                          | ✅                           | ✅                                  | ✅ lowered to a state machine; top-level `def` only                                                                               |
+| Classes                | ✅ full OOP                 | ✅                           | ✅                                  | ZCA `@inline` only; no vtable                                                                                                     |
+| Multiple inheritance   | ✅                          | ✅                           | ✅                                  | Not supported                                                                                                                     |
+| `async / await`        | ✅                          | ✅                           | ✅                                  | ✅ compiled to a state machine — `await asyncio.sleep_ms`, `asyncio.run` / `gather`; cannot await another coroutine               |
 
 ---
 
@@ -1500,6 +1501,7 @@ CircuitPython's `time` module has only `sleep(seconds: float)`, `monotonic()` an
 `monotonic_ns()` — there is no `sleep_ms` / `sleep_us` here (those are MicroPython's `utime`).
 
 **Things that still need changes:**
+
 - Type annotations: add `x: uint8 = 0` where you need a specific width. Unannotated locals and
   outlined `def` signatures are inferred, but the annotation is what pins the width.
 - Growing containers: an unbounded `dict` / `set` has no equivalent. Use a closed literal as a
@@ -1537,6 +1539,7 @@ while True:
 ```
 
 **Things that still need changes:**
+
 - Integer pin numbers map to Arduino Uno digital pin numbers via the compat package.
 - `micropython.const(0xFF)` is treated as an integer literal.
 - `Pin.irq(handler, trigger)` **is** supported for external pin interrupts — the handler must be

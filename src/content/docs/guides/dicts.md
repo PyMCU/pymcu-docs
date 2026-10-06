@@ -43,13 +43,13 @@ def main():
 The literal itself never exists at runtime. There is no table in flash and no object in
 SRAM — only the code the lookups compile into:
 
-| You write | The compiler emits |
-|---|---|
-| `SCALE[2]` (constant key) | The constant `30`. Nothing at all at runtime |
-| `SCALE[k]` (runtime key) | A compare chain over the keys, raising `KeyError` if none match |
-| `x in OK` | A membership compare chain |
-| `len(SCALE)` | The constant `3` |
-| `MODES["mid"]` (string key) | The constant `2` |
+| You write                   | The compiler emits                                              |
+| --------------------------- | --------------------------------------------------------------- |
+| `SCALE[2]` (constant key)   | The constant `30`. Nothing at all at runtime                    |
+| `SCALE[k]` (runtime key)    | A compare chain over the keys, raising `KeyError` if none match |
+| `x in OK`                   | A membership compare chain                                      |
+| `len(SCALE)`                | The constant `3`                                                |
+| `MODES["mid"]` (string key) | The constant `2`                                                |
 
 ## A missing key raises a catchable `KeyError`
 
@@ -179,16 +179,16 @@ Z:0
 
 ### The API
 
-| Operation | Behaviour |
-|---|---|
-| `FixedDict(capacity)` | `capacity` must be a **compile-time constant** |
-| `d[k] = v` | Insert or overwrite. Raises `ValueError` when the dict is full |
-| `d[k]` | Raises `KeyError` when the key is absent |
-| `k in d` | Returns `1` or `0` |
-| `len(d)` | Number of live entries |
-| `d.get(k, default=0)` | Value, or `default` when absent — never raises |
-| `d.pop(k)` | Returns the value and removes the entry. Raises `KeyError` when absent |
-| `d.clear()` | Empties the dict |
+| Operation             | Behaviour                                                              |
+| --------------------- | ---------------------------------------------------------------------- |
+| `FixedDict(capacity)` | `capacity` must be a **compile-time constant**                         |
+| `d[k] = v`            | Insert or overwrite. Raises `ValueError` when the dict is full         |
+| `d[k]`                | Raises `KeyError` when the key is absent                               |
+| `k in d`              | Returns `1` or `0`                                                     |
+| `len(d)`              | Number of live entries                                                 |
+| `d.get(k, default=0)` | Value, or `default` when absent — never raises                         |
+| `d.pop(k)`            | Returns the value and removes the entry. Raises `KeyError` when absent |
+| `d.clear()`           | Empties the dict                                                       |
 
 Keys and values are `uint16` (a `uint8` widens transparently).
 
@@ -213,13 +213,13 @@ before you build something on top:
 
 ## What is not supported
 
-| Not supported | Alternative |
-|---|---|
-| A general growable `dict` / `set` | Hash tables need a heap. Use a closed literal (read-only) or `FixedDict` (fixed capacity) |
-| Mutating a closed literal (`SCALE[k] = v`) | `FixedDict` |
-| Iterating a `FixedDict` | Keep your own array of keys |
-| Non-integer keys in a `FixedDict` | String keys work only in closed literals, on constant lookups |
-| Dict/set comprehensions | Build the literal explicitly |
+| Not supported                              | Alternative                                                                               |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| A general growable `dict` / `set`          | Hash tables need a heap. Use a closed literal (read-only) or `FixedDict` (fixed capacity) |
+| Mutating a closed literal (`SCALE[k] = v`) | `FixedDict`                                                                               |
+| Iterating a `FixedDict`                    | Keep your own array of keys                                                               |
+| Non-integer keys in a `FixedDict`          | String keys work only in closed literals, on constant lookups                             |
+| Dict/set comprehensions                    | Build the literal explicitly                                                              |
 
 See [Limitations](/limitations/) and the [Roadmap](/roadmap/).
 

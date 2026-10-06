@@ -1,6 +1,6 @@
 ---
 title: Writing a library
-description: "Publish a PyMCU library: package layout, the pymcu.toml manifest, architecture dispatch with __CHIP__, compat adapters, pymcu lint --library and submitting to the index."
+description: 'Publish a PyMCU library: package layout, the pymcu.toml manifest, architecture dispatch with __CHIP__, compat adapters, pymcu lint --library and submitting to the index.'
 ---
 
 A PyMCU library is **source code the compiler reads at build time**, not a module imported at
@@ -123,16 +123,16 @@ language-level = 1
 basic = "examples/basic"
 ```
 
-| Key | Meaning |
-|---|---|
-| `sources` | Directory inside the package holding what the compiler reads. Defaults to `mcu`. Nothing outside it is on the include path |
-| `provides.modules` | Top-level names the library claims, private ones included. Two installed libraries claiming the same name is a resolution error, so a private package has to be declared to be protected |
-| `supports.arch` | Architectures, as reported by `__CHIP__.arch`: `avr`, `arm`, `pic12`, `pic14`, `pic14e`, `pic18`, `riscv` |
-| `supports.chips` | Narrows to specific chips. Empty means every chip of the listed architectures |
-| `supports.layer` | `native`, `micropython` or `circuitpython` — which API the core is written against |
-| `supports.adapters` | Layers with a wrapper under `compat/<layer>/` |
-| `supports.symbols` | Optional. For layer libraries, the symbols actually used (e.g. `["machine.Pin"]`) |
-| `requires.*` | Version ranges and the language level. Mirror `stdlib` / `compiler` in `[project.dependencies]` so `pip` fails during resolution, not during a build |
+| Key                 | Meaning                                                                                                                                                                                  |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sources`           | Directory inside the package holding what the compiler reads. Defaults to `mcu`. Nothing outside it is on the include path                                                               |
+| `provides.modules`  | Top-level names the library claims, private ones included. Two installed libraries claiming the same name is a resolution error, so a private package has to be declared to be protected |
+| `supports.arch`     | Architectures, as reported by `__CHIP__.arch`: `avr`, `arm`, `pic12`, `pic14`, `pic14e`, `pic18`, `riscv`                                                                                |
+| `supports.chips`    | Narrows to specific chips. Empty means every chip of the listed architectures                                                                                                            |
+| `supports.layer`    | `native`, `micropython` or `circuitpython` — which API the core is written against                                                                                                       |
+| `supports.adapters` | Layers with a wrapper under `compat/<layer>/`                                                                                                                                            |
+| `supports.symbols`  | Optional. For layer libraries, the symbols actually used (e.g. `["machine.Pin"]`)                                                                                                        |
+| `requires.*`        | Version ranges and the language level. Mirror `stdlib` / `compiler` in `[project.dependencies]` so `pip` fails during resolution, not during a build                                     |
 
 **The manifest carries no version number.** The version comes from the distribution metadata
 (`importlib.metadata.version`). A number that is not duplicated cannot drift out of sync —
@@ -186,7 +186,7 @@ eliminated, so this costs nothing at runtime — the same two-level dispatch the
 ### End the dispatch with `CompileError`, never a sentinel
 
 The `case _:` branch must raise, and `pymcu lint --library` fails the package if it does not. A
-driver that returns `0xFFFF` on an unsupported architecture *compiles*, and the user finds out
+driver that returns `0xFFFF` on an unsupported architecture _compiles_, and the user finds out
 on the bench instead of at build time. With `CompileError`, "it compiles" means "the author
 implemented this architecture", which is also what makes the measured compatibility matrix
 trustworthy.
@@ -201,7 +201,7 @@ signatures. A library written in ordinary Python style compiles, but may not fit
 ### ASCII only
 
 The lexer rejects any non-ASCII character outside comments and strings. Worse, non-ASCII
-*inside* a string passes the lexer and is then encoded as ASCII, corrupting the byte silently.
+_inside_ a string passes the lexer and is then encoded as ASCII, corrupting the byte silently.
 Keep every source file in the package plain ASCII — degree signs and accented characters
 included.
 
@@ -233,7 +233,7 @@ same name with the same shape, do not add a directory for it — a copy that sha
 just a second place to fix the same bug.
 
 Import the core through its private package (`_dht.core`), never through the public name —
-inside the adapter, `dht` *is* the adapter. That is the whole reason the core has a name of its
+inside the adapter, `dht` _is_ the adapter. That is the whole reason the core has a name of its
 own rather than living in a `dht/` package: an adapter that shadows the public name would
 otherwise shadow the implementation along with it.
 
@@ -251,7 +251,7 @@ what the index compiles per chip to produce the compatibility matrix and the fla
 index reads it from the sdist, which is exactly what an sdist is for — an immutable, versioned
 artefact carrying everything needed to build and check the project.
 
-It is *not* what `pymcu install --verify` compiles. That builds a small program importing the
+It is _not_ what `pymcu install --verify` compiles. That builds a small program importing the
 modules in `provides.modules`, which needs nothing but the wheel: it answers whether those
 modules resolve and compile for the installing project's chip and layer, and rolls the install
 back if they do not.
@@ -289,19 +289,19 @@ with `ast` and `tokenize`, never imported and never compiled. That is the divisi
 only `pymcuc` can decide whether a library really builds for a chip, so these checks cover the
 failures that compiling would never report as an error.
 
-| Finding | Severity | What it catches |
-|---|---|---|
-| `manifest-missing` / `manifest-invalid` | error | No `pymcu.toml`, or one that does not parse |
-| `module-missing` | error | `provides.modules` names a module that is not in the source tree |
-| `adapter-missing` | error | `supports.adapters` names a layer with no `compat/<layer>/` |
-| `stray-source` | error | A `.py` outside the source tree, where the compiler cannot see it |
-| `stray-directory` | warn | A directory in the wheel that nothing reads — it belongs in the sdist |
-| `ascii-string` / `ascii-code` | error | Non-ASCII. Inside a string the lexer accepts it and then corrupts the byte in silence |
-| `ascii-comment` | warn | Non-ASCII in a comment. The compiler skips comments, but keep sources ASCII |
-| `sentinel-default` | error | A `match __CHIP__` whose default branch does not raise |
-| `surface-changed` | error | The public API moved but `api-surface.lock` did not |
-| `surface-missing` | warn | No `api-surface.lock` yet |
-| `no-targets` | warn | The manifest declares neither `supports.arch` nor `supports.chips` |
+| Finding                                 | Severity | What it catches                                                                       |
+| --------------------------------------- | -------- | ------------------------------------------------------------------------------------- |
+| `manifest-missing` / `manifest-invalid` | error    | No `pymcu.toml`, or one that does not parse                                           |
+| `module-missing`                        | error    | `provides.modules` names a module that is not in the source tree                      |
+| `adapter-missing`                       | error    | `supports.adapters` names a layer with no `compat/<layer>/`                           |
+| `stray-source`                          | error    | A `.py` outside the source tree, where the compiler cannot see it                     |
+| `stray-directory`                       | warn     | A directory in the wheel that nothing reads — it belongs in the sdist                 |
+| `ascii-string` / `ascii-code`           | error    | Non-ASCII. Inside a string the lexer accepts it and then corrupts the byte in silence |
+| `ascii-comment`                         | warn     | Non-ASCII in a comment. The compiler skips comments, but keep sources ASCII           |
+| `sentinel-default`                      | error    | A `match __CHIP__` whose default branch does not raise                                |
+| `surface-changed`                       | error    | The public API moved but `api-surface.lock` did not                                   |
+| `surface-missing`                       | warn     | No `api-surface.lock` yet                                                             |
+| `no-targets`                            | warn     | The manifest declares neither `supports.arch` nor `supports.chips`                    |
 
 The command exits non-zero when there is at least one error, so it works as a CI gate.
 `--write-surface` regenerates `api-surface.lock` instead of comparing against it, and `--json`
@@ -322,7 +322,7 @@ emits the findings for tooling.
    the check; building for one you never declared is reported so you can claim it.
 
 You do not need a new PR for later releases. A weekly run re-installs the newest version of
-everything listed and measures it again, so an entry says what builds *today* rather than what
+everything listed and measures it again, so an entry says what builds _today_ rather than what
 built the day it was submitted — and a library that stops building against a new compiler is
 marked without anyone filing an issue.
 

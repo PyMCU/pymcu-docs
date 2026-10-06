@@ -87,11 +87,11 @@ A function containing `yield` is lowered to the **same zero-cost state-machine c
 `async def` produces: locals that must survive a suspension become fields, and the body is
 split into numbered states behind a `poll()` method. `poll()` reports what happened:
 
-| `poll()` returns | Meaning |
-|---|---|
-| `2` | The generator yielded — the value is in `._value` |
-| `1` | An internal state transition, no value this time |
-| `0` | The generator is finished |
+| `poll()` returns | Meaning                                           |
+| ---------------- | ------------------------------------------------- |
+| `2`              | The generator yielded — the value is in `._value` |
+| `1`              | An internal state transition, no value this time  |
+| `0`              | The generator is finished                         |
 
 Your `for` loop desugars to an explicit poll loop over that protocol:
 
@@ -113,11 +113,11 @@ thing is straight-line machine code plus a state variable.
 
 ## What is not supported yet
 
-| Not supported | Do this instead |
-|---|---|
-| `yield` inside an `@inline` function | Make it a plain `def` — a generator is compiled once as a state machine, which is incompatible with being inlined at each call site |
-| `yield` inside a method | Use a module-level generator function and pass what it needs as arguments |
-| `yield` as an expression (`x = yield v`) | Not lowered. Generators are one-directional: they produce values, they do not receive them |
+| Not supported                            | Do this instead                                                                                                                     |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `yield` inside an `@inline` function     | Make it a plain `def` — a generator is compiled once as a state machine, which is incompatible with being inlined at each call site |
+| `yield` inside a method                  | Use a module-level generator function and pass what it needs as arguments                                                           |
+| `yield` as an expression (`x = yield v`) | Not lowered. Generators are one-directional: they produce values, they do not receive them                                          |
 
 See [Limitations](/limitations/) for the full list of unsupported Python features, and the
 [Roadmap](/roadmap/) for what is planned next.

@@ -10,7 +10,7 @@ Returning from a sleep call means the MCU has woken.
 
 **MicroPython** exposes three module-level functions — `machine.idle()`,
 `machine.lightsleep()` and `machine.deepsleep()`. **CircuitPython** models sleep the other way
-round, as *alarms*: you build an `alarm.time.TimeAlarm` or `alarm.pin.PinAlarm` and hand it to
+round, as _alarms_: you build an `alarm.time.TimeAlarm` or `alarm.pin.PinAlarm` and hand it to
 `alarm.sleep_until_alarms()`. The native `pymcu.hal.power` module underneath both exposes the
 full set of AVR sleep modes, including the three the compat APIs do not name.
 
@@ -159,14 +159,14 @@ rather than entering a genuine low-power mode.
 
 ## How the compat calls map to the HAL
 
-| Compat call | Native HAL | Typical current (3 V, 25 °C) |
-|---|---|---|
-| `machine.idle()` | `sleep_idle()` | ~6 mA |
-| `machine.lightsleep()` | `sleep_power_save()` | ~0.1 µA |
-| `machine.deepsleep()` | `sleep_power_down()` | ~0.1 µA |
-| `alarm.sleep_until_alarms()` | blocking delay / pin poll | full run current |
-| `alarm.light_sleep_until_alarms()` | identical to the above | full run current |
-| `alarm.exit_and_deep_sleep_until_alarms()` | identical to the above; **does not** restart the program | full run current |
+| Compat call                                | Native HAL                                               | Typical current (3 V, 25 °C) |
+| ------------------------------------------ | -------------------------------------------------------- | ---------------------------- |
+| `machine.idle()`                           | `sleep_idle()`                                           | ~6 mA                        |
+| `machine.lightsleep()`                     | `sleep_power_save()`                                     | ~0.1 µA                      |
+| `machine.deepsleep()`                      | `sleep_power_down()`                                     | ~0.1 µA                      |
+| `alarm.sleep_until_alarms()`               | blocking delay / pin poll                                | full run current             |
+| `alarm.light_sleep_until_alarms()`         | identical to the above                                   | full run current             |
+| `alarm.exit_and_deep_sleep_until_alarms()` | identical to the above; **does not** restart the program | full run current             |
 
 Two honest caveats about the CircuitPython side. `light_sleep_until_alarms()` is an alias for
 `sleep_until_alarms()` on AVR. And `exit_and_deep_sleep_until_alarms()` does **not** power the
@@ -187,14 +187,14 @@ the handful of register writes plus the `sleep` instruction, with no SRAM cost.
 
 ### Sleep modes
 
-| Function | Typical current (3 V, 25 °C) | Wake sources |
-|---|---|---|
-| `sleep_idle()` | ~6 mA | Any interrupt |
-| `sleep_adc_noise()` | ~1 mA | ADC complete, external interrupt, TWI address match, Timer2 |
-| `sleep_power_down()` | ~0.1 µA | External INT0/INT1, TWI address match, watchdog |
-| `sleep_power_save()` | ~0.1 µA | Same as power-down, plus Timer2 in async mode |
-| `sleep_standby()` | ~0.1 µA | Same as power-down (faster oscillator start-up) |
-| `sleep_extended_standby()` | ~0.1 µA | Power-down + async timer + fast oscillator |
+| Function                   | Typical current (3 V, 25 °C) | Wake sources                                                |
+| -------------------------- | ---------------------------- | ----------------------------------------------------------- |
+| `sleep_idle()`             | ~6 mA                        | Any interrupt                                               |
+| `sleep_adc_noise()`        | ~1 mA                        | ADC complete, external interrupt, TWI address match, Timer2 |
+| `sleep_power_down()`       | ~0.1 µA                      | External INT0/INT1, TWI address match, watchdog             |
+| `sleep_power_save()`       | ~0.1 µA                      | Same as power-down, plus Timer2 in async mode               |
+| `sleep_standby()`          | ~0.1 µA                      | Same as power-down (faster oscillator start-up)             |
+| `sleep_extended_standby()` | ~0.1 µA                      | Power-down + async timer + fast oscillator                  |
 
 Only three of these have a compat name: `sleep_idle`, `sleep_power_save` and `sleep_power_down`,
 via `machine.idle()`, `machine.lightsleep()` and `machine.deepsleep()`. `sleep_adc_noise()`,
@@ -266,10 +266,10 @@ def main():
 
 ### ATmega328P sleep register map
 
-| Register | Address | Description |
-|---|---|---|
-| `SMCR` | `0x53` | Sleep Mode Control Register (SM2:0, SE) |
-| `MCUCR` | `0x55` | MCU Control Register (BODS, BODSE) |
+| Register | Address | Description                             |
+| -------- | ------- | --------------------------------------- |
+| `SMCR`   | `0x53`  | Sleep Mode Control Register (SM2:0, SE) |
+| `MCUCR`  | `0x55`  | MCU Control Register (BODS, BODSE)      |
 
 :::caution[Advanced — native HAL only]
 `sleep_adc_noise()`, `sleep_standby()` and `sleep_extended_standby()` have no MicroPython or

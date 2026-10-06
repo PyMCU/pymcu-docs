@@ -120,11 +120,11 @@ T:13
 
 ## Three ways to drive the tasks
 
-| Executor | What it does | When to use it |
-|---|---|---|
-| `asyncio.run(coro)` | Polls one coroutine until it finishes (blocking) | A single task that terminates |
-| `asyncio.gather(a, b)` | Polls two coroutines concurrently until both finish | Two tasks; the arity is **fixed at two** |
-| Your own `while True:` loop calling `a.poll()` | Whatever you want | Three or more tasks, or tasks that never finish |
+| Executor                                       | What it does                                        | When to use it                                  |
+| ---------------------------------------------- | --------------------------------------------------- | ----------------------------------------------- |
+| `asyncio.run(coro)`                            | Polls one coroutine until it finishes (blocking)    | A single task that terminates                   |
+| `asyncio.gather(a, b)`                         | Polls two coroutines concurrently until both finish | Two tasks; the arity is **fixed at two**        |
+| Your own `while True:` loop calling `a.poll()` | Whatever you want                                   | Three or more tasks, or tasks that never finish |
 
 `gather` takes exactly two coroutines because a state machine has no runtime
 representation to put in an array. For more tasks, nest gathers or write the poll loop
@@ -154,11 +154,11 @@ That three-task shape — heartbeat LED, sensor sampling, UART reporting — is 
 Every `await` waits on `asyncio.ticks()`, a free-running monotonic microsecond counter.
 What backs it depends on the chip, and on two families **there is no backing at all**:
 
-| Target | Time base | Resolution |
-|---|---|---|
-| RP2040 / RP2350 | Hardware `TIMER` (1 MHz) | 1 us, exact |
+| Target                       | Time base                                                               | Resolution                                                                                              |
+| ---------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| RP2040 / RP2350              | Hardware `TIMER` (1 MHz)                                                | 1 us, exact                                                                                             |
 | ATmega (328P, 2560, 32U4, …) | Timer0 overflow counter + `TCNT0` — the same counter `pymcu.time` reads | 4 us at 16 MHz with prescaler 64; wraps every ~71 minutes, which `uint32` subtraction handles correctly |
-| ATtiny, PIC, RISC-V | **None** — `ticks()` returns 0 | An `await` there never completes |
+| ATtiny, PIC, RISC-V          | **None** — `ticks()` returns 0                                          | An `await` there never completes                                                                        |
 
 :::caution[No time base means an await that blocks forever]
 On ATtiny, PIC and RISC-V the counter is frozen at 0, so the wait condition
@@ -173,11 +173,11 @@ from Timer0 in an async program.
 
 ## What is not supported yet
 
-| Not supported | Notes |
-|---|---|
-| `await` on another coroutine or a future | Only `asyncio.sleep` / `asyncio.sleep_ms` can be awaited. The compiler raises a clear error rather than miscompiling it |
-| `await` as an expression (`x = await f()`) | `await` is statement-only — `await sleep_ms(n)` on its own line |
-| More than two tasks in one `gather` | Nest gathers, or write the poll loop by hand |
+| Not supported                              | Notes                                                                                                                   |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `await` on another coroutine or a future   | Only `asyncio.sleep` / `asyncio.sleep_ms` can be awaited. The compiler raises a clear error rather than miscompiling it |
+| `await` as an expression (`x = await f()`) | `await` is statement-only — `await sleep_ms(n)` on its own line                                                         |
+| More than two tasks in one `gather`        | Nest gathers, or write the poll loop by hand                                                                            |
 
 See [Limitations](/limitations/) and the [Roadmap](/roadmap/).
 

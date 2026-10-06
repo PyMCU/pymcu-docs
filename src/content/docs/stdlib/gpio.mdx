@@ -139,11 +139,11 @@ from pymcu.hal.gpio import Pin
 **PIC** (PIC16). The class is the same on all three; what differs is how a pin is named and
 which of the optional features the silicon can back.
 
-| Target | How a pin is identified | Notes |
-|---|---|---|
-| AVR (ATmega328P and friends) | Port/pin string: `"PB5"`, `"PD2"`, `"PC0"` | `irq()` and `init()`; no open-drain, no pull-down, no drive strength |
-| ARM (RP2040 / RP2350) | GPIO number: `Pin(25, Pin.OUT)` | Pin may be a runtime value; pull-down works; `irq()` and `init()` are not wrapped yet |
-| PIC (PIC16F84A / PIC16F877A) | Port/pin string: `"RB0"`, `"RA2"` | Same method names as AVR, but `pulse_in()` and `drive()` are stubs |
+| Target                       | How a pin is identified                    | Notes                                                                                 |
+| ---------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------- |
+| AVR (ATmega328P and friends) | Port/pin string: `"PB5"`, `"PD2"`, `"PC0"` | `irq()` and `init()`; no open-drain, no pull-down, no drive strength                  |
+| ARM (RP2040 / RP2350)        | GPIO number: `Pin(25, Pin.OUT)`            | Pin may be a runtime value; pull-down works; `irq()` and `init()` are not wrapped yet |
+| PIC (PIC16F84A / PIC16F877A) | Port/pin string: `"RB0"`, `"RA2"`          | Same method names as AVR, but `pulse_in()` and `drive()` are stubs                    |
 
 ### The Pin class
 
@@ -154,45 +154,45 @@ Pin(name, mode, pull=-1, value=-1, drive=0, alt=-1)
 Creates and configures a GPIO pin. Everything after `mode` is optional; `pull` and `value`
 must be compile-time constants.
 
-| Parameter | Type | Description |
-|---|---|---|
-| `name` | `str` on AVR/PIC, `uint8` on ARM | Port/pin name (`"PB5"`) or GPIO number (`25`) |
-| `mode` | `const[uint8]` | `Pin.OUT` or `Pin.IN` |
-| `pull` | `const[uint8]` | `Pin.PULL_UP` (inputs) |
-| `value` | `const` | Initial output level (outputs) |
-| `drive` | `const` | Drive strength. **Not supported on AVR** — any non-zero value raises a `CompileError`; on PIC it is silently ignored |
-| `alt` | `const` | Alternate function select. **Not supported on AVR** — any value other than `-1` raises a `CompileError` |
+| Parameter | Type                             | Description                                                                                                          |
+| --------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `name`    | `str` on AVR/PIC, `uint8` on ARM | Port/pin name (`"PB5"`) or GPIO number (`25`)                                                                        |
+| `mode`    | `const[uint8]`                   | `Pin.OUT` or `Pin.IN`                                                                                                |
+| `pull`    | `const[uint8]`                   | `Pin.PULL_UP` (inputs)                                                                                               |
+| `value`   | `const`                          | Initial output level (outputs)                                                                                       |
+| `drive`   | `const`                          | Drive strength. **Not supported on AVR** — any non-zero value raises a `CompileError`; on PIC it is silently ignored |
+| `alt`     | `const`                          | Alternate function select. **Not supported on AVR** — any value other than `-1` raises a `CompileError`              |
 
 #### Pin constants
 
-| Constant | Value | Description |
-|---|---|---|
-| `Pin.OUT` | 0 | Output mode |
-| `Pin.IN` | 1 | Input mode |
-| `Pin.OPEN_DRAIN` | 2 | Open-drain output. **AVR raises `CompileError("Open-drain mode not supported on AVR")`.** On RP2040/RP2350 it is accepted for API compatibility and leaves the output floating rather than driving it |
-| `Pin.PULL_UP` | 1 | Enable pull-up resistor |
-| `Pin.PULL_DOWN` | 2 | Enable pull-down resistor. **AVR raises `CompileError("Pull-down resistor not supported on AVR")`** — the silicon has no pull-downs. On PIC the value is silently ignored; only RP2040/RP2350 honours it |
-| `Pin.IRQ_FALLING` | 1 | Interrupt on falling edge (AVR / PIC) |
-| `Pin.IRQ_RISING` | 2 | Interrupt on rising edge (AVR / PIC) |
-| `Pin.IRQ_LOW_LEVEL` | 4 | Interrupt on low level (AVR / PIC) |
-| `Pin.IRQ_HIGH_LEVEL` | 8 | Interrupt on high level (AVR / PIC) |
+| Constant             | Value | Description                                                                                                                                                                                              |
+| -------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Pin.OUT`            | 0     | Output mode                                                                                                                                                                                              |
+| `Pin.IN`             | 1     | Input mode                                                                                                                                                                                               |
+| `Pin.OPEN_DRAIN`     | 2     | Open-drain output. **AVR raises `CompileError("Open-drain mode not supported on AVR")`.** On RP2040/RP2350 it is accepted for API compatibility and leaves the output floating rather than driving it    |
+| `Pin.PULL_UP`        | 1     | Enable pull-up resistor                                                                                                                                                                                  |
+| `Pin.PULL_DOWN`      | 2     | Enable pull-down resistor. **AVR raises `CompileError("Pull-down resistor not supported on AVR")`** — the silicon has no pull-downs. On PIC the value is silently ignored; only RP2040/RP2350 honours it |
+| `Pin.IRQ_FALLING`    | 1     | Interrupt on falling edge (AVR / PIC)                                                                                                                                                                    |
+| `Pin.IRQ_RISING`     | 2     | Interrupt on rising edge (AVR / PIC)                                                                                                                                                                     |
+| `Pin.IRQ_LOW_LEVEL`  | 4     | Interrupt on low level (AVR / PIC)                                                                                                                                                                       |
+| `Pin.IRQ_HIGH_LEVEL` | 8     | Interrupt on high level (AVR / PIC)                                                                                                                                                                      |
 
 #### Pin methods
 
-| Method | AVR | ARM | PIC | Description |
-|---|---|---|---|---|
-| `high()` | yes | yes | yes | Drive the pin high |
-| `low()` | yes | yes | yes | Drive the pin low |
-| `on()` | yes | yes | yes | Alias for `high()` |
-| `off()` | yes | yes | yes | Alias for `low()` |
-| `toggle()` | yes | yes | yes | Flip the output level |
-| `value(x=-1)` | yes | yes | yes | Read the pin when `x == -1`, otherwise write `x` |
-| `mode(m)` | yes | yes | yes | Set the direction (AVR/PIC also read it back with `mode(-1)`) |
-| `pull(p)` | yes | yes | yes | Configure the pull resistor. `Pin.PULL_DOWN` raises a `CompileError` on AVR and is ignored on PIC |
-| `pulse_in(state, timeout_us=1000)` | partial | yes | **stub** | Measure a pulse width in microseconds. Real only on the ATmega48/88/168/328 family; every other AVR part and every PIC part returns `0` without measuring anything |
-| `init(mode=-1, pull=-1, value=-1, ...)` | yes | — | yes | Re-configure an existing pin |
-| `drive(strength)` | **no** | — | **no-op** | Drive-strength control. AVR raises a `CompileError`; the PIC implementation is an empty `pass`, so the call compiles but changes nothing. Only use it where the datasheet says the silicon has it |
-| `irq(trigger, handler=0)` | yes | — | yes | Configure an edge/level interrupt |
+| Method                                  | AVR     | ARM | PIC       | Description                                                                                                                                                                                       |
+| --------------------------------------- | ------- | --- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `high()`                                | yes     | yes | yes       | Drive the pin high                                                                                                                                                                                |
+| `low()`                                 | yes     | yes | yes       | Drive the pin low                                                                                                                                                                                 |
+| `on()`                                  | yes     | yes | yes       | Alias for `high()`                                                                                                                                                                                |
+| `off()`                                 | yes     | yes | yes       | Alias for `low()`                                                                                                                                                                                 |
+| `toggle()`                              | yes     | yes | yes       | Flip the output level                                                                                                                                                                             |
+| `value(x=-1)`                           | yes     | yes | yes       | Read the pin when `x == -1`, otherwise write `x`                                                                                                                                                  |
+| `mode(m)`                               | yes     | yes | yes       | Set the direction (AVR/PIC also read it back with `mode(-1)`)                                                                                                                                     |
+| `pull(p)`                               | yes     | yes | yes       | Configure the pull resistor. `Pin.PULL_DOWN` raises a `CompileError` on AVR and is ignored on PIC                                                                                                 |
+| `pulse_in(state, timeout_us=1000)`      | partial | yes | **stub**  | Measure a pulse width in microseconds. Real only on the ATmega48/88/168/328 family; every other AVR part and every PIC part returns `0` without measuring anything                                |
+| `init(mode=-1, pull=-1, value=-1, ...)` | yes     | —   | yes       | Re-configure an existing pin                                                                                                                                                                      |
+| `drive(strength)`                       | **no**  | —   | **no-op** | Drive-strength control. AVR raises a `CompileError`; the PIC implementation is an empty `pass`, so the call compiles but changes nothing. Only use it where the datasheet says the silicon has it |
+| `irq(trigger, handler=0)`               | yes     | —   | yes       | Configure an edge/level interrupt                                                                                                                                                                 |
 
 On the RP2040/RP2350 a constant pin number const-folds all the way down: `Pin(25).toggle()`
 lowers to a single 32-bit store to `SIO_GPIO_OUT_XOR`. Only a genuinely runtime pin number pays

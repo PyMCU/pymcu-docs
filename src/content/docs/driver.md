@@ -9,33 +9,33 @@ linting. It comes with `pymcu-compiler` — see
 
 ## Commands
 
-| Command | Description |
-|---|---|
-| [`pymcu new <name>`](#pymcu-new-name) | Scaffold a new project |
-| [`pymcu build`](#pymcu-build) | Compile `src/` into firmware |
-| [`pymcu flash`](#pymcu-flash) | Upload the firmware to a device |
-| [`pymcu clean`](#pymcu-clean) | Remove build artefacts |
-| [`pymcu lint <path>`](#pymcu-lint-path) | Vet a MicroPython / CircuitPython port |
-| [`pymcu search`](#pymcu-search) | Search the library index |
-| [`pymcu install <name>`](#pymcu-install-name) | Add a library to this project |
-| [`pymcu uninstall <name>`](#pymcu-uninstall-name) | Remove a library from this project |
-| [`pymcu libraries`](#pymcu-libraries) | List the libraries installed in this project |
-| [`pymcu boards`](#pymcu-boards) | List the supported boards and chips |
-| [`pymcu toolchain`](#pymcu-toolchain) | Manage assemblers and linkers |
-| [`pymcu backend`](#pymcu-backend) | Manage code-generation backend plugins |
-| [`pymcu sync`](#pymcu-sync) | Regenerate the board module from `pyproject.toml` |
-| [`pymcu upgrade`](#pymcu-upgrade) | Update PyMCU packages in the project and the global tool |
-| [`pymcu stubs`](#pymcu-stubs) | Emit PEP 561 `.pyi` stubs for the installed packages |
-| [`pymcu version`](#global-options) | Print the version table |
+| Command                                           | Description                                              |
+| ------------------------------------------------- | -------------------------------------------------------- |
+| [`pymcu new <name>`](#pymcu-new-name)             | Scaffold a new project                                   |
+| [`pymcu build`](#pymcu-build)                     | Compile `src/` into firmware                             |
+| [`pymcu flash`](#pymcu-flash)                     | Upload the firmware to a device                          |
+| [`pymcu clean`](#pymcu-clean)                     | Remove build artefacts                                   |
+| [`pymcu lint <path>`](#pymcu-lint-path)           | Vet a MicroPython / CircuitPython port                   |
+| [`pymcu search`](#pymcu-search)                   | Search the library index                                 |
+| [`pymcu install <name>`](#pymcu-install-name)     | Add a library to this project                            |
+| [`pymcu uninstall <name>`](#pymcu-uninstall-name) | Remove a library from this project                       |
+| [`pymcu libraries`](#pymcu-libraries)             | List the libraries installed in this project             |
+| [`pymcu boards`](#pymcu-boards)                   | List the supported boards and chips                      |
+| [`pymcu toolchain`](#pymcu-toolchain)             | Manage assemblers and linkers                            |
+| [`pymcu backend`](#pymcu-backend)                 | Manage code-generation backend plugins                   |
+| [`pymcu sync`](#pymcu-sync)                       | Regenerate the board module from `pyproject.toml`        |
+| [`pymcu upgrade`](#pymcu-upgrade)                 | Update PyMCU packages in the project and the global tool |
+| [`pymcu stubs`](#pymcu-stubs)                     | Emit PEP 561 `.pyi` stubs for the installed packages     |
+| [`pymcu version`](#global-options)                | Print the version table                                  |
 
 ## Global options
 
 These sit on `pymcu` itself, before the subcommand:
 
-| Flag | Description |
-|---|---|
+| Flag              | Description                                                                                                                          |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `-v`, `--verbose` | Verbose logging for the whole run. Recognised anywhere on the command line, so `pymcu build -v` turns on the global debug output too |
-| `--version` | Print version information and exit |
+| `--version`       | Print version information and exit                                                                                                   |
 
 ```bash
 pymcu --version
@@ -73,28 +73,28 @@ neither is present does it ask anything — and the single question is whether t
 
 ### Generated files
 
-| File | Contents |
-|---|---|
-| `src/main.py` | Starter firmware in the compat API you chose (`app.py` at the root with `--no-src`) |
-| `pyproject.toml` | Project config with a `[tool.pymcu]` section |
-| `Makefile` | Always written; a `sync` / `install` target that runs your package manager followed by `pymcu sync` |
-| `requirements.txt` | **pip flavour only** — pinned `pymcu-stdlib`, `pymcu-compiler[extra]` and each compat package |
-| `.gitignore` | Git ignore rules (`dist/`, `__pycache__/`, `*.hex`, `.venv/`, ...) |
+| File               | Contents                                                                                            |
+| ------------------ | --------------------------------------------------------------------------------------------------- |
+| `src/main.py`      | Starter firmware in the compat API you chose (`app.py` at the root with `--no-src`)                 |
+| `pyproject.toml`   | Project config with a `[tool.pymcu]` section                                                        |
+| `Makefile`         | Always written; a `sync` / `install` target that runs your package manager followed by `pymcu sync` |
+| `requirements.txt` | **pip flavour only** — pinned `pymcu-stdlib`, `pymcu-compiler[extra]` and each compat package       |
+| `.gitignore`       | Git ignore rules (`dist/`, `__pycache__/`, `*.hex`, `.venv/`, ...)                                  |
 
 If you accept the git prompt, `post-merge` and `post-checkout` hooks are installed that
 re-run `pymcu sync` whenever `pyproject.toml` changes.
 
 ### Options
 
-| Flag | Description |
-|---|---|
-| `--board NAME` | Pick the board non-interactively (`arduino_uno`, `arduino_mega`, `raspberry_pi_pico`, ...) |
-| `--stdlib FLAVOUR` | Compat flavour to enable — `micropython` or `circuitpython`. Repeatable |
-| `--pkg-manager NAME` | `uv`, `poetry` or `pip` instead of auto-detection |
-| `--no-git` | Skip the git prompt and the repository entirely |
-| `--no-src` | Flat layout — the entry point becomes `./app.py` instead of `src/main.py` |
-| `--chip ID` | Advanced: target a chip directly, bypassing board selection. **Hidden from `--help`** |
-| `--freq HZ` | Advanced: override the CPU clock. **Hidden from `--help`** |
+| Flag                 | Description                                                                                |
+| -------------------- | ------------------------------------------------------------------------------------------ |
+| `--board NAME`       | Pick the board non-interactively (`arduino_uno`, `arduino_mega`, `raspberry_pi_pico`, ...) |
+| `--stdlib FLAVOUR`   | Compat flavour to enable — `micropython` or `circuitpython`. Repeatable                    |
+| `--pkg-manager NAME` | `uv`, `poetry` or `pip` instead of auto-detection                                          |
+| `--no-git`           | Skip the git prompt and the repository entirely                                            |
+| `--no-src`           | Flat layout — the entry point becomes `./app.py` instead of `src/main.py`                  |
+| `--chip ID`          | Advanced: target a chip directly, bypassing board selection. **Hidden from `--help`**      |
+| `--freq HZ`          | Advanced: override the CPU clock. **Hidden from `--help`**                                 |
 
 :::caution[`--freq`, not `--frequency`]
 The flag is spelled `--freq`. It writes the `frequency` key into `pyproject.toml`, which is
@@ -142,22 +142,22 @@ The **minimum** viable configuration is one line — everything else has a defau
 board = "arduino_uno"
 ```
 
-| Key | Default | Meaning |
-|---|---|---|
-| `board` | — | Development board; the chip, toolchain and programmer defaults follow from it |
-| `target` | — | Alternative to `board` — a chip identifier such as `atmega328p`, `rp2040`, `rp2350` |
-| `chip` | — | **Deprecated** alias for `target`. Still honoured, but the build prints a rename notice |
-| `frequency` | `4000000` | CPU clock in Hz; delays and UART baud rates are derived from it |
-| `sources` | `"src"` | Source directory |
-| `entry` | `"main.py"` | Entry-point file inside `sources` |
-| `stdlib` | *(none)* | Compat flavours to make importable — `["micropython"]` or `["circuitpython"]` |
-| `stdlib_path` | — | Point the build at a checkout of the stdlib instead of the installed package. Relative to the `pyproject.toml`; a warning is printed if the directory does not exist |
-| `stdout` | `"uart0"` | Which device `print()` writes to — see [Serial output](#serial-output-and-print) |
-| `stdout_baud` | `115200` | Baud rate for that device |
-| `[tool.pymcu.config]` | `{}` | Chip configuration bits (e.g. PIC `FOSC`), passed through to the compiler |
-| `[tool.pymcu.vectors]` | — | `reset` and `interrupt` vector addresses, for building behind a bootloader |
-| `[tool.pymcu.flash]` | — | Programmer, port and baud for `pymcu flash` — see [below](#pymcu-flash) |
-| `[tool.pymcu.ffi]` | — | C / C++ sources to compile and link — see [below](#c--c-interop) |
+| Key                    | Default     | Meaning                                                                                                                                                              |
+| ---------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `board`                | —           | Development board; the chip, toolchain and programmer defaults follow from it                                                                                        |
+| `target`               | —           | Alternative to `board` — a chip identifier such as `atmega328p`, `rp2040`, `rp2350`                                                                                  |
+| `chip`                 | —           | **Deprecated** alias for `target`. Still honoured, but the build prints a rename notice                                                                              |
+| `frequency`            | `4000000`   | CPU clock in Hz; delays and UART baud rates are derived from it                                                                                                      |
+| `sources`              | `"src"`     | Source directory                                                                                                                                                     |
+| `entry`                | `"main.py"` | Entry-point file inside `sources`                                                                                                                                    |
+| `stdlib`               | _(none)_    | Compat flavours to make importable — `["micropython"]` or `["circuitpython"]`                                                                                        |
+| `stdlib_path`          | —           | Point the build at a checkout of the stdlib instead of the installed package. Relative to the `pyproject.toml`; a warning is printed if the directory does not exist |
+| `stdout`               | `"uart0"`   | Which device `print()` writes to — see [Serial output](#serial-output-and-print)                                                                                     |
+| `stdout_baud`          | `115200`    | Baud rate for that device                                                                                                                                            |
+| `[tool.pymcu.config]`  | `{}`        | Chip configuration bits (e.g. PIC `FOSC`), passed through to the compiler                                                                                            |
+| `[tool.pymcu.vectors]` | —           | `reset` and `interrupt` vector addresses, for building behind a bootloader                                                                                           |
+| `[tool.pymcu.flash]`   | —           | Programmer, port and baud for `pymcu flash` — see [below](#pymcu-flash)                                                                                              |
+| `[tool.pymcu.ffi]`     | —           | C / C++ sources to compile and link — see [below](#c--c-interop)                                                                                                     |
 
 :::caution[`board` and `target` are mutually exclusive]
 Setting both is a hard error, not a precedence rule:
@@ -195,7 +195,7 @@ programmer = "pk2cmd"
 ## Serial output and `print()`
 
 `print()` and f-strings are compiler builtins — they work whichever API you import, and
-they write to a UART. To *see* that output you need a serial terminal on the host at a
+they write to a UART. To _see_ that output you need a serial terminal on the host at a
 matching baud rate.
 
 **The default is 115200 baud on UART0.** Two keys control it:
@@ -219,7 +219,7 @@ from pymcu.hal.console import print_str
 
 If your program **does** construct a `UART` of its own, the build injects only the console
 helpers and no initialisation, so your `UART(9600)` keeps ownership of the hardware — and
-`print()` then comes out at *your* baud rate, not `stdout_baud`. The rewritten entry point
+`print()` then comes out at _your_ baud rate, not `stdout_baud`. The rewritten entry point
 is written to `dist/_generated/` if you want to read exactly what was added.
 
 :::note[`stdout` selects the device in name only]
@@ -249,11 +249,11 @@ Two things catch people out:
 
 ### Where `print()` works
 
-| Target | Strings | Numbers | Floats |
-|---|---|---|---|
-| AVR | Yes | Yes | Yes |
-| RP2040 / RP2350 | Yes | Yes | Yes |
-| PIC14 | Yes | No | No |
+| Target               | Strings     | Numbers     | Floats      |
+| -------------------- | ----------- | ----------- | ----------- |
+| AVR                  | Yes         | Yes         | Yes         |
+| RP2040 / RP2350      | Yes         | Yes         | Yes         |
+| PIC14                | Yes         | No          | No          |
 | PIC12, PIC18, RISC-V | **Nothing** | **Nothing** | **Nothing** |
 
 :::caution[`print()` fails silently on pic12, pic18 and riscv]
@@ -275,23 +275,23 @@ pymcu build --debug                  # emit debug symbols and a source line map
 pymcu build --explain                # list what the build did on your behalf
 ```
 
-| Flag | Description |
-|---|---|
-| `-v`, `--verbose` | Assembler output and the full build log |
+| Flag               | Description                                                                    |
+| ------------------ | ------------------------------------------------------------------------------ |
+| `-v`, `--verbose`  | Assembler output and the full build log                                        |
 | `--stdlib FLAVOUR` | **Replaces** the `stdlib` key from `pyproject.toml` for this build. Repeatable |
-| `--debug` | Emit debug symbols and a line map alongside the firmware |
-| `--explain` | After the build, list everything that happened implicitly |
+| `--debug`          | Emit debug symbols and a line map alongside the firmware                       |
+| `--explain`        | After the build, list everything that happened implicitly                      |
 
 **Output files**
 
-| File | Description |
-|---|---|
-| `dist/firmware.hex` | Intel HEX — AVR and PIC |
-| `dist/firmware.bin` | Flat flash image — ARM (RP2040 / RP2350) |
-| `dist/firmware.uf2` | Drag-and-drop image for BOOTSEL mode — ARM |
-| `dist/firmware.asm` | Assembly listing with source annotations |
-| `dist/firmware.mir` | Mid-level IR — useful when investigating code generation |
-| `dist/_generated/` | Any entry point the build rewrote, plus the generated `board` module |
+| File                | Description                                                          |
+| ------------------- | -------------------------------------------------------------------- |
+| `dist/firmware.hex` | Intel HEX — AVR and PIC                                              |
+| `dist/firmware.bin` | Flat flash image — ARM (RP2040 / RP2350)                             |
+| `dist/firmware.uf2` | Drag-and-drop image for BOOTSEL mode — ARM                           |
+| `dist/firmware.asm` | Assembly listing with source annotations                             |
+| `dist/firmware.mir` | Mid-level IR — useful when investigating code generation             |
+| `dist/_generated/`  | Any entry point the build rewrote, plus the generated `board` module |
 
 The only requirement is a valid `pyproject.toml` in the project root; the toolchain for the
 selected target is bundled with the corresponding compiler extra.
@@ -354,24 +354,26 @@ TTY and plain otherwise, which keeps CI logs readable.
 The `ErrorType` field is one of a small closed set. Knowing which one you got tells you what
 kind of fix to reach for:
 
-| Type | What it means |
-|---|---|
-| `SyntaxError` | Malformed Python the parser cannot accept — including constructs PyMCU restricts, such as `await` outside statement position |
-| `IndentationError` | Inconsistent indentation |
-| `LexicalError` | The tokenizer choked on a character or literal. A non-ASCII character in a source file is the usual cause |
-| `CompileError` | Valid Python that cannot exist on this target — an `@export_c` function or an ISR that can propagate an exception, or an explicit `raise CompileError(...)` from a HAL guard telling you the feature is unsupported on your chip |
-| `ValueError` | An illegal compile-time constant — division or modulo by zero, a shift count outside `0..31`, `chr()` out of range |
-| `TypeError` | Operand or assignment type mismatch. The largest category by far |
-| `RecursionError` | A recursive call cycle. PyMCU uses a static stack layout with no per-call frames, so recursion cannot be lowered — rewrite it as a loop. The message names the full cycle |
-| `NameError` | An unresolvable name, including `.append()` on an untyped `[]` that has no runtime list behind it |
-| `IndexError` | A constant subscript outside the array bounds, caught at compile time |
+| Type               | What it means                                                                                                                                                                                                                    |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SyntaxError`      | Malformed Python the parser cannot accept — including constructs PyMCU restricts, such as `await` outside statement position                                                                                                     |
+| `IndentationError` | Inconsistent indentation                                                                                                                                                                                                         |
+| `LexicalError`     | The tokenizer choked on a character or literal. A non-ASCII character in a source file is the usual cause                                                                                                                        |
+| `CompileError`     | Valid Python that cannot exist on this target — an `@export_c` function or an ISR that can propagate an exception, or an explicit `raise CompileError(...)` from a HAL guard telling you the feature is unsupported on your chip |
+| `ValueError`       | An illegal compile-time constant — division or modulo by zero, a shift count outside `0..31`, `chr()` out of range                                                                                                               |
+| `TypeError`        | Operand or assignment type mismatch. The largest category by far                                                                                                                                                                 |
+| `RecursionError`   | A recursive call cycle. PyMCU uses a static stack layout with no per-call frames, so recursion cannot be lowered — rewrite it as a loop. The message names the full cycle                                                        |
+| `NameError`        | An unresolvable name, including `.append()` on an untyped `[]` that has no runtime list behind it                                                                                                                                |
+| `IndexError`       | A constant subscript outside the array bounds, caught at compile time                                                                                                                                                            |
 
 There is one more you may see:
 
 :::note[`InternalCompilerError` is a bug, not your mistake]
+
 ```text
 src/main.py:1:1: error: InternalCompilerError: <message>
 ```
+
 This is the catch-all for an unhandled exception inside the compiler, reported with no real
 source location. It means the compiler failed to do its job on input it should have handled
 — or should at least have rejected with a proper diagnostic. Please
@@ -389,10 +391,10 @@ pymcu flash -P /dev/ttyACM0             # Linux; -P is the short form
 pymcu flash --port COM3                 # Windows
 ```
 
-| Flag | Description |
-|---|---|
-| `-P`, `--port` | Serial port. Overrides `[tool.pymcu.flash] port` |
-| `-v`, `--verbose` | Verbose logging |
+| Flag              | Description                                      |
+| ----------------- | ------------------------------------------------ |
+| `-P`, `--port`    | Serial port. Overrides `[tool.pymcu.flash] port` |
+| `-v`, `--verbose` | Verbose logging                                  |
 
 The port is resolved in this order: `--port`/`-P`, then `[tool.pymcu.flash] port`, then
 auto-detection of the first matching USB-serial device, and finally an error with
@@ -454,24 +456,24 @@ pymcu lint src/ --flavor micropython
 pymcu lint src/ --json           # machine-readable findings
 ```
 
-| Flag | Description |
-|---|---|
-| `--flavor NAME` | Override the detected flavour — `micropython` or `circuitpython` |
-| `--errors-only` | Show only hard `ERROR` findings |
-| `--json` | Emit findings as JSON on stdout |
-| `--library` | Switch to the **library publication** checks instead. Takes the package directory, not a file |
-| `--write-surface` | With `--library`, rewrite `api-surface.lock` rather than comparing against it |
+| Flag              | Description                                                                                   |
+| ----------------- | --------------------------------------------------------------------------------------------- |
+| `--flavor NAME`   | Override the detected flavour — `micropython` or `circuitpython`                              |
+| `--errors-only`   | Show only hard `ERROR` findings                                                               |
+| `--json`          | Emit findings as JSON on stdout                                                               |
+| `--library`       | Switch to the **library publication** checks instead. Takes the package directory, not a file |
+| `--write-surface` | With `--library`, rewrite `api-surface.lock` rather than comparing against it                 |
 
 `--library` is a different set of checks for a different job — see
 [Publishing a library](/libraries/authoring/#7-publishing).
 
 Findings come in three severities:
 
-| Severity | Meaning |
-|---|---|
-| `ERROR` | Will not compile in PyMCU's subset — must be rewritten |
-| `WARN` | Supported only in a limited form; needs care |
-| `INFO` | Fine as-is — usually an import that maps to a compat API |
+| Severity | Meaning                                                  |
+| -------- | -------------------------------------------------------- |
+| `ERROR`  | Will not compile in PyMCU's subset — must be rewritten   |
+| `WARN`   | Supported only in a limited form; needs care             |
+| `INFO`   | Fine as-is — usually an import that maps to a compat API |
 
 Hardware imports (`machine`, `rp2`, `board`, `digitalio`, `busio`, ...) map roughly one to
 one through the compat packages, so they are reported as `INFO`, not problems. The command
@@ -494,11 +496,11 @@ pymcu search --refresh       # re-download the index first
 pymcu search --json
 ```
 
-| Flag | Description |
-|---|---|
-| `--all` | Do not filter by the project's chip and layer |
+| Flag        | Description                                            |
+| ----------- | ------------------------------------------------------ |
+| `--all`     | Do not filter by the project's chip and layer          |
 | `--refresh` | Re-download the index instead of using the cached copy |
-| `--json` | Emit results as JSON on stdout |
+| `--json`    | Emit results as JSON on stdout                         |
 
 Run from a project directory, results are filtered to what fits that project's chip and
 declared layer, and a footer says how many were hidden. Run anywhere else, there is no chip
@@ -516,12 +518,12 @@ pymcu install dht --no-verify
 pymcu install --from-pypi pymcu-lib-something
 ```
 
-| Flag | Description |
-|---|---|
-| `--from-pypi` | Skip the index and install this **distribution** name straight from PyPI. The manifest is still required |
-| `--verify` / `--no-verify` | Compile the library's declared modules for this project's chip after installing. On by default |
-| `--refresh` | Re-download the index first |
-| `--pre` / `--no-pre` | Allow pre-release versions. On by default, because PyMCU is in alpha |
+| Flag                       | Description                                                                                              |
+| -------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `--from-pypi`              | Skip the index and install this **distribution** name straight from PyPI. The manifest is still required |
+| `--verify` / `--no-verify` | Compile the library's declared modules for this project's chip after installing. On by default           |
+| `--refresh`                | Re-download the index first                                                                              |
+| `--pre` / `--no-pre`       | Allow pre-release versions. On by default, because PyMCU is in alpha                                     |
 
 The order matters: the name is resolved against the index, the index's measurements are
 checked against your chip and layer, and only then is anything downloaded. An install that
@@ -557,10 +559,10 @@ pymcu libraries --all      # include the ones that do not fit this target
 pymcu libraries --json
 ```
 
-| Flag | Description |
-|---|---|
-| `--all` | List every installed library, not only the usable ones |
-| `--json` | Emit the list as JSON on stdout |
+| Flag     | Description                                            |
+| -------- | ------------------------------------------------------ |
+| `--all`  | List every installed library, not only the usable ones |
+| `--json` | Emit the list as JSON on stdout                        |
 
 Two things are reported that a plain package list would not show. **Collisions**: two
 libraries claiming the same top-level module name, which is a resolution error rather than a
@@ -594,11 +596,11 @@ pymcu toolchain clean             # drop superseded versions from the cache
 **Where the binaries come from differs by family**, so the cache is not the whole
 story:
 
-| Family | Where the tools live | Cached under `~/.pymcu/tools/`? |
-|---|---|---|
-| **AVR** | inside the `pymcu-avr-toolchain-wasi` pip package | **no** — nothing is downloaded |
-| **ARM** (RP2040 / RP2350) | fetched on first use | yes |
-| **PIC** | fetched on first use | yes |
+| Family                    | Where the tools live                              | Cached under `~/.pymcu/tools/`? |
+| ------------------------- | ------------------------------------------------- | ------------------------------- |
+| **AVR**                   | inside the `pymcu-avr-toolchain-wasi` pip package | **no** — nothing is downloaded  |
+| **ARM** (RP2040 / RP2350) | fetched on first use                              | yes                             |
+| **PIC**                   | fetched on first use                              | yes                             |
 
 On AVR there is nothing to install or clean: the WebAssembly modules ship in the
 wheel, and `install` only tells you which package to pip-install. What it does keep
@@ -676,11 +678,11 @@ pymcu stubs                                  # -> dist/_generated/stubs
 pymcu stubs -o typings -p pymcu_micropython
 ```
 
-| Flag | Description |
-|---|---|
-| `-o`, `--out DIR` | Output directory (default `dist/_generated/stubs`) |
-| `-p`, `--package NAME` | Restrict to one package. Repeatable |
-| `--remap-types` | Rewrite PyMCU's fixed-width types to their closest CPython equivalents |
+| Flag                   | Description                                                            |
+| ---------------------- | ---------------------------------------------------------------------- |
+| `-o`, `--out DIR`      | Output directory (default `dist/_generated/stubs`)                     |
+| `-p`, `--package NAME` | Restrict to one package. Repeatable                                    |
+| `--remap-types`        | Rewrite PyMCU's fixed-width types to their closest CPython equivalents |
 
 ## C / C++ interop
 

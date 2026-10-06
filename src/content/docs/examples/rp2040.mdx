@@ -408,7 +408,7 @@ This needs the MicroPython stdlib (`stdlib = ["micropython"]` in `[tool.pymcu]`)
 
 :::caution[Advanced — `rp2` only]
 The PIO DSL has no CircuitPython equivalent in PyMCU (CircuitPython's own `rp2pio` is not
-wrapped), and no native-HAL form — `@rp2.asm_pio` *is* the API. It is the one place where
+wrapped), and no native-HAL form — `@rp2.asm_pio` _is_ the API. It is the one place where
 the MicroPython flavour is required rather than merely recommended.
 :::
 
@@ -512,7 +512,7 @@ def main():
 
 ### f-strings as values
 
-f-strings work streamed (`print(f"...")`, `uart.write_str(f"...")`) *and* as values: the
+f-strings work streamed (`print(f"...")`, `uart.write_str(f"...")`) _and_ as values: the
 compiler builds the result into a fixed, compiler-managed buffer — no heap. `len(s)`,
 `s[i]` and re-assignment inside a loop (which reuses the same buffer) all work.
 
@@ -792,20 +792,20 @@ construct the radio locally.
 
 Both parts share the same HAL surface; the backend is single-core (core 0) for now.
 
-| Peripheral | RP2040 | RP2350 |
-|---|---|---|
-| GPIO (`pymcu.hal.gpio`) | Yes | Yes |
-| UART0 (`pymcu.hal.uart`) | Yes | Yes |
-| SPI (`pymcu.hal.spi`) | Yes | Yes |
-| I2C (`pymcu.hal.i2c`) | Yes | Yes |
-| PWM (`pymcu.hal.pwm`) | Yes | Yes |
-| ADC (`pymcu.hal.adc`) | Yes | Yes |
-| DMA (`pymcu.hal.dma`) | Yes | Yes |
-| PIO (`@rp2.asm_pio`) | Yes (PIO0 / SM0) | Yes (PIO0 / SM0) |
-| CYW43439 WiFi | No | Pico 2 W only, open networks |
-| Exceptions, `float`, f-strings, generators, async | Yes | Yes |
-| Second core | No | No |
-| Garbage collector | No (by design) | No (by design) |
+| Peripheral                                        | RP2040           | RP2350                       |
+| ------------------------------------------------- | ---------------- | ---------------------------- |
+| GPIO (`pymcu.hal.gpio`)                           | Yes              | Yes                          |
+| UART0 (`pymcu.hal.uart`)                          | Yes              | Yes                          |
+| SPI (`pymcu.hal.spi`)                             | Yes              | Yes                          |
+| I2C (`pymcu.hal.i2c`)                             | Yes              | Yes                          |
+| PWM (`pymcu.hal.pwm`)                             | Yes              | Yes                          |
+| ADC (`pymcu.hal.adc`)                             | Yes              | Yes                          |
+| DMA (`pymcu.hal.dma`)                             | Yes              | Yes                          |
+| PIO (`@rp2.asm_pio`)                              | Yes (PIO0 / SM0) | Yes (PIO0 / SM0)             |
+| CYW43439 WiFi                                     | No               | Pico 2 W only, open networks |
+| Exceptions, `float`, f-strings, generators, async | Yes              | Yes                          |
+| Second core                                       | No               | No                           |
+| Garbage collector                                 | No (by design)   | No (by design)               |
 
 ## Build and flash
 

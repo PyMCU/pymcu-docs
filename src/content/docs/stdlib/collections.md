@@ -21,22 +21,21 @@ for which — see the [Dictionaries and sets guide](/guides/dicts/). This page i
 
 ## `FixedDict(capacity)`
 
-| Parameter | Type | Description |
-|---|---|---|
+| Parameter  | Type    | Description                                      |
+| ---------- | ------- | ------------------------------------------------ |
 | `capacity` | `uint8` | Number of slots. Must be a compile-time constant |
 
 An integer-keyed dictionary implemented as **open addressing with linear probing** over three
 fixed arrays sized at construction:
 
-| Array | Type | Purpose |
-|---|---|---|
-| `_keys` | `uint16[capacity]` | The stored keys |
-| `_vals` | `uint16[capacity]` | The stored values |
-| `_state` | `uint8[capacity]` | Per-slot state: `0` empty, `1` used, `2` tombstone |
+| Array    | Type               | Purpose                                            |
+| -------- | ------------------ | -------------------------------------------------- |
+| `_keys`  | `uint16[capacity]` | The stored keys                                    |
+| `_vals`  | `uint16[capacity]` | The stored values                                  |
+| `_state` | `uint8[capacity]`  | Per-slot state: `0` empty, `1` used, `2` tombstone |
 
 That is **5 bytes of RAM per slot**, allocated per instance, with no heap and no garbage
-collector. `FixedDict(4)` costs 20 bytes plus the capacity and count bytes; `FixedDict(64)` costs
-320. On a 2 KB ATmega328P that arithmetic matters.
+collector. `FixedDict(4)` costs 20 bytes plus the capacity and count bytes; `FixedDict(64)` costs 320. On a 2 KB ATmega328P that arithmetic matters.
 
 ```python
 from pymcu.types import uint16
@@ -54,15 +53,15 @@ def main():
 
 ### FixedDict operations
 
-| Operation | Signature | Description |
-|---|---|---|
-| `d[key] = value` | `key: uint16`, `value: uint16` | Insert or overwrite. Raises `ValueError` if the dict is full and the key is new |
-| `d[key]` | → `uint16` | Look up. Raises `KeyError` if the key is absent |
-| `key in d` | → `uint8` | `1` if present, `0` if not. Never raises |
-| `len(d)` | → `uint8` | Number of live entries |
-| `d.get(key, default=0)` | → `uint16` | Look up, returning `default` instead of raising |
-| `d.pop(key)` | → `uint16` | Remove the entry and return its value. Raises `KeyError` if absent |
-| `d.clear()` | — | Mark every slot empty and reset the count to zero |
+| Operation               | Signature                      | Description                                                                     |
+| ----------------------- | ------------------------------ | ------------------------------------------------------------------------------- |
+| `d[key] = value`        | `key: uint16`, `value: uint16` | Insert or overwrite. Raises `ValueError` if the dict is full and the key is new |
+| `d[key]`                | → `uint16`                     | Look up. Raises `KeyError` if the key is absent                                 |
+| `key in d`              | → `uint8`                      | `1` if present, `0` if not. Never raises                                        |
+| `len(d)`                | → `uint8`                      | Number of live entries                                                          |
+| `d.get(key, default=0)` | → `uint16`                     | Look up, returning `default` instead of raising                                 |
+| `d.pop(key)`            | → `uint16`                     | Remove the entry and return its value. Raises `KeyError` if absent              |
+| `d.clear()`             | —                              | Mark every slot empty and reset the count to zero                               |
 
 Every method except the constructor is `@inline`, so a lookup is a probe loop emitted at the call
 site rather than a call into a shared routine.
@@ -75,10 +74,10 @@ Both are real, catchable PyMCU exceptions from `pymcu.exceptions`:
 from pymcu.exceptions import KeyError, ValueError
 ```
 
-| Raised by | Exception | When |
-|---|---|---|
-| `d[key]`, `d.pop(key)` | `KeyError` | The key is not in the dict |
-| `d[key] = value` | `ValueError` | Every slot is occupied and the key is new — a fixed dict cannot grow |
+| Raised by              | Exception    | When                                                                 |
+| ---------------------- | ------------ | -------------------------------------------------------------------- |
+| `d[key]`, `d.pop(key)` | `KeyError`   | The key is not in the dict                                           |
+| `d[key] = value`       | `ValueError` | Every slot is occupied and the key is new — a fixed dict cannot grow |
 
 `get()` and `in` never raise; use `get()` when a miss is expected and you do not want the cost of
 a `try` block.
@@ -121,7 +120,7 @@ i = uint8(key) % self._cap
 ```
 
 The key is **truncated to 8 bits before the modulo**, so only its low byte participates in the
-hash. The full 16-bit key is still compared on every probe, so lookups remain *correct* — but keys
+hash. The full 16-bit key is still compared on every probe, so lookups remain _correct_ — but keys
 that differ only above bit 7 all land on the same starting slot and are separated only by linear
 probing.
 

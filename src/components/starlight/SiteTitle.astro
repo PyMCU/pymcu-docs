@@ -3,11 +3,11 @@ const { siteTitleHref } = Astro.locals.starlightRoute;
 ---
 
 <a href={siteTitleHref} class="site-title sl-flex" translate="no">
-  {/* Both halves live inside ONE flex item: .site-title sets a flex `gap`, so two
-      sibling spans would render as "Py MCU" with a gap between them. */}
-  <span class="site-title__word"
-    ><span class="site-title__py">Py</span><span class="site-title__mcu">MCU</span></span
-  >
+  {
+    /* Both halves live inside ONE flex item: .site-title sets a flex `gap`, so two
+      sibling spans would render as "Py MCU" with a gap between them. */
+  }
+  <span class="site-title__word"><span class="site-title__py">Py</span><span class="site-title__mcu">MCU</span></span>
 </a>
 
 <style>

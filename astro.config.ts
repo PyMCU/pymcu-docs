@@ -140,6 +140,7 @@ export default defineConfig({
             { label: 'Tuple Operations', slug: 'examples/tuple-ops' },
             { label: 'Sensor Dashboard', slug: 'examples/sensor-dashboard' },
             { label: 'Game of Life on an OLED', slug: 'examples/game-of-life' },
+            { label: 'Build: Game of Life OLED (step by step)', slug: 'guides/game-of-life-oled' },
             { label: 'Class Inheritance', slug: 'examples/inheritance-zca' },
             { label: 'Raspberry Pi Pico / Pico 2', slug: 'examples/rp2040' },
           ],

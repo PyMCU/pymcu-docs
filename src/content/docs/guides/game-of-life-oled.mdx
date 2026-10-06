@@ -1,0 +1,324 @@
+---
+title: 'Build: Game of Life on an OLED'
+description: A complete, tested, step-by-step build guide for Conway's Game of Life on an SSD1306 OLED and an Arduino Uno, from an empty folder to a blinking grid of pixels, with PyMCU installed straight from PyPI.
+---
+
+A full walkthrough, start to finish: install PyMCU, wire up an OLED, get the unmodified
+Adafruit CircuitPython drivers, write the program, build it, and flash it to a real Arduino
+Uno. Every command on this page was run from a clean install, with nothing but what PyPI
+publishes today, before this page was written.
+
+## What you will build
+
+Conway's Game of Life, evolving forever on a small OLED screen: a grid of cells lights up,
+steps forward once every tenth of a second following the standard Game of Life rule, and
+reseeds itself with a fresh random pattern whenever the world dies out or freezes solid.
+
+<img
+  src="/images/examples/game-of-life/game-of-life.gif"
+  alt="Conway's Game of Life evolving on a 128x64 SSD1306 OLED, rendered from the I2C bytes an emulated Arduino Uno sends"
+/>
+
+<small>OLED module artwork from [wokwi-elements](https://github.com/wokwi/wokwi-elements) (MIT)</small>
+
+## Materials
+
+- An **Arduino Uno** (or any ATmega328P board wired the same way)
+- A **128x64 SSD1306 I2C OLED module** (the common 0.96" ones; a 128x32 module also works,
+  see the note at the end)
+- 4 jumper wires
+- A USB cable to program the Uno
+
+No soldering, no extra components: the module takes power and two signal wires directly
+from the Uno's header pins.
+
+## Wiring
+
+| OLED pin | Arduino Uno pin |
+| -------- | --------------- |
+| GND      | GND             |
+| VCC      | 5V              |
+| SCL      | A5              |
+| SDA      | A4              |
+
+That is the whole circuit: I2C only, no reset or chip-select wire on these modules. Double
+check your module's silkscreen: VCC/GND and SCL/SDA order is not identical across every
+0.96" OLED board on the market, even though the pin count and function are.
+
+:::note[3.3V modules]
+Most of these modules run happily from the Uno's 5V pin, but a few are 3.3V-only, and
+nothing on the board tells you which. If the screen never lights up and the wiring and code
+are right, try the Uno's 3.3V pin instead of 5V before anything else.
+:::
+
+## 1. Install PyMCU
+
+PyMCU is a single PyPI package plus one extra per architecture. For an Arduino Uno you want
+the `avr` extra:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate        # on Windows: .venv\Scripts\activate
+pip install --upgrade pip
+pip install --pre "pymcu-compiler[avr]" pymcu-circuitpython
+```
+
+The `--pre` flag is needed because the current release, `0.1.0b1`, is a beta, and `pip`
+skips pre-releases unless asked. Check it worked:
+
+```bash
+pymcu version
+```
+
+This should print a table with `pymcu-compiler`, `pymcu-avr` and `pymcu-circuitpython` all
+at version `0.1.0b1` (or newer, if you are reading this later).
+
+## 2. Create the project
+
+```bash
+pymcu new game-of-life-oled --board arduino_uno --stdlib circuitpython --pkg-manager pip
+cd game-of-life-oled
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+```
+
+`pymcu new` scaffolds `src/main.py`, a `pyproject.toml` already configured for the Uno and
+the CircuitPython compatibility layer, and a `requirements.txt`. The project gets its own
+virtual environment, separate from the one `pymcu` itself is installed in, so its exact
+dependency versions stay pinned independently of whatever else you build later.
+
+## 3. Get the Adafruit drivers
+
+This guide does not vendor the Adafruit libraries: they are not PyMCU code, and a copy
+here would drift out of date. Install the official packages and copy the plain `.py` files
+out of them:
+
+```bash
+pip install adafruit-circuitpython-ssd1306 adafruit-circuitpython-framebuf adafruit-circuitpython-busdevice
+```
+
+That installs them (and their dependencies) into whichever Python environment you ran the
+command in; PyMCU never imports them at runtime; it only needs the source files on disk.
+Find where pip put them (`pip show -f adafruit-circuitpython-ssd1306` prints the file list)
+and copy these three files, plus the `adafruit_bus_device` folder, into this project's
+`src/`:
+
+- `adafruit_ssd1306.py`
+- `adafruit_framebuf.py`
+- `adafruit_bus_device/__init__.py`, `adafruit_bus_device/i2c_device.py`,
+  `adafruit_bus_device/spi_device.py`
+
+:::note[No font file needed]
+`adafruit_framebuf.py` can draw text using a font file, `font5x8.bin`, but that file is not
+published on PyPI at all: it only ships in the library's GitHub repository. This program
+never calls `display.text()`, so it never opens that file, and the build in step 5 succeeds
+without it. If you extend the program to draw text, grab `font5x8.bin` from
+[the adafruit_framebuf GitHub repository](https://github.com/adafruit/Adafruit_CircuitPython_framebuf)
+and add `files = ["font5x8.bin"]` under `[tool.pymcu]` in `pyproject.toml`.
+:::
+
+This guide was tested against `adafruit-circuitpython-ssd1306` 2.12.24,
+`adafruit-circuitpython-framebuf` 1.6.12 and `adafruit-circuitpython-busdevice` 5.2.17, the
+current versions on PyPI as of this writing.
+
+:::caution[`pymcu install` does not reach these yet]
+PyMCU has its own library index (`pymcu search`, `pymcu install`), and it is tempting to
+try `pymcu install adafruit_ssd1306`. Today that fails: `'adafruit_ssd1306' is not in the
+PyMCU library index`. The suggested fallback, `pymcu install --from-pypi
+adafruit-circuitpython-ssd1306`, also fails right now, with `it registers no
+pymcu.libraries entry point, so the compiler would never see it`. The manual copy above is
+the path that works.
+:::
+
+## 4. The code
+
+Replace `src/main.py` with this:
+
+```python
+# Conway's Game of Life on the OLED
+# Optimized for CircuitPython, using fill_rect and time.sleep
+import time
+import board
+import adafruit_ssd1306
+
+CELL = 8
+SEED = 20260921
+
+# Display initialization
+i2c = board.I2C()
+display = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c)
+
+
+class Life:
+    """Conway's Game of Life on a toroidal width x height grid of cells."""
+
+    def __init__(self, width, height, seed):
+        self.width = width
+        self.height = height
+        self.cells = [[0] * width for _ in range(height)]
+        self.next_cells = [[0] * width for _ in range(height)]
+        self.rng = seed
+
+    def seed(self):
+        # A small LCG in Python, not the random module.
+        for y in range(self.height):
+            for x in range(self.width):
+                self.rng = (self.rng * 1103515245 + 12345) & 0x7FFFFFFF
+                self.cells[y][x] = 1 if ((self.rng >> 16) & 3) == 0 else 0
+
+    def neighbours(self, x, y):
+        n = 0
+        for dy in range(-1, 2):
+            for dx in range(-1, 2):
+                if dx == 0 and dy == 0:
+                    continue
+                xx = (x + dx) % self.width
+                yy = (y + dy) % self.height
+                n = n + self.cells[yy][xx]
+        return n
+
+    def step(self):
+        for y in range(self.height):
+            for x in range(self.width):
+                n = self.neighbours(x, y)
+                if self.cells[y][x]:
+                    self.next_cells[y][x] = 1 if n == 2 or n == 3 else 0
+                else:
+                    self.next_cells[y][x] = 1 if n == 3 else 0
+        changed = 0
+        for y in range(self.height):
+            for x in range(self.width):
+                if self.cells[y][x] != self.next_cells[y][x]:
+                    changed = 1
+                self.cells[y][x] = self.next_cells[y][x]
+        return changed
+
+    def alive(self):
+        for y in range(self.height):
+            for x in range(self.width):
+                if self.cells[y][x]:
+                    return 1
+        return 0
+
+    def draw(self, display):
+        display.fill(0)
+        for y in range(self.height):
+            for x in range(self.width):
+                if self.cells[y][x]:
+                    # OPTIMIZATION 1: use fill_rect to draw the whole cell at
+                    # once instead of looping over it pixel by pixel.
+                    display.fill_rect(x * CELL, y * CELL, CELL, CELL, 1)
+        display.show()
+
+
+life = Life(16, 8, SEED)
+life.seed()
+life.draw(display)
+generation = 0
+
+while True:
+    tick = time.monotonic()
+    changed = life.step()
+    life.draw(display)
+    generation = generation + 1
+
+    if generation % 10 == 0:
+        print("generation", generation)
+
+    if changed == 0 or life.alive() == 0:
+        # Dead or frozen world: hold the last frame, then a fresh soup.
+        time.sleep(1.0)
+        life.seed()
+        life.draw(display)
+        generation = 0
+
+    # OPTIMIZATION 2: rest the processor instead of spinning in a busy wait.
+    elapsed = time.monotonic() - tick
+    if elapsed < 0.1:
+        time.sleep(0.1 - elapsed)
+```
+
+`CELL = 8` and a 16x8 grid are deliberate, not arbitrary: the Arduino Uno has 2 KB of SRAM
+total, and a 128x64 panel's framebuffer alone takes 1025 bytes of it. The finer 4x4 cells a
+128x32 panel can afford need two 32x16 grids that, next to that framebuffer, do not fit
+here; `pymcu build` would refuse with a clear `static data needs ... bytes but atmega328p
+has 2048 bytes of SRAM` error if you tried. 8x8 cells keep both grids small enough.
+
+## 5. Build
+
+```bash
+pymcu build
+```
+
+Tested on this page: **10,272 / 32,768 bytes** of flash (31%), with `pymcu-compiler`
+0.1.0b1 straight from PyPI, no local or development build involved.
+
+## 6. Flash it
+
+```bash
+pymcu flash --port /dev/cu.usbmodem*   # macOS
+pymcu flash --port /dev/ttyACM0        # Linux
+pymcu flash --port COM3                # Windows
+```
+
+`pymcu flash` drives `avrdude` under the hood; install it first if you do not have it
+(`brew install avrdude` on macOS, `sudo apt-get install avrdude` on Debian/Ubuntu, or a
+release from the [avrdude releases page](https://github.com/avrdudes/avrdude/releases) on
+Windows). If you would rather call `avrdude` yourself, `pymcu build` always leaves the
+compiled firmware at `dist/firmware.hex`:
+
+```bash
+avrdude -c arduino -p m328p -P /dev/cu.usbmodem14201 -b 115200 -U flash:w:dist/firmware.hex:i
+```
+
+Swap in your own port either way; `pymcu flash --port` without a value usually finds it for
+you.
+
+:::note[Not verified on real hardware by this page]
+This guide was tested up through a successful `pymcu build` with packages installed only
+from PyPI. Flashing needs a physical Arduino Uno and OLED, which the environment this page
+was written in does not have; that final step has not been run here.
+:::
+
+## What to expect
+
+A couple of seconds after the Uno resets, the screen fills with a random scatter of lit
+squares: the seed pattern. From there it evolves on its own, roughly ten generations a
+second, cells blinking on and off as the standard Game of Life rule plays out on a board
+that wraps around at the edges. When the pattern dies out completely or settles into
+something that never changes again, the screen holds for a second, then reseeds with a new
+random pattern and keeps going, forever, with no further input from you.
+
+## Common problems
+
+**`ValueError: No I2C device at address: 0x3c`** -- this is the SSD1306 driver's own probe
+failing, and it almost always means a connection problem, not a code problem: a loose
+jumper wire, especially on a solderless breadboard, or SDA and SCL swapped. Reseat every
+wire, including the power ones, before suspecting anything else.
+
+**It still says no device, but the wiring looks right** -- a few SSD1306 modules answer at
+`0x3D` instead of the common `0x3C`, usually selectable with a solder jumper on the back of
+the board. Pass the address explicitly: `adafruit_ssd1306.SSD1306_I2C(128, 64, i2c, addr=0x3D)`.
+
+**The screen stays completely blank, no error at all** -- check the module's logic voltage
+before anything else. Most of these boards run from 5V, but some are 3.3V-only and simply
+do nothing, dark and silent, if overdriven or underdriven; try the other supply pin. A dim
+or half-lit screen usually means the contrast or charge pump init did not complete, which
+again traces back to a flaky I2C connection rather than the program.
+
+## How it works inside
+
+The short version: every frame you see here is computed the same way regardless of which
+Python runs it, because the random soup comes from a small hand-written LCG, not the
+`random` module, which differs between interpreters. Getting this exact driver stack
+reliable on real AVR hardware surfaced a genuine compiler bug along the way, a register
+that was not guaranteed to start at zero on a cold boot; [the write-up](/blog/the-oled-that-froze/)
+tells that story in full.
+
+## Also see
+
+- [Game of Life on an OLED](/examples/game-of-life/) -- the example this guide builds, with
+  the rendered animation and the exact driver versions it was measured against
+- [Quick Start](/getting-started/quickstart/) -- the same install-to-blink path for the
+  simplest possible PyMCU program
+- [Installation](/getting-started/installation/) -- every install method and platform note

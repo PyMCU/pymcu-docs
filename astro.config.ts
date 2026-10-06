@@ -139,6 +139,7 @@ export default defineConfig({
             { label: 'UART Echo', slug: 'examples/uart-echo' },
             { label: 'Tuple Operations', slug: 'examples/tuple-ops' },
             { label: 'Sensor Dashboard', slug: 'examples/sensor-dashboard' },
+            { label: 'Game of Life on an OLED', slug: 'examples/game-of-life' },
             { label: 'Class Inheritance', slug: 'examples/inheritance-zca' },
             { label: 'Raspberry Pi Pico / Pico 2', slug: 'examples/rp2040' },
           ],

@@ -1,0 +1,179 @@
+---
+title: Game of Life on an OLED
+description: Conway's Game of Life on a 128x32 SSD1306 OLED, through the unmodified Adafruit CircuitPython SSD1306 and framebuf drivers, rendered here from the actual I2C bytes an emulated Arduino Uno sends.
+---
+
+Conway's Game of Life on a 128x32 SSD1306 I2C OLED: a 32x8 grid of 4x4-pixel cells,
+evolving once every 0.1 s. A dead or frozen world holds its last frame for a second, then
+reseeds with a fresh random soup and keeps going.
+
+:::note[AVR example]
+This page targets the **ATmega328P**. The program is CircuitPython throughout: there is
+no MicroPython or native-HAL equivalent shown here, since it is really the unmodified
+Adafruit CircuitPython SSD1306 driver stack being exercised.
+:::
+
+## What it does
+
+- Seeds a 32x8 cell grid from a small linear congruential generator written in plain
+  Python, not the `random` module, which differs between interpreters. The LCG computes
+  the identical 31-bit sequence on CPython, CircuitPython and PyMCU, which is also what
+  makes the animation below reproducible from an emulator run.
+- Steps the grid with the standard Game of Life rule on a toroidal (wrapping) board.
+- Draws each live cell as a 4x4 pixel block with `display.fill_rect()`, then calls
+  `display.show()` once per generation.
+- Reseeds whenever the world dies out or freezes (no cell changed since the last step).
+
+## The code
+
+```python
+# Conway's Game of Life on the OLED
+# Optimized for CircuitPython, using fill_rect and time.sleep
+import time
+import board
+import adafruit_ssd1306
+
+CELL = 4
+SEED = 20260921
+
+# Display initialization
+i2c = board.I2C()
+display = adafruit_ssd1306.SSD1306_I2C(128, 32, i2c)
+
+
+class Life:
+    """Conway's Game of Life on a toroidal width x height grid of cells."""
+
+    def __init__(self, width, height, seed):
+        self.width = width
+        self.height = height
+        self.cells = [[0] * width for _ in range(height)]
+        self.next_cells = [[0] * width for _ in range(height)]
+        self.rng = seed
+
+    def seed(self):
+        # A small LCG in Python, not the random module.
+        for y in range(self.height):
+            for x in range(self.width):
+                self.rng = (self.rng * 1103515245 + 12345) & 0x7FFFFFFF
+                self.cells[y][x] = 1 if ((self.rng >> 16) & 3) == 0 else 0
+
+    def neighbours(self, x, y):
+        n = 0
+        for dy in range(-1, 2):
+            for dx in range(-1, 2):
+                if dx == 0 and dy == 0:
+                    continue
+                xx = (x + dx) % self.width
+                yy = (y + dy) % self.height
+                n = n + self.cells[yy][xx]
+        return n
+
+    def step(self):
+        for y in range(self.height):
+            for x in range(self.width):
+                n = self.neighbours(x, y)
+                if self.cells[y][x]:
+                    self.next_cells[y][x] = 1 if n == 2 or n == 3 else 0
+                else:
+                    self.next_cells[y][x] = 1 if n == 3 else 0
+        changed = 0
+        for y in range(self.height):
+            for x in range(self.width):
+                if self.cells[y][x] != self.next_cells[y][x]:
+                    changed = 1
+                self.cells[y][x] = self.next_cells[y][x]
+        return changed
+
+    def alive(self):
+        for y in range(self.height):
+            for x in range(self.width):
+                if self.cells[y][x]:
+                    return 1
+        return 0
+
+    def draw(self, display):
+        display.fill(0)
+        for y in range(self.height):
+            for x in range(self.width):
+                if self.cells[y][x]:
+                    # OPTIMIZATION 1: use fill_rect to draw the whole cell at
+                    # once instead of looping over it pixel by pixel.
+                    display.fill_rect(x * CELL, y * CELL, CELL, CELL, 1)
+        display.show()
+
+
+life = Life(32, 8, SEED)
+life.seed()
+life.draw(display)
+generation = 0
+
+while True:
+    tick = time.monotonic()
+    changed = life.step()
+    life.draw(display)
+    generation = generation + 1
+
+    if generation % 10 == 0:
+        print("generation", generation)
+
+    if changed == 0 or life.alive() == 0:
+        # Dead or frozen world: hold the last frame, then a fresh soup.
+        time.sleep(1.0)
+        life.seed()
+        life.draw(display)
+        generation = 0
+
+    # OPTIMIZATION 2: rest the processor instead of spinning in a busy wait.
+    elapsed = time.monotonic() - tick
+    if elapsed < 0.1:
+        time.sleep(0.1 - elapsed)
+```
+
+## Libraries
+
+The unmodified Adafruit CircuitPython stack, not a single line changed:
+
+| Library                     | Version |
+| --------------------------- | ------- |
+| `adafruit_ssd1306`          | 2.12.24 |
+| `adafruit_framebuf`         | 1.6.12  |
+| `adafruit_bus_device` (I2C) | current |
+
+Get the example and the instructions for pulling these three packages from PyPI into
+`src/` at [`examples/game-of-life-oled`](https://github.com/PyMCU/pymcu-circuitpython/tree/main/examples/game-of-life-oled)
+in the `pymcu-circuitpython` repository.
+
+## Flash
+
+**9940 / 32768 bytes** (30% of program storage) on `arduino_uno` with PyMCU's compiler:
+the whole Game of Life, the SSD1306 driver, the framebuffer and the embedded 5x8 font.
+
+## The animation
+
+<img
+  src="/images/examples/game-of-life/game-of-life.gif"
+  alt="Conway's Game of Life evolving on a 128x32 SSD1306 OLED, rendered from the I2C traffic an emulated Arduino Uno sent"
+/>
+
+This is not a screen recording or a hand-made simulation: every frame comes from decoding
+the actual I2C bytes the compiled firmware sends on the wire, through the same
+`SET_COL_ADDR` / `SET_PAGE_ADDR` / framebuffer-write protocol a real SSD1306 module would
+receive, captured by running the firmware on an emulated Arduino Uno (AVR8Sharp) and
+recording the I2C bus. The first frame was checked pixel for pixel against the same
+unmodified source files run under plain CPython, with an identical fake I2C bus standing in
+for the hardware, to confirm that the decoder, and the compiled firmware, reproduce the
+exact board the program computes.
+
+The same firmware also ran on a real Arduino Uno wired to a 128x32 SSD1306 module over I2C.
+
+## Build
+
+```bash
+cd examples/game-of-life-oled    # in the pymcu-circuitpython repository, after
+                                  # copying the Adafruit drivers in per its README
+pymcu build
+pymcu flash --port /dev/cu.usbmodem*
+```
+
+See [`pymcu build`](/driver/#pymcu-build) for the full command reference.

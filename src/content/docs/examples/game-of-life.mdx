@@ -156,6 +156,8 @@ the whole Game of Life, the SSD1306 driver, the framebuffer and the embedded 5x8
   alt="Conway's Game of Life evolving on a 128x32 SSD1306 OLED, rendered from the I2C traffic an emulated Arduino Uno sent"
 />
 
+<small>OLED module artwork from [wokwi-elements](https://github.com/wokwi/wokwi-elements) (MIT)</small>
+
 This is not a screen recording or a hand-made simulation: every frame comes from decoding
 the actual I2C bytes the compiled firmware sends on the wire, through the same
 `SET_COL_ADDR` / `SET_PAGE_ADDR` / framebuffer-write protocol a real SSD1306 module would

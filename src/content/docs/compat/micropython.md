@@ -107,11 +107,12 @@ from machine import Pin
 led = Pin(13, Pin.OUT)         # D13 = PB5
 btn = Pin(2, Pin.IN, Pin.PULL_UP)   # D2 = PD2 with pull-up
 
-# Mode constants (note the values: these match the compat package, not CPython intuition)
-Pin.IN       # 1
-Pin.OUT      # 0
-Pin.PULL_UP  # 1
-Pin.PULL_DOWN  # 2 — see the caution below
+# Mode constants (the real rp2 port's values, so ported code keeps working)
+Pin.IN          # 0
+Pin.OUT         # 1
+Pin.OPEN_DRAIN  # 2 — refused on every port, see below
+Pin.PULL_UP     # 1
+Pin.PULL_DOWN   # 2 — see the caution below
 
 # Methods (same as pymcu.hal.gpio.Pin)
 led.high()
@@ -119,7 +120,24 @@ led.low()
 led.toggle()
 v = led.value()
 led.value(1)
+
+# Reconfigure in place -- upstream MicroPython API
+led.init(mode=Pin.IN, pull=Pin.PULL_UP)
 ```
+
+:::caution[No `mode()`, `pull()` or `drive()` methods]
+The real `machine.Pin` on rp2 does not export `mode()`, `pull()` or `drive()`, and neither
+does this layer — call `init()` to change direction or pull after construction, exactly as
+upstream. On RP2040/RP2350 `init()`'s `drive=` and `alt=` keywords are refused: the GPIO HAL
+exposes no drive-strength knob or alternate-function mux for them to reach.
+:::
+
+`pull=None` is upstream's "disable pulls" spelling and works on every port (the RP pad's
+pull-down is on at reset, so the write does happen there). `Pin.OPEN_DRAIN` is refused at
+build time on both ports — neither AVR nor RP GPIO hardware can float the driver — and the
+diagnostic names the workaround: drive low for 0, switch the pin to `Pin.IN` for 1, with an
+external pull-up. `init(mode=Pin.OUT, value=1)` writes the output latch before enabling the
+driver, so the pin never pulses low.
 
 A port-string form is also accepted on AVR: `Pin("PB5", Pin.OUT)`.
 
@@ -151,17 +169,23 @@ Portable — compiles on AVR, RP2040 and RP2350.
 ```python
 from machine import UART
 
-uart = UART(0, 9600)        # id=0 → USART0
+uart = UART(0, 9600)        # id=0 → USART0 (GP0/GP1 on a Pico, as upstream defaults)
 uart.write(b"hello")
-data = uart.read()          # one byte; read() takes no argument
+
+buf = bytearray(8)
+n = uart.readinto(buf)      # bytes read, or None when the timeout passes empty
 ```
 
-:::caution[`read()` takes no argument]
-Unlike MicroPython, `UART.read()` has the signature `read(self) -> uint8` and returns a single
-byte — there is no `read(n)` overload, because returning a `bytes` object would need a heap.
-To fill a buffer use `uart.readline(buf)`, which reads until `\n` (or until `buf` is full) and
-returns the byte count. The no-arg `readline()` is a compile error that names that form,
-rather than a confusing arity mismatch.
+:::caution[`read()` returns an int on AVR and is refused on the Pico]
+`UART.read()` with no argument upstream returns the bytes available now — a heap object
+this target does not have. On AVR the layer's long-standing one-byte `read()` still
+answers a `uint8`; on RP2040/RP2350 it is refused at build time, and the diagnostic names
+the portable spelling: `n = uart.readinto(buf)` — a count, or `None` on an empty read.
+`uart.any()` is refused there too: the RP FIFO reports empty-or-not, never a count.
+
+`uart.readline(buf)` reads until `\n` (or until `buf` is full) and returns the byte count;
+the no-arg `readline()` is a compile error that names that form, rather than a confusing
+arity mismatch.
 :::
 
 ### `machine.ADC`
@@ -306,11 +330,13 @@ from pymcu.types import uint8
 def main():
     uart = UART(0, 115200)
     led = Pin(25, Pin.OUT)
-    uart.println("READY")
+    uart.write("READY\n")
+    buf = bytearray(1)
     while True:
-        c: uint8 = uart.read()
-        led.toggle()
-        uart.write(c)
+        n = uart.readinto(buf)
+        if n:
+            led.toggle()
+            uart.write(buf)
 ```
 
 Only the portable half of `machine` is available here. `ADC`, `PWM`, `SPI`, `I2C`, `Timer` and
@@ -376,7 +402,7 @@ MicroPython.
 | Execution model                         | Bytecode interpreter                                                 | Native compiled — no VM, no GC, ~0 bytes RAM overhead                                                                                                                                                                                                                                                                                                                                            |
 | `machine` module scope                  | Whole module on every port                                           | `Pin` / `UART` / `Signal` / `mem8` / `time_pulse_us` everywhere; `ADC`, `PWM`, `SPI`, `I2C`, `Timer`, `WDT` on AVR only                                                                                                                                                                                                                                                                          |
 | `Pin.PULL_DOWN`                         | Supported where the pad has one                                      | RP2040 / RP2350 only — a `CompileError` on AVR                                                                                                                                                                                                                                                                                                                                                   |
-| `UART.read(n)`                          | Returns `bytes`                                                      | `read()` takes no argument and returns one byte; use `readline(buf)` for a buffer                                                                                                                                                                                                                                                                                                                |
+| `UART.read(n)`                          | Returns `bytes`                                                      | On AVR `read()` returns one byte as `uint8`; on RP2040/RP2350 the call is a compile error naming `readinto(buf)` — a count, or `None` on an empty read                                                                                                                                                                                                                                                                                                                |
 | `Pin.irq()` callbacks                   | Supported                                                            | Supported — `btn.irq(handler=cb, trigger=Pin.IRQ_FALLING)` registers the real ISR                                                                                                                                                                                                                                                                                                                |
 | `Timer` callbacks                       | Supported                                                            | Supported on AVR — `Timer(1, freq=10, callback=on_tick)` auto-selects the prescaler                                                                                                                                                                                                                                                                                                              |
 | `machine.mem8[addr]`                    | Supported                                                            | Supported; `ptr(addr).value` is the typed, compile-time-checked alternative                                                                                                                                                                                                                                                                                                                      |
@@ -398,7 +424,7 @@ MicroPython.
 | `async` / `await`                       | Supported (`uasyncio`)                                               | `await asyncio.sleep_ms(…)` anywhere in a body, plus `asyncio.run` / `gather`; awaiting another coroutine is not supported yet                                                                                                                                                                                                                                                                   |
 | `bytearray`                             | Dynamic heap allocation                                              | Constant sizes lower to fixed arrays. On AVR a runtime size is allowed where allocation is proven to run once, using a static arena with no `free()`                                                                                                                                                                                                                                             |
 | Platform guards                         | `sys.implementation`, `sys.platform`, `os.uname()` reflect the board | The same guards fold at compile time to the configured MicroPython target                                                                                                                                                                                                                                                                                                                        |
-| `UART.any()`                            | Byte count                                                           | Returns `1` / `0`, not an exact count                                                                                                                                                                                                                                                                                                                                                            |
+| `UART.any()`                            | Byte count                                                           | On AVR returns `1` / `0`; on RP2040/RP2350 it is a compile error — the FIFO reports empty-or-not, never a count — and the diagnostic names `readinto()`                                                                                                                                                                                                                                                                                                |
 | `UART.readline()`                       | Returns `bytes`, no args                                             | `readline(buf)` — the caller provides the buffer and `len(buf)` is the limit; the no-arg call is a compile error naming this form                                                                                                                                                                                                                                                                |
 | `I2C.scan()`                            | List of addresses                                                    | Returns a count; `scan(buf, max_count)` fills a caller-owned buffer                                                                                                                                                                                                                                                                                                                              |
 | `network.WLAN`                          | Every WiFi port                                                      | Pico 2 W (RP2350) only, open networks only — no WPA                                                                                                                                                                                                                                                                                                                                              |

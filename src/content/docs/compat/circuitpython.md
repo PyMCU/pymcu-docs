@@ -179,11 +179,18 @@ peripheral from the pins: a pad that is no TX/RX pad, a TX and an RX that sit on
 different UARTs, or a real pair that belongs to UART1 (GP4/GP5, GP8/GP9, GP20/GP21 and
 GP24/GP25 on the RP2040) are all refused at build time — the HAL this port compiles
 against drives UART0 only, so its pairs are GP0/GP1, GP12/GP13, GP16/GP17 and GP28/GP29.
+On the RP2350 the same UART0 pairs are GP0/GP1, GP12/GP13, GP16/GP17, GP28/GP29, GP32/GP33
+and GP44/GP45 — the pads in between (numbered 2 or 3 mod 4, like GP2/GP3) reach a UART
+only through `GPIO_FUNC_UART_AUX`, which the RP2350 HAL never writes, so they are
+refused rather than muxed to a function that is not the UART.
 
 `timeout` is always **seconds**, for floats and ints alike — that is CircuitPython's
 `mp_obj_get_float` coercion, where `timeout=1` means one second and `timeout=0.1` is
-100 ms. The property reads back in seconds too. A value past the `uint16` millisecond
-field the timed reads take — over 65.535 s — is refused at build time.
+100 ms. The property reads back in seconds too. The stored value is `timeout * 1000`
+assigned into an integer field, so sub-millisecond fractions truncate the way
+CircuitPython's does — `timeout=0.0005` stores 0 ms and reads back `0.0`. A value past
+the `uint16` millisecond field the timed reads take — over 65.535 s — is refused at
+build time.
 
 `readinto(buf)` returns how many bytes arrived, as CircuitPython does. When the timeout
 passes before the first byte it returns `None` on the RP ports (on AVR it returns `0`,

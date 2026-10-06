@@ -176,6 +176,19 @@ buf = bytearray(8)
 n = uart.readinto(buf)      # bytes read, or None when the timeout passes empty
 ```
 
+`tx=`/`rx=` are validated against the chip's mux table — upstream's `IS_VALID_TX` /
+`IS_VALID_RX` — at build time: `UART(0, tx=Pin(1), rx=Pin(0))` refuses instead of
+transmitting on GP0. UART0 pairs are GP0/GP1, GP12/GP13, GP16/GP17 and GP28/GP29 on the
+RP2040 and every even/odd pair on the RP2350; a pair that is real but belongs to UART1
+(GP4/GP5 and friends) is refused too — the HAL drives UART0 only, as is `UART(1, ...)`.
+
+`UART.init()` keeps upstream's "leave unchanged what is not passed": a bare `init()` is a
+no-op and `init(timeout=...)` / `init(timeout_char=...)` update the timeouts alone. The
+stored frame lives in runtime state that cannot be re-read as the compile-time constants
+the HAL constructor folds from, so touching `baudrate`/`bits`/`parity`/`stop` requires all
+four explicitly — plus `tx=`/`rx=` on the Pico — and a partial call is refused at build
+time rather than silently resetting to 9600/8N1.
+
 :::caution[`read()` returns an int on AVR and is refused on the Pico]
 `UART.read()` with no argument upstream returns the bytes available now — a heap object
 this target does not have. On AVR the layer's long-standing one-byte `read()` still

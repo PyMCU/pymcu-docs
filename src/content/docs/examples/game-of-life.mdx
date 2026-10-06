@@ -1,9 +1,9 @@
 ---
 title: Game of Life on an OLED
-description: Conway's Game of Life on a 128x32 SSD1306 OLED, through the unmodified Adafruit CircuitPython SSD1306 and framebuf drivers, rendered here from the actual I2C bytes an emulated Arduino Uno sends.
+description: Conway's Game of Life on a 128x64 SSD1306 OLED, through the unmodified Adafruit CircuitPython SSD1306 and framebuf drivers, rendered here from the actual I2C bytes an emulated Arduino Uno sends.
 ---
 
-Conway's Game of Life on a 128x32 SSD1306 I2C OLED: a 32x8 grid of 4x4-pixel cells,
+Conway's Game of Life on a 128x64 SSD1306 I2C OLED: a 16x8 grid of 8x8-pixel cells,
 evolving once every 0.1 s. A dead or frozen world holds its last frame for a second, then
 reseeds with a fresh random soup and keeps going.
 
@@ -15,14 +15,22 @@ Adafruit CircuitPython SSD1306 driver stack being exercised.
 
 ## What it does
 
-- Seeds a 32x8 cell grid from a small linear congruential generator written in plain
+- Seeds a 16x8 cell grid from a small linear congruential generator written in plain
   Python, not the `random` module, which differs between interpreters. The LCG computes
   the identical 31-bit sequence on CPython, CircuitPython and PyMCU, which is also what
   makes the animation below reproducible from an emulator run.
 - Steps the grid with the standard Game of Life rule on a toroidal (wrapping) board.
-- Draws each live cell as a 4x4 pixel block with `display.fill_rect()`, then calls
+- Draws each live cell as an 8x8 pixel block with `display.fill_rect()`, then calls
   `display.show()` once per generation.
 - Reseeds whenever the world dies out or freezes (no cell changed since the last step).
+
+:::note[Why 8x8 cells, not 4x4]
+A 128x64 panel's framebuffer alone is 1025 bytes, and the Arduino Uno has 2 KB of SRAM
+total. The finer 4x4 cell size the 128x32 panel uses needs two 32x16 grids that, next to
+that framebuffer, do not fit: the compiler refuses the build (`static data needs 2288
+bytes but atmega328p has 2048 bytes of SRAM`). 8x8 cells bring the two grids down to a
+16x8 shape, 256 bytes combined, which does fit.
+:::
 
 ## The code
 
@@ -33,12 +41,12 @@ import time
 import board
 import adafruit_ssd1306
 
-CELL = 4
+CELL = 8
 SEED = 20260921
 
 # Display initialization
 i2c = board.I2C()
-display = adafruit_ssd1306.SSD1306_I2C(128, 32, i2c)
+display = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c)
 
 
 class Life:
@@ -103,7 +111,7 @@ class Life:
         display.show()
 
 
-life = Life(32, 8, SEED)
+life = Life(16, 8, SEED)
 life.seed()
 life.draw(display)
 generation = 0
@@ -146,14 +154,14 @@ in the `pymcu-circuitpython` repository.
 
 ## Flash
 
-**9940 / 32768 bytes** (30% of program storage) on `arduino_uno` with PyMCU's compiler:
+**9906 / 32768 bytes** (30% of program storage) on `arduino_uno` with PyMCU's compiler:
 the whole Game of Life, the SSD1306 driver, the framebuffer and the embedded 5x8 font.
 
 ## The animation
 
 <img
   src="/images/examples/game-of-life/game-of-life.gif"
-  alt="Conway's Game of Life evolving on a 128x32 SSD1306 OLED, rendered from the I2C traffic an emulated Arduino Uno sent"
+  alt="Conway's Game of Life evolving on a 128x64 SSD1306 OLED, rendered from the I2C traffic an emulated Arduino Uno sent"
 />
 
 <small>OLED module artwork from [wokwi-elements](https://github.com/wokwi/wokwi-elements) (MIT)</small>
@@ -162,12 +170,15 @@ This is not a screen recording or a hand-made simulation: every frame comes from
 the actual I2C bytes the compiled firmware sends on the wire, through the same
 `SET_COL_ADDR` / `SET_PAGE_ADDR` / framebuffer-write protocol a real SSD1306 module would
 receive, captured by running the firmware on an emulated Arduino Uno (AVR8Sharp) and
-recording the I2C bus. The first frame was checked pixel for pixel against the same
-unmodified source files run under plain CPython, with an identical fake I2C bus standing in
-for the hardware, to confirm that the decoder, and the compiled firmware, reproduce the
-exact board the program computes.
+recording the I2C bus. All 46 compared frames were checked pixel for pixel against the
+same unmodified source files run under plain CPython, with an identical fake I2C bus
+standing in for the hardware: 0 differences. The decoder and the compiled firmware
+reproduce the exact board the program computes.
 
-The same firmware also ran on a real Arduino Uno wired to a 128x32 SSD1306 module over I2C.
+This 128x64 version has not been flashed to real hardware yet. An earlier 128x32 version
+of this same program, with 4x4 cells on a 32x8 grid, did run on a real Arduino Uno wired
+to a 128x32 SSD1306 module over I2C. Getting it to run reliably took finding a real
+compiler bug: see [the write-up](/blog/the-oled-that-froze/).
 
 ## Build
 

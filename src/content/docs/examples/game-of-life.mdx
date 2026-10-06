@@ -159,12 +159,24 @@ the whole Game of Life, the SSD1306 driver, the framebuffer and the embedded 5x8
 
 ## The animation
 
-<img
-  src="/images/examples/game-of-life/game-of-life.gif"
-  alt="Conway's Game of Life evolving on a 128x64 SSD1306 OLED, rendered from the I2C traffic an emulated Arduino Uno sent"
-/>
+<div style="max-width: 100%; overflow-x: auto; padding: 4px;">
+  <div style="width: 450px; height: 348px;">
+    <wokwi-ssd1306
+      id="gol-example-screen"
+      data-gol-frames="/data/game-of-life-frames.json"
+      style="display: inline-block; transform: scale(3); transform-origin: top left;"
+    ></wokwi-ssd1306>
+  </div>
+</div>
 
-<small>OLED module artwork from [wokwi-elements](https://github.com/wokwi/wokwi-elements) (MIT)</small>
+<script
+  type="module"
+  src="https://cdn.jsdelivr.net/npm/@wokwi/elements@1.9.2/dist/wokwi-elements.bundle.min.js"
+></script>
+
+<script type="module" src="/scripts/wokwi-gol-animate.js"></script>
+
+<small>OLED module artwork from [wokwi-elements](https://github.com/wokwi/wokwi-elements) (MIT). This is the real, unmodified `<wokwi-ssd1306>` component, live in your browser, animated with frames decoded from the actual I2C trace below, not a recording.</small>
 
 This is not a screen recording or a hand-made simulation: every frame comes from decoding
 the actual I2C bytes the compiled firmware sends on the wire, through the same

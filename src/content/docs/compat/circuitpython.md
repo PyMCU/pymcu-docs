@@ -174,12 +174,16 @@ as CircuitPython does, where a `str` is not a buffer. Use `print()` or the nativ
 On the Pico, `tx` and `rx` must both be given: CircuitPython refuses a UART with neither
 pad, and this port's UART HAL routes exactly the pads it is handed, so a `None` pin —
 or a one-sided UART — is refused at build time instead of silently wiring GP0/GP1.
+The pair is then checked against the chip's mux table, the way CircuitPython picks the
+peripheral from the pins: a pad that is no TX/RX pad, a TX and an RX that sit on
+different UARTs, or a real pair that belongs to UART1 (GP4/GP5, GP8/GP9, GP20/GP21 and
+GP24/GP25 on the RP2040) are all refused at build time — the HAL this port compiles
+against drives UART0 only, so its pairs are GP0/GP1, GP12/GP13, GP16/GP17 and GP28/GP29.
 
-`timeout` speaks two spellings so the same program compiles everywhere. A **float is
-CircuitPython seconds** (`timeout=0.1` is 100 ms) and the property reads back in seconds
-too; an **int is milliseconds**, this layer's long-standing spelling on AVR. A value past
-the `uint16` field — over 65.535 s as a float, over 65535 ms as an int — is refused at
-build time.
+`timeout` is always **seconds**, for floats and ints alike — that is CircuitPython's
+`mp_obj_get_float` coercion, where `timeout=1` means one second and `timeout=0.1` is
+100 ms. The property reads back in seconds too. A value past the `uint16` millisecond
+field the timed reads take — over 65.535 s — is refused at build time.
 
 `readinto(buf)` returns how many bytes arrived, as CircuitPython does. When the timeout
 passes before the first byte it returns `None` on the RP ports (on AVR it returns `0`,

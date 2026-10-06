@@ -620,9 +620,11 @@ for the element to copy: it silently stored the instance's own, never-written ha
 and every element after the first read back as 0, indistinguishable from a real field value
 (`xs[1]` answered `xs[0]`'s field). The same holds for `xs[i] = Counter(...)` into scalar
 element storage, for `bins[0][0] = Counter(...)` into a nested list's element storage, for
-`a = xs[i]` reading an element of an instance array as a value (the element names the
-instance, not a byte -- `xs[i].field` and `xs[i].method()` stay legal), and for an instance
-element inside a tuple return. Refused now, naming the class: build a fixed-size array of
+the annotated initializer `xs: list[uint8] = [c]`, for `a = xs[i]` reading an element of an
+instance array as a value (the element names the instance, not a byte -- `xs[i].field` and
+`xs[i].method()` stay legal), and for an instance element inside a tuple return, including
+one produced by a method call such as `factory.make()`. Refused now, naming the class: build
+a fixed-size array of
 instances instead (`xs: Pair[N]` then `xs[i] = Pair(...)`, RFC 0001 Model B -- a class with
 at least two fields), which gives each instance real, run-time-indexed storage and a shared
 method body.

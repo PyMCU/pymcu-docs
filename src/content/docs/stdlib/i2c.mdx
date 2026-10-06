@@ -183,10 +183,12 @@ DW_apb_i2c controller). It is not implemented for PIC — importing it there rai
 `CompileError`. For a bit-banged bus on any target with GPIO, use
 `pymcu.hal.softi2c.SoftI2C(scl, sda, half_us=5)`, which takes `Pin` objects.
 
-### `I2C(addr=0, general_call=0)` — AVR
+### `I2C(addr=0, general_call=0, pullups=True)`: AVR
 
 Initializes the TWI peripheral at 100 kHz. SDA = `PC4` (A4), SCL = `PC5` (A5) on the
-ATmega328P. `addr` is only relevant when acting as a bus target.
+ATmega328P. Like Arduino's `twi_init()`, it enables the internal pull-ups on SDA and SCL
+before starting TWI. Pass `pullups=False` when external pull-ups already hold a 3.3 V bus.
+`addr` is only relevant when acting as a bus target.
 
 #### Status constants
 

@@ -12,13 +12,12 @@ head:
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
-:::tip[Alpha 10 is out]
-The hardware-validation release. A sustained bug hunt on a real Arduino Uno with a logic
-analyzer closed out a class of silent miscompiles, and the official MicroPython quickref
-plus the CircuitPython Essentials examples now double as a test suite (53 of the 63
-projects compile; the rest fail on purpose with a clear diagnostic).
-[Read the release notes](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0a10), or see
-[what changed](/changelog/).
+:::tip[Beta 1 is out]
+The compiler frontend and AVR backend are now a matched beta. The release adds tagged
+Optional and Union values, broader compatibility with unmodified MicroPython and
+CircuitPython drivers, and explicit cold-boot validation on a real Arduino Uno.
+[Read the release notes](https://github.com/PyMCU/PyMCU/releases/tag/v0.1.0b1), see
+[what changed](/changelog/), or read the measured [State of the beta](/state-of-the-beta/).
 :::
 
 **PyMCU** compiles a statically-typed, allocation-free subset of Python directly to bare-metal
@@ -108,6 +107,10 @@ the API you chose.
 PyMCU occupies the gap between "write C++" and "run MicroPython": you write Python, but the
 compiler produces tight machine code with zero runtime overhead — AVR and PIC assembly
 emitted directly, ARM through LLVM.
+
+For scale, the native blink above is 138 bytes on an Arduino Uno: 36 bytes for the toggle
+loop and 102 bytes for the interrupt vector table. The equivalent Arduino sketch is 924
+bytes with the Arduino runtime linked.
 
 ---
 
@@ -208,5 +211,6 @@ compiler frontend and the AVR backend, not every API reachable through them.
 - [Supported Targets](/targets/) — per-architecture peripheral and language coverage
 - [Examples Gallery](/examples/) — annotated firmware, AVR and Pico
 - [Limitations](/limitations/) — what PyMCU deliberately does not compile, and why
+- [State of the beta](/state-of-the-beta/) - measured test coverage, hardware runs and known issues
 - [Changelog](/changelog/) — what landed in each alpha
 - [MicroPython migration](/migration/from-micropython/) · [CircuitPython migration](/migration/from-circuitpython/)

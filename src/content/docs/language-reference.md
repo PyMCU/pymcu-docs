@@ -8,10 +8,10 @@ PyMCU compiles a **statically-typed subset of Python** to bare-metal machine cod
 fixed at compile time. This document is the canonical reference for every language feature the
 compiler accepts.
 
-:::note[Alpha]
-This page tracks PyMCU **v0.1.0a5**. Core compilation is stable and test-covered; error
-messages and tooling still have rough edges. Where a feature is target-dependent, the target
-list is stated inline.
+:::note[Beta 1]
+This page tracks PyMCU **v0.1.0b1**. The frontend and AVR backend are beta; ARM and PIC
+remain alpha. Where a feature is target-dependent, the target list is stated inline. See
+[State of the beta](/state-of-the-beta/) for measured coverage and known issues.
 :::
 
 This page is about the **language** — the syntax and the type system, which are the same
@@ -70,6 +70,9 @@ and `@extern` have no compat equivalent by design.
 | | Member access `obj.x`, method calls `obj.m()` | Complete |
 | | f-strings `f"t={t}C"` — streamed and as values | Complete |
 | | Closed `dict` / `set` literals (compile-time lookup tables) | Complete |
+| | Runtime-tagged `Optional[T]` / scalar `Union[...]` | Complete, up to four scalar members |
+| | `memoryview(buf)` fixed-buffer windows | Complete |
+| | `open()` read-only embedded files (ROMFS) | Complete |
 | **MCU extensions** | `uint8 / int8 / uint16 / int16 / uint32 / int32` | Complete |
 | | `float` (IEEE-754 single precision) | Complete (AVR, RP2040, RP2350) |
 | | `ptr[T]` pointer type | Complete |
@@ -86,6 +89,7 @@ and `@extern` have no compat equivalent by design.
 | | List comprehension (compile-time constant only) | Complete |
 | | `bytearray(N)` / `bytearray(b"...")` | Complete (lowers to `uint8[N]`) |
 | | `list[T]` bounded list with `append()` | Complete on AVR (bump allocator + GC); not on ARM/PIC |
+| | Runtime-sized `bytearray(n)` allocated at most once | Complete on AVR (static arena) |
 | | `pymcu.collections.FixedDict(capacity)` | Complete (no heap) |
 | **Not supported** | Growing `dict` / `set` (`.add()`, unbounded insert) | No heap hash tables — use a closed literal or `FixedDict` |
 | | `list.append` on a **fixed-size** array | Use `list[T]`, or size the array up front |
@@ -141,9 +145,11 @@ The implementation differs per target, the semantics do not:
 | RP2040 (Cortex-M0+) | The bootrom **fast-float** library; `crt0` resolves the SF table and the `__aeabi_f*` shims |
 | RP2350 (Cortex-M33) | Hardware FPU (FPv5-SP, softfp calling convention) |
 
-`print(x)` on a `float` — and a `float` interpolated into a streamed f-string — emits two
-rounded decimals on both AVR and ARM, with a trailing zero trimmed but never past the first
-decimal: `3.25`, `-2.25`, `0.05`, `123.75` and `1234.5` all print exactly.
+Unformatted `print(x)`, `str(x)`, `repr(x)` and `f"{x}"` use PyMCU's compact port of
+MicroPython's float32 formatter. It selects 6 to 9 significant digits by a float32
+round-trip check and switches between fixed and scientific notation at CPython's threshold,
+for example `0.1`, `3.1415928` and `1e+20`. A `.{N}f` format prints exactly `N` decimals
+with half-to-even rounding on the exact float32 value.
 
 ```python
 a: float = 2.5
@@ -168,6 +174,11 @@ centivolts: uint32 = uint32(volts * 100.0 + 0.5)   # 326
 
 Subnormals are flushed to zero; NaN and Inf propagate correctly. `float` is not supported on
 the PIC backend.
+
+`float("inf")`, `float("infinity")` and `float("nan")` fold at compile time, with an
+optional sign and case-insensitive spelling. `math.isnan`, `math.isinf` and
+`math.isfinite` are inline bit tests. NaN comparisons match Python: every comparison is
+false except `!=`.
 
 ### Pointer type `ptr[T]`
 
@@ -248,6 +259,19 @@ samples.append(42)
 n: uint8 = len(samples)
 ```
 
+An unannotated `[]` learns its element type from the first append, and a list literal takes
+the widest type needed by its elements. `array.array(typecode)` uses the same bounded list
+implementation for integer typecodes. Function parameters and returns may be annotated
+`list[T]`; because the list has no fixed-width ABI, the compiler expands the function at
+each call site.
+
+On AVR, `bytearray(n)` may take a runtime `n` when the compiler proves the allocation runs
+at most once, such as a module-level statement or an inlined constructor reached once from
+module scope. It reserves a startup-only static arena and has no `free()`. Allocation in a
+loop, ISR, multiply-called function or other repeatable path is refused. Runtime-sized
+buffers support indexing, stores, augmented stores, negative indices and `len()`, but not
+slicing, `memoryview` or passage through a regular `bytearray` parameter.
+
 ### Dictionaries and sets
 
 There is no hash table and no heap, so an unbounded, growing `dict` or `set` cannot be
@@ -308,8 +332,18 @@ d.clear()
 
 ### Strings and f-strings
 
-String literals live in flash and are read-only. `f"..."` with runtime interpolations is
-supported in two forms.
+String literals live in flash and are read-only. A name bound to one compile-time string
+keeps its text through inline calls, so `len`, indexing, slicing, membership, equality,
+`strip`, `lstrip`, `rstrip`, `index`, `find`, `startswith`, `endswith`, `count`, `replace`,
+`upper`, `lower` and iteration over `split()` fold while compiling. `split()` is supported
+as the iterable of `for` or `enumerate`, not as a list value.
+
+When runtime control flow assigns several literal strings to one name, that name stores a
+16-bit interned id. `print`, `uart.write_str`, `println`, and equality or inequality against
+a literal dispatch on the id while all text remains in flash. Other operations are refused
+because there is no single compile-time text.
+
+`f"..."` with runtime interpolations is supported in two forms.
 
 **Streamed** — the compiler lowers each piece to a direct write, with no buffer at all:
 
@@ -321,7 +355,8 @@ uart.println(f"err 0x{code:02X}")
 
 **As a value** — assigning an f-string to a name builds it into a compiler-managed fixed
 `bytearray` whose size is statically bounded per part. `len(s)` is the formatted length,
-`s[i]` indexes bytes, `print(s)` / `uart.write_str(s)` stream it, and re-assigning `s` inside
+`s[i]` yields the one-character string at that position, `print(s)` /
+`uart.write_str(s)` stream it, and re-assigning `s` inside
 a loop reuses the same buffer:
 
 ```python
@@ -341,19 +376,21 @@ while k < 3:
     k = k + 1
 ```
 
-**Format specs:** `{x:02x}`, `{x:X}`, `{x:08b}`, `{x:o}`, `{x:5d}`, `{x:04d}` — width,
-zero-padding and the `x` / `X` / `b` / `o` / `d` bases. Compile-time constant interpolations
-are folded straight into the flash string.
+**Format specs:** `{x:02x}`, `{x:X}`, `{x:08b}`, `{x:o}`, `{x:5d}`, `{x:04d}`, plus
+float formats such as `{v:f}`, `{v:.2f}`, `{v:6.3f}` and `{v:08.2f}`. Compile-time constant
+interpolations are folded straight into the flash string. The same float formats work in
+the fixed-buffer value form.
 
-Not supported in the **value** form: float interpolations, `s == "lit"` comparison, and an
-f-string used inline in an arbitrary expression position — assign it to a name first.
+Not supported in the **value** form: `s == "lit"` comparison and an f-string used inline in
+an arbitrary expression position. Assign it to a name first. Self-interpolation
+(`s = f"{s}..."`) snapshots the old bytes before rewriting the buffer, but still cannot
+grow beyond the size established at the first assignment.
 
 ### Tuple returns
 
 Functions may return multiple values as a tuple, and the caller unpacks them at the call
-site. The function **must be `@inline`** — unpacking a tuple returned by an outlined
-(non-`@inline`) `def` is a located `CompileError`, because there is no multi-value return in
-the calling convention.
+site. A tuple-returning function is force-inlined, whether or not it is explicitly marked
+`@inline`, because the calling convention has no standalone multi-value return.
 
 ```python
 @inline
@@ -368,6 +405,30 @@ q, r = divmod8(10, 3)   # q=3, r=1
 The return annotation itself is optional and may be spelled either `-> (uint8, uint8)` or
 `-> tuple[uint8, uint8]`. Annotating it pins the width of each element, so a wide value is
 not truncated into an 8-bit result slot.
+
+### Optional and Union values
+
+`Optional[X]`, `X | None` and `Union[X, None]` are equivalent. Where None-ness is known at
+compile time, the compiler keeps only `X`'s storage and folds the test. A plain function
+return, parameter, local or field whose member is selected at runtime uses a tagged union:
+the widest scalar payload plus one byte identifying the active member.
+
+Scalar unions may contain up to four members. `is None`, `isinstance(value, T)`, truth tests
+and `match` narrow the tag. `print(value)` and an f-string print the active member. An
+unnarrowed arithmetic, comparison, `len`, subscript, or non-Optional argument dispatches by
+member and raises `TypeError` if the active member is `None`, matching Python. Buffer,
+sequence and class-instance members do not have a tagged ABI and are refused.
+
+```python
+def read_optional(raw: uint8) -> uint8 | None:
+    if raw == 0:
+        return None
+    return raw
+
+r = read_optional(sensor.read())
+if r is not None:
+    print(r + 1)           # narrowed to uint8
+```
 
 ---
 
@@ -393,6 +454,26 @@ def increment():
     global count
     count += 1
 ```
+
+### Entry-point ordering
+
+With a bare `def main():`, PyMCU runs module-level statements first and the body of `main`
+last. An explicit module-level `main()` call, either bare or under
+`if __name__ == "__main__":`, instead marks the exact point where the body runs. Statements
+after the call run afterward, as they do in CPython.
+
+```python
+def main():
+    print("work")
+
+print("before")
+main()
+print("after")       # before, work, after
+```
+
+A second module-level call is refused because the firmware entry point runs once. A
+`main()` that can return early is also refused when module-level code follows the call,
+because splicing that body at the call would skip the later code.
 
 ---
 
@@ -491,6 +572,13 @@ z: uint16 = uint16(y)   # zero-extend
 | `ord('A')` | ASCII code of a single-character literal (compile-time) |
 | `chr(65)` | Character literal to integer (compile-time identity) |
 | `len(arr)` | Element count of a fixed-size array or list literal (compile-time constant) |
+| `round(x[, n])` | Half-to-even; `n` must be compile-time, runtime floats use `pymcu.round2` |
+| `hex(n)` / `bin(n)` / `oct(n)` | Flash string for constants, fixed runtime buffer otherwise |
+| `divmod(a, b)` | Tuple result; runtime zero raises `ZeroDivisionError` |
+| `pow(x, n)` / `x ** n` | Constant integer fold, runtime integer unroll, or software float |
+| `all` / `any` / `sum` / `min` / `max` | Fixed iterables; direct generator-expression arguments unroll |
+| `memoryview(buf)` | Writable window over a fixed buffer; no runtime buffer protocol |
+| `getattr(module, "name", default)` | Compile-time module lookup only |
 
 ### Walrus operator `:=`
 
@@ -667,12 +755,21 @@ outer scope, and `return` / `break` / `continue` out of the `try`.
 
 **Builtin exception types** — no import required, exactly like CPython:
 `ValueError`, `TypeError`, `IndexError`, `KeyError`, `NotImplementedError`,
-`ZeroDivisionError`. `ZeroDivisionError` is raised automatically on a runtime `//` or `%` by
-zero; `KeyError` comes out of a failed closed-dict or `FixedDict` lookup. Exception types are
-integer codes at runtime — handlers match on the code, and there are no message strings.
+`ZeroDivisionError`. `ZeroDivisionError` is raised automatically on a runtime `/`, `//`,
+`%`, or invalid negative power of zero; `KeyError` comes out of a failed closed-dict or
+`FixedDict` lookup. A handler may use a bare type, a module-qualified type, or a tuple of
+types.
 
-An exception that reaches `main` with no handler is not swallowed: the runtime writes
-`E:<TypeName>` to UART0 (when one is initialized) and halts.
+`except E as e` binds a bounded exception object. `print(e)`, `str(e)`, `e.args[0]`,
+`e.args`, `len(e.args)` and `isinstance(e, X)` are supported. A string message is either a
+flash literal or a deferred print of its runtime parts. An integer passed to `OSError` or a
+subclass is available through `e.errno` when every exception reaching that handler carries
+one. `raise X(...) from Y` is accepted as `raise X(...)`; tracebacks and exception chaining
+are not stored.
+
+An exception that reaches `main` with no handler is not swallowed: the runtime initializes
+UART0 when necessary, writes `E:<TypeName>` or `E:<TypeName>: <message>`, and halts. A
+program that already owns UART0 keeps its configured rate.
 
 :::note[Not on PIC]
 The PIC backend does not implement the exception model — only the automatic
@@ -751,6 +848,15 @@ x = get_count()   # uint16, from the callee's return type
 y = 300           # wide enough to hold 300, not a truncated uint8
 ```
 
+Every later store is checked against the inferred width. If a wider or signed value is
+needed, the compiler repeats type assignment with a wide enough slot. A loop accumulator
+does not widen from the number of iterations, so annotate counters whose range exceeds the
+width of their seed. The compiler warns about an unannotated narrow accumulator in user code.
+
+A literal argument that cannot fit a declared parameter is rejected, but an equally large
+computed value is currently narrowed without a diagnostic. Library authors must declare a
+parameter wide enough for every computed value callers may pass.
+
 ### `@inline`
 
 Marks a function for zero-cost inline expansion at every call site. No stack frame is allocated;
@@ -767,7 +873,10 @@ def nibble_to_hex(n: uint8) -> uint8:
 **Constraints:**
 - Inline functions containing `asm()` with labels must delegate asm to a non-inline sub-helper
   (labels would duplicate at multiple call sites).
-- No recursion inside `@inline` functions.
+- Direct and mutual recursion are refused for every function. PyMCU uses a static stack
+  layout rather than per-call dynamic frames, and reports the full call cycle.
+- A value-returning function must return on every reachable path when its result is read.
+  Calling the same function as a statement is allowed because no result slot is consumed.
 
 ### `@interrupt(vector)`
 
@@ -787,9 +896,12 @@ on AVR it may also promote small ones into the `GPIOR0`-`GPIOR2` registers for s
 access. Multi-byte values still need an explicit critical section (disable interrupts around the
 read) if you need the read to be atomic.
 
-### `@property` / `@name.setter`
+### `@property`, setters and descriptors
 
-Supported inside classes. Compile-time expansion only — no descriptor protocol at runtime.
+Properties and setters expand at compile time. A class attribute whose class defines
+`__get__` and `__set__` uses the descriptor protocol too, including an attribute literally
+named `value`. The owning instance is passed as `obj`, and tuple-valued descriptor reads may
+be indexed at the call site.
 
 ```python
 class Sensor:
@@ -801,6 +913,10 @@ class Sensor:
     def value(self, v: uint8):
         self._raw = v
 ```
+
+PyMCU refuses three descriptor shapes it cannot model safely: `__set_name__`, a descriptor
+read through the class itself such as `Box.value`, and assignment to a non-data descriptor
+that defines `__get__` but not `__set__`.
 
 ### Generators — `yield`
 
@@ -948,10 +1064,18 @@ class Derived(Base):
 `super()` works on a single-level hierarchy, and `@staticmethod` is supported. So are the
 operator dunder methods — `__add__`, `__sub__`, `__mul__`, `__len__`, `__contains__`,
 `__getitem__`, `__setitem__` and the comparison and bitwise dunders — all expanded at compile
-time.
+time. Nested classes are constructible, and constants resolve through both
+`Outer.Inner.NAME` and an imported module alias.
 
-**Not supported:** multiple inheritance, `isinstance()` / `type()`, metaclasses, `dataclass` /
-`namedtuple`, and `__repr__` / `__str__` (there is no runtime string formatting of an object).
+`isinstance()` folds for known ZCA instances and for the builtin `tuple`, `list`, `int` and
+`slice` shapes. `collections.namedtuple("Name", ("a", "b"))` creates a compile-time ZCA
+class with fields, `__len__` and `__match_args__`; factory options such as defaults and
+rename are not supported.
+
+**Not supported:** multiple inheritance, runtime `type()`, metaclasses, `dataclass`, and
+object `__repr__` / `__str__` methods. `__new__` and `__init_subclass__` are refused because
+there is no runtime class-creation event. `__del__` has no automatic call because static
+storage has no collection event; use `deinit()`, `close()` or a context manager.
 Virtual calls are devirtualized at compile time; a call the compiler cannot resolve statically
 is a diagnostic, not a runtime vtable lookup.
 
@@ -992,10 +1116,19 @@ import foo
 from foo import Bar
 from foo import Bar as B
 from foo.sub import helper
+from foo import *
 ```
 
-- **Relative imports** (`from . import foo`) are supported.
-- **`__init__.py`** re-exports work at compile time.
+- **Relative imports** (`from . import foo`, `from .util import helper`) are supported.
+- **`__init__.py`** function and submodule re-exports work at compile time, including
+  `from package import submodule` when the package does not bind another value by that name.
+- **Star imports** bind public names or exactly the names in `__all__`.
+- **`from __future__ import ...`** is a no-op because PyMCU reads annotations from source
+  directly.
+- **Optional typing imports** under `if TYPE_CHECKING` or `try` / `except ImportError` fold
+  to the usable branch.
+- **Compatibility guards** over `sys.implementation`, `sys.platform` and `os.uname()` fold
+  to the selected MicroPython or CircuitPython target when a compat layer is configured.
 - **Third-party PyPI packages** are not supported — only the `pymcu` stdlib and the compat
   packages (`pymcu-circuitpython`, `pymcu-micropython`).
 - **Circular imports** are not supported.
@@ -1004,6 +1137,12 @@ from foo.sub import helper
 - **C / C++ interop** — available on AVR via `@extern` and `[tool.pymcu.ffi]` in
   `pyproject.toml`, which is how you pull in an existing Arduino library. Not yet on the ARM or
   PIC backends.
+
+The read-only ROMFS is the exception to "no file system". `open(name, mode)` resolves a
+compile-time path to a blob embedded through `[tool.pymcu] files = [...]`, or auto-embedded
+when a literal path names a source file. Read modes support `read(n)`, `readinto`,
+`readline(max)`, `seek`, `tell`, `close` and `with`. File names and modes must be
+compile-time strings; write modes are refused.
 
 ---
 

@@ -87,26 +87,26 @@ The previous run had 178 probes after adding 58 cases from a Python language-ref
 sweep. Both frontends were green with tracked bugs represented as strict expected failures.
 The main causes found were:
 
-| Cause | Issue | Representative probes |
-|---|---|---|
-| Unannotated integer arithmetic kept the width of its first store and wrapped | [#364](https://github.com/PyMCU/PyMCU/issues/364) | `007`, `051`, `073` |
-| A field reached through `with obj as name` read zero | [#390](https://github.com/PyMCU/PyMCU/issues/390) | `029`, `030` |
-| A class without explicit `__init__` could not be constructed | [#391](https://github.com/PyMCU/PyMCU/issues/391) | `037`, `079`, `080` |
-| `self.field = bytearray(...)` was refused while an identical local worked | [#392](https://github.com/PyMCU/PyMCU/issues/392) | `049` |
-| Folded `hex`, `bin` and `str` printed a flash address | [#393](https://github.com/PyMCU/PyMCU/issues/393) | `056` |
-| Multi-clause and filtered comprehensions were wrong or unconditionally refused | [#394](https://github.com/PyMCU/PyMCU/issues/394) | `063` to `065` |
-| ZCA arithmetic and comparison dunders returned wrong results in selected contexts | [#395](https://github.com/PyMCU/PyMCU/issues/395) | `075`, `146` |
-| `len(instance)` returned zero although implicit truthiness found `__len__` | [#396](https://github.com/PyMCU/PyMCU/issues/396) | `076` |
-| Two-index `__setitem__` and `__getitem__` returned zero | [#397](https://github.com/PyMCU/PyMCU/issues/397) | `078` |
-| `list[T].append()` did not store its element | [#398](https://github.com/PyMCU/PyMCU/issues/398) | `084`, `153` |
-| A one-character runtime-string subscript produced its numeric code | [#399](https://github.com/PyMCU/PyMCU/issues/399) | `087` |
-| An enum read produced a misleading undefined-class error | [#400](https://github.com/PyMCU/PyMCU/issues/400) | `027` |
-| A sequence pattern over a real array read phantom flattened variables | [#401](https://github.com/PyMCU/PyMCU/issues/401) | `018` |
-| `chr()` lost its character identity across a function return | [#436](https://github.com/PyMCU/PyMCU/issues/436) | `127` |
-| String concatenation and equality fell through to interned numeric ids | [#438](https://github.com/PyMCU/PyMCU/issues/438) | `134`, `135` |
-| A tuple pattern was refused by one frontend and silently wrong in the other | [#439](https://github.com/PyMCU/PyMCU/issues/439) | `168`, `169` |
-| Class patterns differed between frontends | [#440](https://github.com/PyMCU/PyMCU/issues/440) | `170`, `171` |
-| A type annotation reached through a module alias wrapped instead of promoting | [#449](https://github.com/PyMCU/PyMCU/issues/449) | `172` |
+| Cause                                                                             | Issue                                             | Representative probes |
+| --------------------------------------------------------------------------------- | ------------------------------------------------- | --------------------- |
+| Unannotated integer arithmetic kept the width of its first store and wrapped      | [#364](https://github.com/PyMCU/PyMCU/issues/364) | `007`, `051`, `073`   |
+| A field reached through `with obj as name` read zero                              | [#390](https://github.com/PyMCU/PyMCU/issues/390) | `029`, `030`          |
+| A class without explicit `__init__` could not be constructed                      | [#391](https://github.com/PyMCU/PyMCU/issues/391) | `037`, `079`, `080`   |
+| `self.field = bytearray(...)` was refused while an identical local worked         | [#392](https://github.com/PyMCU/PyMCU/issues/392) | `049`                 |
+| Folded `hex`, `bin` and `str` printed a flash address                             | [#393](https://github.com/PyMCU/PyMCU/issues/393) | `056`                 |
+| Multi-clause and filtered comprehensions were wrong or unconditionally refused    | [#394](https://github.com/PyMCU/PyMCU/issues/394) | `063` to `065`        |
+| ZCA arithmetic and comparison dunders returned wrong results in selected contexts | [#395](https://github.com/PyMCU/PyMCU/issues/395) | `075`, `146`          |
+| `len(instance)` returned zero although implicit truthiness found `__len__`        | [#396](https://github.com/PyMCU/PyMCU/issues/396) | `076`                 |
+| Two-index `__setitem__` and `__getitem__` returned zero                           | [#397](https://github.com/PyMCU/PyMCU/issues/397) | `078`                 |
+| `list[T].append()` did not store its element                                      | [#398](https://github.com/PyMCU/PyMCU/issues/398) | `084`, `153`          |
+| A one-character runtime-string subscript produced its numeric code                | [#399](https://github.com/PyMCU/PyMCU/issues/399) | `087`                 |
+| An enum read produced a misleading undefined-class error                          | [#400](https://github.com/PyMCU/PyMCU/issues/400) | `027`                 |
+| A sequence pattern over a real array read phantom flattened variables             | [#401](https://github.com/PyMCU/PyMCU/issues/401) | `018`                 |
+| `chr()` lost its character identity across a function return                      | [#436](https://github.com/PyMCU/PyMCU/issues/436) | `127`                 |
+| String concatenation and equality fell through to interned numeric ids            | [#438](https://github.com/PyMCU/PyMCU/issues/438) | `134`, `135`          |
+| A tuple pattern was refused by one frontend and silently wrong in the other       | [#439](https://github.com/PyMCU/PyMCU/issues/439) | `168`, `169`          |
+| Class patterns differed between frontends                                         | [#440](https://github.com/PyMCU/PyMCU/issues/440) | `170`, `171`          |
+| A type annotation reached through a module alias wrapped instead of promoting     | [#449](https://github.com/PyMCU/PyMCU/issues/449) | `172`                 |
 
 Several of these were fixed and untracked before Beta 1. The table is historical: the
 current `# tracked` headers, not this snapshot, are authoritative.

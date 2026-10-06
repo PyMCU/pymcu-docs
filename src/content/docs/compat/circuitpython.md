@@ -172,24 +172,24 @@ as CircuitPython does, where a `str` is not a buffer. Use `print()` or the nativ
 `uart.write_str()` when what you have is text.
 
 On the Pico, `tx` and `rx` must both be given: CircuitPython refuses a UART with neither
-pad, and this port's UART HAL routes exactly the pads it is handed, so a `None` pin —
-or a one-sided UART — is refused at build time instead of silently wiring GP0/GP1.
+pad, and this port's UART HAL routes exactly the pads it is handed, so a `None` pin
+(or a one-sided UART) is refused at build time instead of silently wiring GP0/GP1.
 The pair is then checked against the chip's mux table, the way CircuitPython picks the
 peripheral from the pins: a pad that is no TX/RX pad, a TX and an RX that sit on
 different UARTs, or a real pair that belongs to UART1 (GP4/GP5, GP8/GP9, GP20/GP21 and
-GP24/GP25 on the RP2040) are all refused at build time — the HAL this port compiles
+GP24/GP25 on the RP2040) are all refused at build time: the HAL this port compiles
 against drives UART0 only, so its pairs are GP0/GP1, GP12/GP13, GP16/GP17 and GP28/GP29.
 On the RP2350 the same UART0 pairs are GP0/GP1, GP12/GP13, GP16/GP17, GP28/GP29, GP32/GP33
-and GP44/GP45 — the pads in between (numbered 2 or 3 mod 4, like GP2/GP3) reach a UART
+and GP44/GP45. The pads in between (numbered 2 or 3 mod 4, like GP2/GP3) reach a UART
 only through `GPIO_FUNC_UART_AUX`, which the RP2350 HAL never writes, so they are
 refused rather than muxed to a function that is not the UART.
 
-`timeout` is always **seconds**, for floats and ints alike — that is CircuitPython's
+`timeout` is always **seconds**, for floats and ints alike; that is CircuitPython's
 `mp_obj_get_float` coercion, where `timeout=1` means one second and `timeout=0.1` is
 100 ms. The property reads back in seconds too. The stored value is `timeout * 1000`
 assigned into an integer field, so sub-millisecond fractions truncate the way
-CircuitPython's does — `timeout=0.0005` stores 0 ms and reads back `0.0`. A value past
-the `uint16` millisecond field the timed reads take — over 65.535 s — is refused at
+CircuitPython's does: `timeout=0.0005` stores 0 ms and reads back `0.0`. A value past
+the `uint16` millisecond field the timed reads take (over 65.535 s) is refused at
 build time.
 
 `readinto(buf)` returns how many bytes arrived, as CircuitPython does. When the timeout
@@ -203,14 +203,14 @@ diagnostic pointing you at the replacement. Use `readinto(buf)` with a pre-alloc
 `bytearray` instead.
 
 `in_waiting` is a byte count, and on the RP ports the UART FIFO only reports
-empty-or-not — it cannot count. The property is refused at build time there; poll
+empty-or-not; it cannot count. The property is refused at build time there; poll
 `readinto()` and take the count it returns.
 :::
 
 :::caution[On the Pico, `receiver_buffer_size` is capped by hardware]
 On AVR a received byte is buffered by an interrupt-driven ring (fixed at 64 bytes, the
-default). The RP2040/RP2350 port has no such ring — the receive buffer is the UART's own
-32-entry hardware FIFO — so `receiver_buffer_size` above 32, the default 64 included, is
+default). The RP2040/RP2350 port has no such ring (the receive buffer is the UART's own
+32-entry hardware FIFO), so `receiver_buffer_size` above 32, the default 64 included, is
 refused at build time. Pass `receiver_buffer_size=32` (or less) for a program that compiles
 on every target.
 :::
@@ -354,7 +354,7 @@ def main():
 ```
 
 That is the whole portable surface: `board`, `digitalio` and `busio.UART`. `analogio`,
-`pwmio`, `neopixel` and `microcontroller` are not importable on an RP target — use
+`pwmio`, `neopixel` and `microcontroller` are not importable on an RP target; use
 [the native HAL](/stdlib/) for those peripherals. `busio` itself imports everywhere;
 `busio.SPI` and `busio.I2C` refuse construction on an RP target, and the diagnostic names
 `bitbangio`, which bit-bangs the same CircuitPython API on any pins.

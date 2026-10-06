@@ -73,7 +73,7 @@ the [Pico examples](/examples/rp2040/).
 | `board`                                   | Pin constants (D0-D13, A0-A5, GP0-GP28, LED, TX, RX, SDA, SCL, SCK, MOSI, MISO, …)                                                   | Varies by board   | Auto-generated from the selected board, so the names depend on which one. The four Arduino boards define the full list. The ATtiny dev boards and the Pico define `LED`; the **bare ATtiny chips do not**, because the part has no on-board LED — blink a pin the chip actually has (`board.PB0` on the 8-pin parts, `board.D0` on the 14-pin). No Pico 2 board file |
 | `digitalio`                               | `DigitalInOut`, `Direction`, `Pull`, `DriveMode`                                                                                     | Complete          | Portable. ZCA properties for `.direction`, `.value`, `.pull`, `.drive_mode`                                                                                                                                                                                                                                                                                          |
 | `busio`                                   | `UART`                                                                                                                               | Complete          | Portable — the only `busio` class that compiles on the Pico                                                                                                                                                                                                                                                                                                          |
-| `busio`                                   | `SPI`, `I2C`                                                                                                                         | AVR only          | Imported inside an `arch == "avr"` guard                                                                                                                                                                                                                                                                                                                             |
+| `busio`                                   | `SPI`, `I2C`                                                                                                                         | AVR only          | The module imports on every target; on an RP chip the constructors refuse with a `CompileError` naming `bitbangio`, which bit-bangs the same API on any pins                                                                                                                                                                                                            |
 | `analogio`                                | `AnalogIn`                                                                                                                           | AVR only          | 16-bit values, scaled from the 10-bit AVR ADC                                                                                                                                                                                                                                                                                                                        |
 | `analogio`                                | `AnalogOut`                                                                                                                          | Not available     | Warns and compiles to nothing — no AVR part has a DAC                                                                                                                                                                                                                                                                                                                |
 | `pwmio`                                   | `PWMOut`                                                                                                                             | AVR only          | 16-bit duty cycle, scaled to the AVR's 8-bit compare                                                                                                                                                                                                                                                                                                                 |
@@ -159,22 +159,49 @@ The one `busio` class that compiles on every target.
 import busio, board
 from pymcu.types import uint8
 
-uart = busio.UART(board.TX, board.RX, baudrate=9600)
+uart = busio.UART(board.TX, board.RX, baudrate=9600,
+                  receiver_buffer_size=32)   # the Pico's hardware FIFO is 32 deep
 uart.write(b"hello")        # returns the number of bytes written
 
 buf: uint8[1] = bytearray(1)
-uart.readinto(buf)          # fills the caller's buffer; returns the count
+n = uart.readinto(buf)      # fills the caller's buffer; count, or None on timeout
 ```
 
 `write()` takes a **buffer** — a `bytes` literal or a `bytearray` / `uint8[N]` array — exactly
 as CircuitPython does, where a `str` is not a buffer. Use `print()` or the native
 `uart.write_str()` when what you have is text.
 
-:::caution[`read()` and `readline()` are no-ops]
+On the Pico, `tx` and `rx` must both be given: CircuitPython refuses a UART with neither
+pad, and this port's UART HAL routes exactly the pads it is handed, so a `None` pin —
+or a one-sided UART — is refused at build time instead of silently wiring GP0/GP1.
+
+`timeout` speaks two spellings so the same program compiles everywhere. A **float is
+CircuitPython seconds** (`timeout=0.1` is 100 ms) and the property reads back in seconds
+too; an **int is milliseconds**, this layer's long-standing spelling on AVR. A value past
+the `uint16` field — over 65.535 s as a float, over 65535 ms as an int — is refused at
+build time.
+
+`readinto(buf)` returns how many bytes arrived, as CircuitPython does. When the timeout
+passes before the first byte it returns `None` on the RP ports (on AVR it returns `0`,
+which reads the same under `if n:`).
+
+:::caution[`read()`, `readline()` and `in_waiting` are not available]
 `busio.UART.read(nbytes)` and `busio.UART.readline()` would have to return a `bytes` object,
 which needs a heap. Both are marked `@warning` and compile to nothing — the build prints a
 diagnostic pointing you at the replacement. Use `readinto(buf)` with a pre-allocated
 `bytearray` instead.
+
+`in_waiting` is a byte count, and on the RP ports the UART FIFO only reports
+empty-or-not — it cannot count. The property is refused at build time there; poll
+`readinto()` and take the count it returns.
+:::
+
+:::caution[On the Pico, `receiver_buffer_size` is capped by hardware]
+On AVR a received byte is buffered by an interrupt-driven ring (fixed at 64 bytes, the
+default). The RP2040/RP2350 port has no such ring — the receive buffer is the UART's own
+32-entry hardware FIFO — so `receiver_buffer_size` above 32, the default 64 included, is
+refused at build time. Pass `receiver_buffer_size=32` (or less) for a program that compiles
+on every target.
 :::
 
 ### `analogio.AnalogIn`
@@ -304,7 +331,8 @@ def main():
     led = digitalio.DigitalInOut(board.LED)      # GP25
     led.direction = digitalio.Direction.OUTPUT
 
-    uart = busio.UART(board.TX, board.RX, baudrate=115200)   # GP0 / GP1
+    uart = busio.UART(board.TX, board.RX, baudrate=115200,
+                      receiver_buffer_size=32)             # GP0 / GP1
     uart.write(b"READY\r\n")
 
     buf: uint8[1] = bytearray(1)
@@ -315,8 +343,10 @@ def main():
 ```
 
 That is the whole portable surface: `board`, `digitalio` and `busio.UART`. `analogio`,
-`pwmio`, `busio.SPI`, `busio.I2C`, `neopixel` and `microcontroller` are not importable on an
-RP target — use [the native HAL](/stdlib/) for those peripherals.
+`pwmio`, `neopixel` and `microcontroller` are not importable on an RP target — use
+[the native HAL](/stdlib/) for those peripherals. `busio` itself imports everywhere;
+`busio.SPI` and `busio.I2C` refuse construction on an RP target, and the diagnostic names
+`bitbangio`, which bit-bangs the same CircuitPython API on any pins.
 
 On a **Pico 2** there is no board file, so set `target = "rp2350"` with
 `frequency = 150000000` and drop `import board`, passing GP numbers directly.

@@ -157,6 +157,7 @@ export default defineConfig({
           items: [
             { label: 'Roadmap', slug: 'roadmap' },
             { label: 'Changelog', slug: 'changelog' },
+            { label: 'State of the beta', slug: 'state-of-the-beta' },
             { label: 'Contributing', slug: 'contributing' },
           ],
         },

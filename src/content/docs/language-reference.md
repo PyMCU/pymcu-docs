@@ -272,6 +272,29 @@ loop, ISR, multiply-called function or other repeatable path is refused. Runtime
 buffers support indexing, stores, augmented stores, negative indices and `len()`, but not
 slicing, `memoryview` or passage through a regular `bytearray` parameter.
 
+#### Fixed-buffer views and construction
+
+`memoryview(buf)` is a compile-time alias of a fixed buffer. A slice such as
+`memoryview(buf)[1:]` is a writable window with an offset and shorter `len()`, not a copy.
+The window may pass through inline constructors and works with `struct.unpack` /
+`unpack_from`. There is no runtime buffer protocol.
+
+`bytes([...])` and `bytes(N)` may appear directly as call arguments. The compiler either
+unrolls the elements into an inline buffer parameter or creates a hidden fixed buffer for a
+regular `bytes` / `bytearray` parameter. A runtime `bytes(n)` is refused; use the once-only
+AVR `bytearray(n)` form instead.
+
+`ReadableBuffer` and `WriteableBuffer` annotations name byte buffers. They select a buffer
+overload instead of letting a buffer address fall through to a numeric overload. A regular
+function that fills and returns a local buffer expands at the call site so the caller refers
+to the same storage.
+
+`struct.pack(fmt, values...)` assigned to a name creates a fixed byte buffer and also works
+as a slice-assignment source. Four-byte `I`, `i`, `L` and `l` fields are supported under
+little- and big-endian formats. `buf += src` grows a fixed buffer only when the operation is
+in the same runtime branch context as the declaration; an open-ended `buf[offset:] = src`
+takes its length from the fixed source.
+
 ### Dictionaries and sets
 
 There is no hash table and no heap, so an unbounded, growing `dict` or `set` cannot be
@@ -329,6 +352,9 @@ dv: uint16 = d.get(9, 99)  # default when missing
 p: uint16 = d.pop(42)
 d.clear()
 ```
+
+A name bound to a compile-time list or tuple also supports `seq.index(x)`. A constant `x`
+folds; a runtime `x` lowers to a comparison chain and raises `ValueError` on a miss.
 
 ### Strings and f-strings
 
@@ -418,6 +444,12 @@ and `match` narrow the tag. `print(value)` and an f-string print the active memb
 unnarrowed arithmetic, comparison, `len`, subscript, or non-Optional argument dispatches by
 member and raises `TypeError` if the active member is `None`, matching Python. Buffer,
 sequence and class-instance members do not have a tagged ABI and are refused.
+
+For an inline function or constructor, a `Union[A, B]` parameter specializes to the actual
+argument type at the call site. `List`, `Tuple` and `Callable` members match their known
+compile-time shapes, and a `Protocol` member is structural: an instance matches when its
+class supplies the required members. Annotation aliases resolve the same way as a spelled-out
+union, including aliases declared inside a discarded `TYPE_CHECKING` branch.
 
 ```python
 def read_optional(raw: uint8) -> uint8 | None:
@@ -821,6 +853,11 @@ def clamp(val: uint8, lo: uint8, hi: uint8) -> uint8:
         return hi
     return val
 ```
+
+`*args` and `**kwargs` are supported when their sequence or mapping is known at the call
+site. PyMCU specializes the callee and splices the values into named parameters, including
+through `super().__init__`. A runtime mapping or an unknown keyword is refused. `*seq` may
+come from a literal, compile-time name or field, or a tuple-returning call.
 
 ### Type inference
 

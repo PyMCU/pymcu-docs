@@ -609,6 +609,24 @@ a runtime index needs it. A writable table must declare SRAM storage explicitly.
 same-length rows becomes a rectangular flash table and may use one-character string keys as
 character codes.
 
+A class instance as a sequence element is refused, by name. A compile-time
+sequence (the shape above) and a growable `xs = []; xs.append(...)` list are two different
+representations: the sequence flattens every element at the call site, while a growable list
+is a real heap buffer that `append`, `len()` and a run-time index all read through an
+address. A class instance has no such address here -- `self.x` is flattened to `<name>_x` at
+compile time, never a value with storage of its own -- so `xs.append(Counter(i))` (a fresh
+instance), `xs.append(c)` (an existing named one) or `xs.extend([Counter(i)])` had nothing
+for the element to copy: it silently stored the instance's own, never-written handle name,
+and every element after the first read back as 0, indistinguishable from a real field value
+(`xs[1]` answered `xs[0]`'s field). The same holds for `xs[i] = Counter(...)` into scalar
+element storage, for `bins[0][0] = Counter(...)` into a nested list's element storage, for
+`a = xs[i]` reading an element of an instance array as a value (the element names the
+instance, not a byte -- `xs[i].field` and `xs[i].method()` stay legal), and for an instance
+element inside a tuple return. Refused now, naming the class: build a fixed-size array of
+instances instead (`xs: Pair[N]` then `xs[i] = Pair(...)`, RFC 0001 Model B -- a class with
+at least two fields), which gives each instance real, run-time-indexed storage and a shared
+method body.
+
 Two-dimensional grids written as `[[0] * W for _ in range(H)]` or
 `[bytearray(W) for _ in range(H)]` flatten to one fixed `W * H` array. `g[y][x]`, row length,
 row iteration and a temporary row view work. Passing, returning, storing, comparing or

@@ -120,8 +120,7 @@ own virtual environment, with `--no-deps`:
 .venv/bin/pip install --no-deps adafruit-circuitpython-ssd1306 adafruit-circuitpython-framebuf adafruit-circuitpython-busdevice
 ```
 
-That is the whole step: nothing to copy into `src/`. PyMCU's CircuitPython compatibility
-layer knows these three packages as upstream libraries, and `pymcu build` finds them
+That is the whole step: nothing to copy into `src/`. `pymcu build` finds them
 directly in this environment the moment the program does `import adafruit_ssd1306` or
 `import adafruit_bus_device.i2c_device`.
 

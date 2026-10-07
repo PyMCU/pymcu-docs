@@ -1,6 +1,21 @@
 ---
 title: Game of Life on an OLED
 description: Conway's Game of Life on a 128x64 SSD1306 OLED, through the unmodified Adafruit CircuitPython SSD1306 and framebuf drivers, rendered here from the actual I2C bytes an emulated Arduino Uno sends.
+head:
+  - tag: meta
+    attrs: { property: 'og:image', content: 'https://docs.pymcu.org/images/og-game-of-life-example.png' }
+  - tag: meta
+    attrs: { property: 'og:image:width', content: '1200' }
+  - tag: meta
+    attrs: { property: 'og:image:height', content: '630' }
+  - tag: meta
+    attrs:
+      {
+        property: 'og:image:alt',
+        content: "A 4-pin SSD1306 OLED board showing Conway's Game of Life, next to the title Game of Life on an OLED, Example",
+      }
+  - tag: meta
+    attrs: { name: 'twitter:image', content: 'https://docs.pymcu.org/images/og-game-of-life-example.png' }
 ---
 
 Conway's Game of Life on a 128x64 SSD1306 I2C OLED: a 32x16 grid of 4x4-pixel cells,

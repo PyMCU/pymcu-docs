@@ -408,11 +408,39 @@ got installed differs.
 
 ## 6. Flash it
 
+<Tabs syncKey="pkg-manager">
+<TabItem label="pip">
+
 ```bash
 pymcu flash --port /dev/cu.usbmodem*   # macOS
 pymcu flash --port /dev/ttyACM0        # Linux
 pymcu flash --port COM3                # Windows
 ```
+
+</TabItem>
+<TabItem label="uv">
+
+```bash
+uv run pymcu flash --port /dev/cu.usbmodem*   # macOS
+uv run pymcu flash --port /dev/ttyACM0        # Linux
+uv run pymcu flash --port COM3                # Windows
+```
+
+</TabItem>
+<TabItem label="poetry">
+
+```bash
+poetry run pymcu flash --port /dev/cu.usbmodem*   # macOS
+poetry run pymcu flash --port /dev/ttyACM0        # Linux
+poetry run pymcu flash --port COM3                # Windows
+```
+
+</TabItem>
+</Tabs>
+
+The arguments are the same either way; only pip's `pymcu` runs on its own, since it is the
+one installed directly into an activated environment, while uv and poetry each keep
+`pymcu` inside their own project environment and need `run` to reach it.
 
 `pymcu flash` drives `avrdude` under the hood; install it first if you do not have it
 (`brew install avrdude` on macOS, `sudo apt-get install avrdude` on Debian/Ubuntu, or a

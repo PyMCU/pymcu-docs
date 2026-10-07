@@ -625,10 +625,13 @@ element storage, for `bins[0][0] = Counter(...)` into a nested list's element st
 the annotated initializer `xs: list[uint8] = [c]`, for `a = xs[i]` reading an element of an
 instance array as a value (the element names the instance, not a byte -- `xs[i].field` and
 `xs[i].method()` stay legal), and for an instance element inside a tuple return. There the
-question is what the element resolves to, not how it is spelled: a bare `d[0]`, a method
-call on any receiver (`factory.make()`, `d[0].make()` through `__getitem__`,
-`super().make()`, `getattr(mod, "f").make()`) and a module function (`mod.make()`) are all
-refused, because the dispatched callee's declared return type is what names the class.
+question is what the element's value resolves to, not how it is spelled: a bare `d[0]`, a
+method call on any receiver (`factory.make()`, `d[0].make()` through `__getitem__`,
+`super().make()`, `getattr(mod, "f").make()`), a module function (`mod.make()`, spliced
+arguments like `mod.make(*(1, 2))` included), a helper with no return annotation
+(`relay()` returning `make()`), and a wrapper expression (`m() if c else m()`, `c and m()`,
+`c or m()`) are all refused, because the dispatched callee's declared return type is what
+names the class and it rides the produced value through the wrapper.
 Refused now, naming the class: build a fixed-size array of
 instances instead (`xs: Pair[N]` then `xs[i] = Pair(...)`, RFC 0001 Model B -- a class with
 at least two fields), which gives each instance real, run-time-indexed storage and a shared

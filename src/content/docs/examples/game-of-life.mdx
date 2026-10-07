@@ -30,7 +30,7 @@ total. The straightforward port, two full 32x16 grids (`cells` and `next_cells`,
 the 128x32 version does it), does not fit: the compiler refuses the build (`static data
 needs 2288 bytes but atmega328p has 2048 bytes of SRAM`). `step()` below updates a single
 grid in place instead, row by row, keeping only two rows of backup, which fits in
-1606/2048 bytes of static SRAM, 442 free. See the comment in the code for exactly why two
+1594/2048 bytes of static SRAM, 453 free. See the comment in the code for exactly why two
 rows are enough.
 :::
 
@@ -172,16 +172,20 @@ The unmodified Adafruit CircuitPython stack, not a single line changed:
 | `adafruit_framebuf`         | 1.6.12  |
 | `adafruit_bus_device` (I2C) | current |
 
-Get the example and the instructions for pulling these three packages from PyPI into
-`src/` at [`examples/game-of-life-oled`](https://github.com/PyMCU/pymcu-circuitpython/tree/main/examples/game-of-life-oled)
-in the `pymcu-circuitpython` repository.
+Get the example at [`examples/game-of-life-oled`](https://github.com/PyMCU/pymcu-circuitpython/tree/main/examples/game-of-life-oled)
+in the `pymcu-circuitpython` repository; its README covers installing these three packages
+straight into the project's own environment with `pip install --no-deps`. Nothing gets
+copied into `src/`: PyMCU's CircuitPython compatibility layer resolves them directly from
+the installed packages.
 
 ## Flash
 
-**13126 / 32768 bytes** (40% of program storage) on `arduino_uno` with PyMCU's compiler:
-the whole Game of Life, the SSD1306 driver, the framebuffer and the embedded 5x8 font.
-1606 bytes of that program's own SRAM are static (the framebuffer, the grid, the two
-backup rows), 442 bytes free before the call stack.
+**13468 / 32768 bytes** (41% of program storage) on `arduino_uno` with `pymcu-compiler`
+0.1.0b1 straight from PyPI, the three Adafruit packages installed with `--no-deps` and
+nothing copied into `src/`: the whole Game of Life, the SSD1306 driver and the framebuffer
+module (no font data is embedded; the program never calls `display.text()`). 1594 bytes of
+that program's own SRAM are static (the framebuffer, the grid, the two backup rows), 453
+bytes free before the call stack.
 
 ## The animation
 
@@ -219,13 +223,13 @@ reproduce the exact board the program computes.
 This 128x64 version has not been flashed to real hardware yet. An earlier 128x32 version
 of this same program, with 4x4 cells on a 32x8 grid and two full grids rather than one,
 did run on a real Arduino Uno wired to a 128x32 SSD1306 module over I2C. Getting it to run
-reliably took finding a real compiler bug: see [the write-up](https://pymcu.org/the-oled-that-froze/).
+reliably took finding a real compiler bug.
 
 ## Build
 
 ```bash
 cd examples/game-of-life-oled    # in the pymcu-circuitpython repository, after
-                                  # copying the Adafruit drivers in per its README
+                                  # installing the Adafruit drivers per its README
 pymcu build
 pymcu flash --port /dev/cu.usbmodem*
 ```

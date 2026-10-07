@@ -3,6 +3,8 @@ title: 'Build: Game of Life on an OLED'
 description: A complete, tested, step-by-step build guide for Conway's Game of Life on an SSD1306 OLED and an Arduino Uno, from an empty folder to a blinking grid of pixels, with PyMCU installed straight from PyPI.
 ---
 
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
 A full walkthrough, start to finish: install PyMCU, wire up an OLED, get the unmodified
 Adafruit CircuitPython drivers, write the program, build it, and flash it to a real Arduino
 Uno. Every command on this page was run from a clean install, with nothing but what PyPI
@@ -96,7 +98,19 @@ pymcu version
 This should print a table with `pymcu-compiler`, `pymcu-avr` and `pymcu-circuitpython` all
 at version `0.1.0b1` (or newer, if you are reading this later).
 
+This part is the same no matter which package manager you plan to use for the project
+itself: you need a working `pymcu` command before `pymcu new` can even offer you the
+choice. The steps from here on show pip, uv and poetry side by side; pick a tab once and
+it stays picked for the rest of the page.
+
 ## 2. Create the project
+
+`pymcu new` scaffolds `src/main.py` and a `pyproject.toml` already configured for the Uno
+and the CircuitPython compatibility layer. `--pkg-manager` picks how its dependencies get
+installed; pick the tab for the one you use:
+
+<Tabs syncKey="pkg-manager">
+<TabItem label="pip">
 
 ```bash
 pymcu new game-of-life-oled --board arduino_uno --stdlib circuitpython --pkg-manager pip
@@ -105,30 +119,96 @@ python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 ```
 
-`pymcu new` scaffolds `src/main.py`, a `pyproject.toml` already configured for the Uno and
-the CircuitPython compatibility layer, and a `requirements.txt`. The project gets its own
-virtual environment, separate from the one `pymcu` itself is installed in, so its exact
-dependency versions stay pinned independently of whatever else you build later.
+`pymcu new` also writes a `requirements.txt`. The project gets its own virtual
+environment, separate from the one `pymcu` itself is installed in, so its exact dependency
+versions stay pinned independently of whatever else you build later.
+
+</TabItem>
+<TabItem label="uv">
+
+```bash
+pymcu new game-of-life-oled --board arduino_uno --stdlib circuitpython --pkg-manager uv
+cd game-of-life-oled
+uv sync
+```
+
+`uv sync` creates the project's own virtual environment (`.venv`) from `pyproject.toml`
+and `uv.lock`, separate from the one `pymcu` itself is installed in.
+
+</TabItem>
+<TabItem label="poetry">
+
+```bash
+pymcu new game-of-life-oled --board arduino_uno --stdlib circuitpython --pkg-manager poetry
+cd game-of-life-oled
+poetry install --no-root
+```
+
+`--no-root` skips trying to install this project itself as a package, since it is a
+program, not a library; `poetry install` creates the project's own virtual environment
+from `pyproject.toml` and `poetry.lock`, separate from the one `pymcu` itself is installed
+in.
+
+</TabItem>
+</Tabs>
 
 ## 3. Get the Adafruit drivers
 
 This guide does not vendor the Adafruit libraries: they are not PyMCU code, and a copy
-here would drift out of date. Install the official packages straight into this project's
-own virtual environment, with `--no-deps`:
+here would drift out of date. Install the official packages straight into the project's
+own environment, with `--no-deps`:
+
+<Tabs syncKey="pkg-manager">
+<TabItem label="pip">
 
 ```bash
 .venv/bin/pip install --no-deps adafruit-circuitpython-ssd1306 adafruit-circuitpython-framebuf adafruit-circuitpython-busdevice
 ```
 
-That is the whole step: nothing to copy into `src/`. `pymcu build` finds them
-directly in this environment the moment the program does `import adafruit_ssd1306` or
-`import adafruit_bus_device.i2c_device`.
+</TabItem>
+<TabItem label="uv">
+
+```bash
+uv pip install --no-deps adafruit-circuitpython-ssd1306 adafruit-circuitpython-framebuf adafruit-circuitpython-busdevice
+```
+
+:::caution[`uv sync` removes these]
+These three packages are not declared in `pyproject.toml`, and cannot be: `uv add` has no
+way to skip their dependencies either, and would pull in `Adafruit-Blinka` the same way
+plain `pip install` does. `uv sync` resets the environment to exactly match
+`pyproject.toml`, which removes them. After any `uv sync`, repeat the `uv pip install
+--no-deps` line above. Plain `uv run` does not remove them.
+:::
+
+</TabItem>
+<TabItem label="poetry">
+
+```bash
+poetry run pip install --no-deps adafruit-circuitpython-ssd1306 adafruit-circuitpython-framebuf adafruit-circuitpython-busdevice
+```
+
+:::caution[`poetry sync` removes these]
+`poetry add` has no way to skip dependencies either, and would pull in `Adafruit-Blinka`
+the same way. `poetry install` keeps these three extra packages, but `poetry sync` resets
+the environment to exactly match `poetry.lock`, which removes them. After any `poetry
+sync`, repeat the `poetry run pip install --no-deps` line above.
+:::
+
+</TabItem>
+</Tabs>
+
+That is the whole step: nothing to copy into `src/`. `pymcu build` finds them directly in
+that environment the moment the program does `import adafruit_ssd1306` or `import
+adafruit_bus_device.i2c_device`. A future PyMCU release is expected to remove this manual
+step, resolving these drivers the same way `pymcu install` resolves its own library index
+today.
 
 :::caution[`--no-deps` is not optional]
-Without it, `pip` also installs `Adafruit-Blinka`, whose own `busio.py` lands in the same
-environment and shadows PyMCU's `busio` from the CircuitPython layer; `pymcu build` then
-tries to compile Blinka's `busio.py` as PyMCU source and fails on syntax it does not
-support. `--no-deps` keeps only the three driver packages themselves.
+Without it, installing these packages also pulls in `Adafruit-Blinka`, whose own
+`busio.py` lands in the same environment and shadows PyMCU's `busio` from the
+CircuitPython layer; `pymcu build` then tries to compile Blinka's `busio.py` as PyMCU
+source and fails on syntax it does not support. `--no-deps` keeps only the three driver
+packages themselves, for pip, uv and poetry alike.
 :::
 
 :::note[No font file needed]
@@ -149,8 +229,8 @@ PyMCU has its own library index (`pymcu search`, `pymcu install`), and it is tem
 try `pymcu install adafruit_ssd1306`. Today that fails: `'adafruit_ssd1306' is not in the
 PyMCU library index`. The suggested fallback, `pymcu install --from-pypi
 adafruit-circuitpython-ssd1306`, also fails right now, with `it registers no
-pymcu.libraries entry point, so the compiler would never see it`. The plain `pip install
---no-deps` above is the path that works.
+pymcu.libraries entry point, so the compiler would never see it`. Installing them with
+`--no-deps` above, whichever package manager you use, is the path that works.
 :::
 
 ## 4. The code
@@ -296,13 +376,35 @@ differences, before this guide was written around it.
 
 ## 5. Build
 
+<Tabs syncKey="pkg-manager">
+<TabItem label="pip">
+
 ```bash
 pymcu build
 ```
 
+</TabItem>
+<TabItem label="uv">
+
+```bash
+uv run pymcu build
+```
+
+</TabItem>
+<TabItem label="poetry">
+
+```bash
+poetry run pymcu build
+```
+
+</TabItem>
+</Tabs>
+
 Tested on this page: **13,468 / 32,768 bytes** of flash (41%), with `pymcu-compiler`
 0.1.0b1 straight from PyPI, the three Adafruit packages installed with `--no-deps` and
-nothing copied into `src/`, no local or development build involved.
+nothing copied into `src/`, no local or development build involved. The same figure for
+all three package managers: the installed drivers are identical either way, only how they
+got installed differs.
 
 ## 6. Flash it
 

@@ -630,8 +630,13 @@ method call on any receiver (`factory.make()`, `d[0].make()` through `__getitem_
 `super().make()`, `getattr(mod, "f").make()`), a module function (`mod.make()`, spliced
 arguments like `mod.make(*(1, 2))` included), a helper with no return annotation
 (`relay()` returning `make()`), and a wrapper expression (`m() if c else m()`, `c and m()`,
-`c or m()`) are all refused, because the dispatched callee's declared return type is what
-names the class and it rides the produced value through the wrapper.
+`c or m()`, the walrus `(x := m())`, or `c and 7` / `c or 7` where the instance is the
+operand the expression selects) are all refused, because the dispatched callee's declared
+return type is what names the class and it rides the produced value through the wrapper.
+What stays legal is a scalar read off the produced instance: on a single-field class the
+field's byte shares the carrier's storage, so `make().n`, `len(make())`, an alias of either
+(`x = make(); y = x.n`), and the field of a method-returned instance (`c.dup().n`) all
+answer the scalar and ride the tuple slot.
 Refused now, naming the class: build a fixed-size array of
 instances instead (`xs: Pair[N]` then `xs[i] = Pair(...)`, RFC 0001 Model B -- a class with
 at least two fields), which gives each instance real, run-time-indexed storage and a shared

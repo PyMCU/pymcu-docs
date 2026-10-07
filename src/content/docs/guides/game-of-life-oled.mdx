@@ -47,6 +47,14 @@ reseeds itself with a fresh random pattern whenever the world dies out or freeze
 No soldering, no extra components: the module takes power and two signal wires directly
 from the Uno's header pins.
 
+:::note[Adafruit Metro 328 also works]
+The Adafruit Metro 328 carries the same ATmega328P at 16 MHz as the Arduino Uno; build for
+it the same way, with `--board arduino_uno`. What has actually been validated on real
+silicon is the Uno (see the note at the end of this guide); the Metro should behave
+identically but has not itself been tested. This 128x64 version of the program has not
+been flashed to any real board yet, Metro or Uno.
+:::
+
 ## Wiring
 
 | OLED pin | Arduino Uno pin |
@@ -105,23 +113,24 @@ dependency versions stay pinned independently of whatever else you build later.
 ## 3. Get the Adafruit drivers
 
 This guide does not vendor the Adafruit libraries: they are not PyMCU code, and a copy
-here would drift out of date. Install the official packages and copy the plain `.py` files
-out of them:
+here would drift out of date. Install the official packages straight into this project's
+own virtual environment, with `--no-deps`:
 
 ```bash
-pip install adafruit-circuitpython-ssd1306 adafruit-circuitpython-framebuf adafruit-circuitpython-busdevice
+.venv/bin/pip install --no-deps adafruit-circuitpython-ssd1306 adafruit-circuitpython-framebuf adafruit-circuitpython-busdevice
 ```
 
-That installs them (and their dependencies) into whichever Python environment you ran the
-command in; PyMCU never imports them at runtime; it only needs the source files on disk.
-Find where pip put them (`pip show -f adafruit-circuitpython-ssd1306` prints the file list)
-and copy these three files, plus the `adafruit_bus_device` folder, into this project's
-`src/`:
+That is the whole step: nothing to copy into `src/`. PyMCU's CircuitPython compatibility
+layer knows these three packages as upstream libraries, and `pymcu build` finds them
+directly in this environment the moment the program does `import adafruit_ssd1306` or
+`import adafruit_bus_device.i2c_device`.
 
-- `adafruit_ssd1306.py`
-- `adafruit_framebuf.py`
-- `adafruit_bus_device/__init__.py`, `adafruit_bus_device/i2c_device.py`,
-  `adafruit_bus_device/spi_device.py`
+:::caution[`--no-deps` is not optional]
+Without it, `pip` also installs `Adafruit-Blinka`, whose own `busio.py` lands in the same
+environment and shadows PyMCU's `busio` from the CircuitPython layer; `pymcu build` then
+tries to compile Blinka's `busio.py` as PyMCU source and fails on syntax it does not
+support. `--no-deps` keeps only the three driver packages themselves.
+:::
 
 :::note[No font file needed]
 `adafruit_framebuf.py` can draw text using a font file, `font5x8.bin`, but that file is not
@@ -141,8 +150,8 @@ PyMCU has its own library index (`pymcu search`, `pymcu install`), and it is tem
 try `pymcu install adafruit_ssd1306`. Today that fails: `'adafruit_ssd1306' is not in the
 PyMCU library index`. The suggested fallback, `pymcu install --from-pypi
 adafruit-circuitpython-ssd1306`, also fails right now, with `it registers no
-pymcu.libraries entry point, so the compiler would never see it`. The manual copy above is
-the path that works.
+pymcu.libraries entry point, so the compiler would never see it`. The plain `pip install
+--no-deps` above is the path that works.
 :::
 
 ## 4. The code
@@ -280,8 +289,8 @@ total, and a 128x64 panel's framebuffer alone takes 1025 bytes of it. The straig
 port, two full 32x16 grids (`cells` and `next_cells`, the way a 128x32 version can afford
 to do it), does not fit next to that framebuffer; `pymcu build` refuses with a clear
 `static data needs 2288 bytes but atmega328p has 2048 bytes of SRAM` error. Updating one
-grid in place, with two rows kept as backup, fits: 1610/2048 bytes of static SRAM measured
-for this exact build, 438 free before the call stack. The single-grid algorithm was
+grid in place, with two rows kept as backup, fits: 1594/2048 bytes of static SRAM measured
+for this exact build, 453 free before the call stack. The single-grid algorithm was
 checked against the two-grid one in plain CPython first, 200 generations, 0 differences,
 and the compiled firmware was checked pixel for pixel against CPython too, 46 frames, 0
 differences, before this guide was written around it.
@@ -292,8 +301,9 @@ differences, before this guide was written around it.
 pymcu build
 ```
 
-Tested on this page: **13,536 / 32,768 bytes** of flash (41%), with `pymcu-compiler`
-0.1.0b1 straight from PyPI, no local or development build involved.
+Tested on this page: **13,468 / 32,768 bytes** of flash (41%), with `pymcu-compiler`
+0.1.0b1 straight from PyPI, the three Adafruit packages installed with `--no-deps` and
+nothing copied into `src/`, no local or development build involved.
 
 ## 6. Flash it
 
@@ -354,8 +364,7 @@ The short version: every frame you see here is computed the same way regardless 
 Python runs it, because the random soup comes from a small hand-written LCG, not the
 `random` module, which differs between interpreters. Getting this exact driver stack
 reliable on real AVR hardware surfaced a genuine compiler bug along the way, a register
-that was not guaranteed to start at zero on a cold boot; [the write-up](https://pymcu.org/the-oled-that-froze/)
-tells that story in full.
+that was not guaranteed to start at zero on a cold boot.
 
 ## Also see
 

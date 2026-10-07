@@ -624,9 +624,12 @@ and every element after the first read back as 0, indistinguishable from a real 
 element storage, for `bins[0][0] = Counter(...)` into a nested list's element storage, for
 the annotated initializer `xs: list[uint8] = [c]`, for `a = xs[i]` reading an element of an
 instance array as a value (the element names the instance, not a byte -- `xs[i].field` and
-`xs[i].method()` stay legal), and for an instance element inside a tuple return, including
-one produced by a method call such as `factory.make()`. Refused now, naming the class: build
-a fixed-size array of
+`xs[i].method()` stay legal), and for an instance element inside a tuple return. There the
+question is what the element resolves to, not how it is spelled: a bare `d[0]`, a method
+call on any receiver (`factory.make()`, `d[0].make()` through `__getitem__`,
+`super().make()`, `getattr(mod, "f").make()`) and a module function (`mod.make()`) are all
+refused, because the dispatched callee's declared return type is what names the class.
+Refused now, naming the class: build a fixed-size array of
 instances instead (`xs: Pair[N]` then `xs[i] = Pair(...)`, RFC 0001 Model B -- a class with
 at least two fields), which gives each instance real, run-time-indexed storage and a shared
 method body.

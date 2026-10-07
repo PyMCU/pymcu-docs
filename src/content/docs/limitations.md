@@ -644,9 +644,16 @@ method body.
 
 Two-dimensional grids written as `[[0] * W for _ in range(H)]` or
 `[bytearray(W) for _ in range(H)]` flatten to one fixed `W * H` array. `g[y][x]`, row length,
-row iteration and a temporary row view work. Passing, returning, storing, comparing or
-slicing a row view is refused. `[[0] * W] * H` is refused because Python makes all rows
-aliases of one object; use the comprehension form.
+row iteration and a temporary row view work. Passing, returning, storing or comparing a row
+view is refused. `[[0] * W] * H` is refused because Python makes all rows aliases of one
+object; use the comprehension form.
+
+Slicing a row (`first_row = g[0][:]`, `g[y][0:2]`) is a COPY, same as any Python list slice
+-- never a view -- and works into a plain assignment: `x = g[y][:]` with a run-time `y`
+copies the row's elements into `x`'s own storage, reusing the same storage when the name is
+rebound inside a loop. Only reading a slice into a value works; assigning INTO a row slice
+(`g[y][:] = ...`) is still refused, since that replaces a span in place rather than
+producing one.
 
 A grid declared `cells: list[list[uint8]]` is a different representation: a real heap list
 of heap lists, not the flattened array above. `row = cells[y]` binds `row` to the SAME

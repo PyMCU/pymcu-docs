@@ -648,6 +648,18 @@ row iteration and a temporary row view work. Passing, returning, storing, compar
 slicing a row view is refused. `[[0] * W] * H` is refused because Python makes all rows
 aliases of one object; use the comprehension form.
 
+A grid declared `cells: list[list[uint8]]` is a different representation: a real heap list
+of heap lists, not the flattened array above. `row = cells[y]` binds `row` to the SAME
+inner list CPython would -- `row[x] = v` is visible through `cells[y][x]`, inside a
+function frame and across a loop that rebinds the name every iteration.
+
+A function parameter declared `bytearray`, `bytes` or a fixed-size array travels as the
+whole buffer's address. Passing it ONE ELEMENT instead -- `f(buf[i])`, or `b` from
+`for i, b in enumerate(buf)` passed to `f(b)` -- is refused, naming the call, the element
+and the parameter. CPython raises `TypeError: 'int' object is not subscriptable` the first
+time such a callee indexes the element it was actually given; a buffer-typed parameter the
+callee never indexes still compiles, since CPython never raises there either.
+
 A method is not a field. Assigning `p.value = 1` to a class whose `value` is a method is
 refused and suggests `p.value(1)`. CircuitPython's `DigitalInOut.value` is a property, so
 assignment to that API remains valid.

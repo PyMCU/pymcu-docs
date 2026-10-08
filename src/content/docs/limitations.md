@@ -651,7 +651,8 @@ object; use the comprehension form.
 Slicing a row (`first_row = g[0][:]`, `g[y][0:2]`) is a COPY, same as any Python list slice
 -- never a view -- and works into a plain assignment: `x = g[y][:]` with a run-time `y`
 copies the row's elements into `x`'s own storage, reusing the same storage when the name is
-rebound inside a loop. Only reading a slice into a value works; assigning INTO a row slice
+rebound inside a loop. The copy is read with constant indexes only (`x[0]`, `x[w - 1]`);
+indexing it with a run-time value is refused for now. Only reading a slice into a value works; assigning INTO a row slice
 (`g[y][:] = ...`) is still refused, since that replaces a span in place rather than
 producing one.
 
@@ -665,7 +666,16 @@ whole buffer's address. Passing it ONE ELEMENT instead -- `f(buf[i])`, or `b` fr
 `for i, b in enumerate(buf)` passed to `f(b)` -- is refused, naming the call, the element
 and the parameter. CPython raises `TypeError: 'int' object is not subscriptable` the first
 time such a callee indexes the element it was actually given; a buffer-typed parameter the
-callee never indexes still compiles, since CPython never raises there either.
+callee never indexes still compiles, since CPython never raises there either. The refusal fires only
+when the compiler can prove the argument is one element; other spellings that produce
+an element (`for b in buf`, tuple unpacking, a function returning `buf[0]`, a field, a
+walrus or a conditional expression) are not detected yet and pass the element through
+as an address.
+
+A `for` over a tuple or list literal may hold run-time values (`for v in (x - 1, x, x + 1)`).
+All elements are evaluated before the first iteration, as in CPython, and the loop
+variable takes a type that holds every element exactly. Elements that share no such type
+(`int32` with `uint32`, a float with an integer or a bool) are refused, naming both types.
 
 A method is not a field. Assigning `p.value = 1` to a class whose `value` is a method is
 refused and suggests `p.value(1)`. CircuitPython's `DigitalInOut.value` is a property, so

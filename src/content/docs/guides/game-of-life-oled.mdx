@@ -68,8 +68,8 @@ from the Uno's header pins.
 The Adafruit Metro 328 carries the same ATmega328P at 16 MHz as the Arduino Uno; build for
 it the same way, with `--board arduino_uno`. What has actually been validated on real
 silicon is the Uno (see the note at the end of this guide); the Metro should behave
-identically but has not itself been tested. This 128x64 version of the program has not
-been flashed to any real board yet, Metro or Uno.
+identically but has not itself been tested. This 128x64 version of the program runs on a
+real Uno with a 128x64 SSD1306 module.
 :::
 
 ## Wiring
@@ -470,10 +470,10 @@ avrdude -c arduino -p m328p -P /dev/cu.usbmodem14201 -b 115200 -U flash:w:dist/f
 Swap in your own port either way; `pymcu flash --port` without a value usually finds it for
 you.
 
-:::note[Not verified on real hardware by this page]
-This guide was tested up through a successful `pymcu build` with packages installed only
-from PyPI. Flashing needs a physical Arduino Uno and OLED, which the environment this page
-was written in does not have; that final step has not been run here.
+:::note[Verified on real hardware]
+The program on this page has been flashed to a real Arduino Uno wired to a 128x64 SSD1306
+module: `pymcu flash` wrote and verified 13468 bytes, and the board ran the Game of Life on
+the OLED, demoed live at PyDay México CDMX.
 :::
 
 ## What to expect
